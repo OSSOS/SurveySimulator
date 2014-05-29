@@ -1,0 +1,47 @@
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+c
+c Survey Simulator set of routines, version 2.0 for OSSOS
+c
+c Based on SurveySim.f from CFEPS, as of 2013-01-15
+c
+c Improvements include use of new efficiency and pointings file format,
+c various efficiency functions for a given pointing as a function of rate of
+c motion and colors for simulated objects such that surveys have not been
+c shifted in magnitude to a common filter.
+c
+c 2013-04-26: Modified GetSurvey, read_sur and read_eff to read in new
+c             efficiency and pointings files.
+c             Modified eta_raw to support multiple efficiency functions as
+c             functions of rate of motion.
+c             Modified detect1 to add a 'color' array in the argument list to
+c             account for colors of objects and various filters used in the
+c             surveys, and change the sequence of rejections to:
+c               - Check app. mag. against limiting mag.
+c               - Check FOV
+c               - Check for filling factor
+c               - Check rate of motion
+c               - Check efficiency on randomized mag.
+c               - Check for tracking
+c
+c 2013-05-03: Added two more arguments at end of list of detect1: 'ic' for the
+c             index of the color of the detection filter, and 'surna', a
+c             3-character string with the name of the survey that detected the
+c             object.
+c             Updated content of efficiency files for CFEPS to eliminate
+c             remaining inconsistancies.
+c
+c 2013-05-08: Changed name of entry subroutine from detect1 to detos1.
+c
+c 2013-07-01: Modified API for detos1 to return a single COMMENTS string
+c             argument and an integer NCHAR specifying how many characeter to
+c             output.
+c
+c 2013-09-18: Changed api to return intrinsic mag and averaged
+c             randomized mag instead of randomized mag and dmag.
+c             Changed algorithm to check efficiency based on intrinsic
+c             mag, using full efficiency function down to 1%, and finally
+c             reject object if averaged randomized mag is fainter than
+c             40% limit.
+c             Discarded use of eta_trust.
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
