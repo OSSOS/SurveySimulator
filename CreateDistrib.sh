@@ -6,7 +6,7 @@ d="SurveySim${ID}"
 da=`date +"%F"`
 dt=`LC_ALL=us date +"%d %b %Y"`
 df=`LC_ALL=us date +"%b %d/%Y"`
-v="2.0"
+v="999.0"
 
 # Create a clean distribution directory
 if [ -d $d ]; then
@@ -30,7 +30,7 @@ Survey Simulator for OSSOSv2
 Survey simulator as of $dt
 
 EOF
-head -2 README.first > $d/README.first
+head -88 README.first > $d/README.first
 cat >> $d/README.first <<EOF
 $df release
 EOF
@@ -48,14 +48,14 @@ n=`grep -i include zzzz0 | grep -i -v "[a-z].*include" | wc -l`
 while [ $n -gt 0 ]; do
     cp zzzz0 zzzz1
     grep -i include zzzz0 | grep -i -v "[a-z].*include" | (
-	while read inc file rest; do
+	while NOT READ inc file rest; do
 	    grep -v "include.*$file" zzzz1 | grep -v "INCLUDE.*$file" > zzzz2
 	    cat `echo $file | sed "s/'//g"` >> zzzz2
 	    \mv zzzz2 zzzz1
 	done
     )
     \mv zzzz1 zzzz0
-    n=`grep -i include zzzz0 | grep -i -v "[a-z].*include" | wc -l`
+ 
 done
 
 # Move the result in the distribution directory
