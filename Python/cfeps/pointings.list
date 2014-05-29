@@ -1,0 +1,117 @@
+# This is a sample survey description file.
+#
+# All lines starting with '#' are ignored, so they are used for comments
+#
+# Each data line has the format:
+# <width> <height> <RA> <DEC> <epoch> <filling_factor> \
+#   <obs_code> <efficiency_file_name>
+#
+# <width>: width of FOV, in degree
+# <height>: height of FOV, in degree
+# <RA>: Right Ascension of pointing, decimal degree or HH:MM:SS[.ss...]
+# <DEC>: Declination of pointing, decimal degree or DD:MM:SS[.ss...]
+# <epoch>: epoch of pointing, in Julian day (decimal)
+# <filling_factor>: filling factor of that FOV
+# <obs_code>: observatory code
+# <efficiency_file_name>: name of efficiency file for that pointing
+#
+4.00 4.00 12:42:04.00 -04:31:00.0 2452722.9600000 0.80 500 L3f-smooth.eff
+4.00 4.00 13:03:51.43 -06:47:24.4 2452755.8399121 0.81 500 L3h-smooth.eff
+4.00 3.00 22:01:39.48 -12:04:38.5 2452882.8300000 0.89 500 L3q-smooth.eff
+2.00 1.00 21:57:41.86 -14:04:02.3 2452882.8178932 0.89 500 L3q-smooth.eff
+2.00 1.00 22:05:37.00 -10:05:14.8 2452882.8427424 0.89 500 L3q-smooth.eff
+8.00 1.00 04:17:14.71 +21:50:00.0 2452989.8165311 0.87 500 L3w-smooth.eff
+8.00 1.00 04:50:41.56 +22:58:33.6 2452989.8296229 0.87 500 L3w-smooth.eff
+5.00 1.00 23:59:50.11 +00:28:01.6 2452909.8504949 0.83 500 L3s-smooth.eff
+5.00 1.00 23:25:53.78 -03:11:29.3 2452909.8608641 0.83 500 L3s-smooth.eff
+4.00 1.00 23:43:22.00 -01:18:42.5 2452909.8670000 0.83 500 L3s-smooth.eff
+4.00 4.00 07:30:39.60 +21:48:15.0 2452997.9570000 0.85 500 L3y-smooth.eff
+# This is a sample survey description file.
+#
+# All lines starting with '#' are ignored, so they are used for comments
+#
+# Each data line has the format:
+# <width> <height> <RA> <DEC> <epoch> <filling_factor> <tracked_fraction> \
+#   <obs_code> <efficiency_file_name>
+#
+# <width>: width of FOV, in degree
+# <height>: height of FOV, in degree
+# <RA>: Right Ascension of pointing, decimal degree or HH:MM:SS[.ss...]
+# <DEC>: Declination of pointing, decimal degree or DD:MM:SS[.ss...]
+# <epoch>: epoch of pointing, in Julian day (decimal)
+# <filling_factor>: filling factor of that FOV
+# <obs_code>: observatory code
+# <efficiency_file_name>: name of efficiency file for that pointing
+#
+4.00 2.00 15:03:37.90 -16:19:00.0 2453120.9341016 0.89 500 L4j-smooth.eff
+4.00 2.00 15:19:54.35 -17:23:18.5 2453120.9454667 0.89 500 L4j-smooth.eff
+4.00 2.00 13:27:56.10 -08:14:20.0 2453121.8249416 0.89 500 L4h-smooth.eff
+3.50 2.00 13:43:40.50 -09:45:00.0 2453121.8362773 0.89 500 L4h-smooth.eff
+4.00 2.00 15:03:35.00 -18:15:42.0 2453149.8573703 0.90 500 L4k-smooth.eff
+4.00 2.00 15:19:51.50 -19:19:57.0 2453149.8685572 0.90 500 L4k-smooth.eff
+6.00 1.00 19:01:54.83 -23:09:36.4 2453181.9567119 0.89 500 L4m-smooth.eff
+6.00 1.00 19:27:00.80 -22:24:49.2 2453181.9651722 0.89 500 L4m-smooth.eff
+7.00 1.00 19:08:07.46 -22:01:49.1 2453208.9339484 0.90 500 L4n-smooth.eff
+7.00 1.00 19:37:23.47 -21:04:04.8 2453208.9458980 0.90 500 L4n-smooth.eff
+6.00 1.00 19:01:47.45 -24:06:53.8 2453210.9279286 0.90 500 L4o-smooth.eff
+7.00 1.00 19:29:01.82 -23:24:16.3 2453210.9378452 0.90 500 L4o-smooth.eff
+4.00 2.00 20:45:23.22 -18:59:46.4 2453232.8416795 0.85 500 L4p-smooth.eff
+4.00 2.00 21:01:36.60 -17:53:50.5 2453232.8549195 0.85 500 L4p-smooth.eff
+4.00 2.00 21:17:44.53 -16:42:31.2 2453236.8527797 0.85 500 L4q-smooth.eff
+4.00 2.00 21:33:45.46 -15:26:41.3 2453236.8658183 0.85 500 L4q-smooth.eff
+4.00 2.00 02:26:53.36 +14:32:03.2 2453318.8793730 0.78 500 L4v-smooth.eff
+3.50 2.00 02:42:55.80 +15:48:10.4 2453318.8923642 0.78 500 L4v-smooth.eff
+# This is a sample survey description file.
+#
+# All lines starting with '#' are ignored, so they are used for comments
+#
+# Each data line has the format:
+# <width> <height> <RA> <DEC> <epoch> <filling_factor> <tracked_fraction> \
+#   <obs_code> <efficiency_file_name>
+#
+# <width>: width of FOV, in degree
+# <height>: height of FOV, in degree
+# <RA>: Right Ascension of pointing, decimal degree or HH:MM:SS[.ss...]
+# <DEC>: Declination of pointing, decimal degree or DD:MM:SS[.ss...]
+# <epoch>: epoch of pointing, in Julian day (decimal)
+# <filling_factor>: filling factor of that FOV
+# <obs_code>: observatory code
+# <efficiency_file_name>: name of efficiency file for that pointing
+#
+2.00 2.00 09:01:05.00 +17:56:40.0 2453411.7959145 0.84 500 L5c-smooth.eff
+3.00 2.00 09:11:11.50 +17:13:16.1 2453411.8024141 0.84 500 L5c-smooth.eff
+2.00 2.00 09:21:14.40 +16:27:27.4 2453411.8106376 0.84 500 L5c-smooth.eff
+1.00 1.00 09:27:16.34 +16:28:18.1 2453411.8286424 0.84 500 L5c-smooth.eff
+4.00 2.00 16:09:18.20 -21:57:38:0 2453502.9484194 0.90 500 L5i-smooth.eff
+4.00 2.00 16:25:57:20 -22:38:20.0 2453502.9615431 0.90 500 L5i-smooth.eff
+4.00 2.00 16:01:01.00 -19:35:46.0 2453531.9001671 0.89 500 L5j-smooth.eff
+4.00 2.00 16:17:36.10 -20:22:54.0 2453531.9116918 0.89 500 L5j-smooth.eff
+2.91 1.97 22:32:16.80 +03:25:50.0 2453616.8042273 0.90 500 L5r-smooth.eff
+1.00 1.00 22:36:06.38 +04:53:28.3 2453616.8092135 0.90 500 L5r-smooth.eff
+1.95 1.97 22:41:50.10 +04:24:52.3 2453616.8125445 0.90 500 L5r-smooth.eff
+2.92 1.97 22:24:35.47 +14:05:15.6 2453616.8225482 0.90 500 L5s-smooth.eff
+1.00 1.00 22:28:28.28 +15:32:56.5 2453616.8274346 0.90 500 L5s-smooth.eff
+2.00 1.97 22:34:10.10 +15:04:40.0 2453616.8307352 0.90 500 L5s-smooth.eff
+1.00 1.00 08:57:19.75 +15:52:32.0 2454119.9187501 0.89 500 L7a-smooth.eff
+2.00 1.50 08:57:38.25 +18:33:44.9 2454119.8411424 0.89 500 L7a-smooth.eff
+2.75 1.92 08:43:11.55 +16:28:50.0 2454119.8392796 0.89 500 L7a-smooth.eff
+4.00 2.75 08:45:10.00 +18:50:00.0 2454119.8245472 0.89 500 L7a-smooth.eff
+2.17 2.18 08:31:35.35 +19:30:20.0 2454115.9009350 0.89 500 L7a-smooth.eff
+# This is a sample survey description file.
+#
+# All lines starting with '#' are ignored, so they are used for comments
+#
+# Each data line has the format:
+# <width> <height> <RA> <DEC> <epoch> <filling_factor> <tracked_fraction> \
+#   <obs_code> <efficiency_file_name>
+#
+# <width>: width of FOV, in degree
+# <height>: height of FOV, in degree
+# <RA>: Right Ascension of pointing, decimal degree or HH:MM:SS[.ss...]
+# <DEC>: Declination of pointing, decimal degree or DD:MM:SS[.ss...]
+# <epoch>: epoch of pointing, in Julian day (decimal)
+# <filling_factor>: filling factor of that FOV
+# <obs_code>: observatory code
+# <efficiency_file_name>: name of efficiency file for that pointing
+#
+3.50 1.88 21:59:59.30 -12:59:59.0 2452491.9932900 0.90 500 presurvey-smooth.eff
