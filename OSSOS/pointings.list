@@ -1,0 +1,30 @@
+# This is a sample survey description file.
+#
+# All lines starting with '#' are ignored, so they are used for comments
+#
+# Each data line has the format:
+# <width> <height> <RA> <DEC> <epoch> <filling_factor> <tracked_fraction> \
+#   <obs_code> <efficiency_file_name>
+#
+# <width>: width of FOV, in degree
+# <height>: height of FOV, in degree
+# <RA>: Right Ascension of pointing, decimal degree or HH:MM:SS[.ss...]
+# <DEC>: Declination of pointing, decimal degree or DD:MM:SS[.ss...]
+# <epoch>: epoch of pointing, in Julian day (decimal)
+# <filling_factor>: filling factor of that FOV
+# <obs_code>: observatory code
+# <efficiency_file_name>: name of efficiency file for that pointing
+#
+# For Megaprime, the 36 CCDs are 2048x4612 with pixels 0.18689x0.18689", so
+# assuming a total footprint of 1 sq.deg, the filling factor is 0.9164
+#
+# 2013A-E block
+ 3.000  3.000 14:24:05.80 -13:15:45.9 2456386.95496 0.9164 500 2013AE.eff
+ 1.000  3.000 14:15:54.20 -12:34:03.0 2456386.95496 0.9164 500 2013AE.eff
+ 3.000  3.000 14:07:42.60 -11:52:20.1 2456386.95496 0.9164 500 2013AE.eff
+# 2013A-O block
+ 3.000  3.000 16:06:13.18 -12:43:40.5 2456420.95956 0.9164 500 2013AO.eff
+ 1.000  3.000 15:58:01.35 -12:19:54.2 2456420.95956 0.9164 500 2013AO.eff
+ 3.000  3.000 15:49:49.52 -11:56:07.9 2456420.95956 0.9164 500 2013AO.eff
+# 2013B-L block
+# 2013B-H block
