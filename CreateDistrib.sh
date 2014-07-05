@@ -2,7 +2,7 @@
 
 # Determine directory name
 ID=`date +"%Y%m%d"`
-d="SurveySim${ID}"
+d="../SurveySim${ID}"
 da=`date +"%F"`
 dt=`LC_ALL=us date +"%d %b %Y"`
 df=`LC_ALL=us date +"%b %d/%Y"`
@@ -14,18 +14,18 @@ if [ -d $d ]; then
 fi
 mkdir $d
 mkdir $d/src
-if [ -e CurrentDistrib ]; then
-    \rm CurrentDistrib
+if [ -e ../CurrentDistrib ]; then
+    \rm ../CurrentDistrib
 fi
-if [ -h CurrentDistrib ]; then
-    \rm CurrentDistrib
+if [ -h ../CurrentDistrib ]; then
+    \rm ../CurrentDistrib
 fi
-ln -s $d CurrentDistrib
+ln -s ${d/./} ../CurrentDistrib
 
 # Copy fix files
 cat > $d/README.version <<EOF
 
-Survey Simulator for OSSOSv2
+Survey Simulator for OSSOSv3
 
 Survey simulator as of $dt
 
@@ -35,7 +35,7 @@ cat >> $d/README.first <<EOF
 $df release
 EOF
 tail --line=+3 README.first >> $d/README.first
-cp -a README.contact cfeps OSSOS OSSOS-cfeps lookup parametric $d/
+cp -a README.contact cfeps OSSOS OSSOS-cfeps lookup parametric Python $d/
 cp src/Driver.f src/README.* $d/src/
 \rm -f $d/cfeps/*.py
 
@@ -72,6 +72,6 @@ cat zzzz0 >> ../$d/src/SurveySubs.f
 cd ../
 
 # Create the tarball
-tar czf SurveySimulator-${ID}.tgz $d
+tar czf ../SurveySimulator-${ID}.tgz $d
 
 exit

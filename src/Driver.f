@@ -91,7 +91,7 @@ c Name for the detected objects outfile
 c Name for the tracked objects outfile
       read (5, '(a)', err=9999) trk_outfile
 
-c Open output file and write header
+c Open output files and write header
       open (unit=lun_h, file=det_outfile, status='new', err=9500)
       write (lun_h, '(''# Seed: '', i10)') seed
       write (lun_h, '(''#'')')

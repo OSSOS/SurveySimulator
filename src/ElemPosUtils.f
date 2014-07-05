@@ -308,6 +308,92 @@ c Cartisian coordinates
       return
       end
 
+c \subroutine{coord\_cart}
+
+      subroutine PQ_cart (inc, capo, smallo, P, Q, R)
+
+c This routine transforms delaunay variables into cartisian
+c variables.
+c
+c ANGLES ARE GIVEN IN RADIAN !!!!
+c
+c \subsection{Arguments}
+c \subsubsection{Definitions}
+c \begin{verse}
+c \verb|inc, capo, smallo| = osculating elements \\
+c \verb|P, Q, R| = $\vec P$, $\vec Q$ and $\vec P \times \vec Q$ vectors
+c \end{verse}
+c
+c \subsubsection{Declarations}
+c
+Cf2py intent(in) inc
+Cf2py intent(in) capo
+Cf2py intent(in) smallo
+Cf2py intent(out) P
+Cf2py intent(out) Q
+Cf2py intent(out) R
+
+      implicit none
+
+      real*8
+     $  inc, capo, smallo, P(3), Q(3), R(3)
+
+c \subsection{Variables}
+c \subsubsection{Definitions}
+c \begin{verse}
+c \verb|cos_i, sin_i| = sinus and cosines of $i$ \\
+c \verb|delau| = Delaunay variables: $l, \cos(g), \sin(g), \cos(h),
+c      \sin(h), L, G, H$
+c \end{verse}
+c
+c \subsubsection{Declarations}
+
+      integer*4
+     $  i
+
+      real*8
+     $  delau(8), cos_i, sin_i, signe
+
+c Computation of sinus and cosines of angles.
+
+      signe = 1.d0
+      if (a .lt. 0.d0) signe = -1.d0
+      cos_i = dcos(inc)
+      sin_i = dsqrt(1.d0 - cos_i**2)
+      delau(2) = dcos(smallo)
+      delau(3) = dsin(smallo)
+      delau(4) = dcos(capo)
+      delau(5) = dsin(capo)
+
+c Rotation matrix.
+c The rotation matrix is the composition of 3 matrices: $R_{xq} =
+c  R_3(-h) \cdot R_1(-i) \cdot R_3(-g)$:
+c \begin{displaymath}
+c     R_{xq} = \left(\matrix{
+c       \cos(h)\cos(g)-\frac{H}{G}\sin(h)\sin(g)&
+c       -\cos(h)\sin(g)-\frac{H}{G}\sin(h)\cos(g)&
+c       \sqrt{1-\frac{H^2}{G^2}}\sin(h) \cr
+c       \sin(h)\cos(g)+\frac{H}{G}\cos(h)\sin(g)&
+c       -\sin(h)\sin(g)+\frac{H}{G}\cos(h)\cos(g)&
+c       -\sqrt{1-\frac{H^2}{G^2}}\cos(h) \cr
+c       \sqrt{1-\frac{H^2}{G^2}}\sin(g)&
+c       \sqrt{1-\frac{H^2}{G^2}}\cos(g)&
+c       \frac{H}{G} \cr}\right);
+c \end{displaymath}
+
+      P(1) = delau(4)*delau(2) - cos_i*delau(5)*delau(3)
+      Q(1) = -delau(4)*delau(3) - cos_i*delau(5)*delau(2)
+      R(1) = sin_i*delau(5)
+      P(2) = delau(5)*delau(2) + cos_i*delau(4)*delau(3)
+      Q(2) = -delau(5)*delau(3) + cos_i*delau(4)*delau(2)
+      R(2) = -sin_i*delau(4)
+      P(3) = sin_i*delau(3)
+      Q(3) = sin_i*delau(2)
+      R(3) = cos_i
+
+      return
+      end
+
 c \subroutine{osc\_el}
 
       subroutine osc_el (mu, x, y, z, vx, vy, vz,
