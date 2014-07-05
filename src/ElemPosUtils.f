@@ -352,12 +352,10 @@ c \subsubsection{Declarations}
      $  i
 
       real*8
-     $  delau(8), cos_i, sin_i, signe
+     $  delau(8), cos_i, sin_i
 
 c Computation of sinus and cosines of angles.
 
-      signe = 1.d0
-      if (a .lt. 0.d0) signe = -1.d0
       cos_i = dcos(inc)
       sin_i = dsqrt(1.d0 - cos_i**2)
       delau(2) = dcos(smallo)
