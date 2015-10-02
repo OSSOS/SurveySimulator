@@ -408,6 +408,19 @@ c \verb|cart| = cartesian variables: $X, Y, Z, Px, Py, Pz$
 c \end{verse}
 c
 c \subsubsection{Declarations}
+Cf2py intent(in) mu
+Cf2py intent(in) x
+Cf2py intent(in) y
+Cf2py intent(in) z
+Cf2py intent(in) vx
+Cf2py intent(in) vy
+Cf2py intent(in) vz
+Cf2py intent(out) a
+Cf2py intent(out) ecc
+Cf2py intent(out) inc
+Cf2py intent(out) capo
+Cf2py intent(out) smallo
+Cf2py intent(out) capm
 
       implicit none
 

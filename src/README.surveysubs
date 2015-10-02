@@ -36,9 +36,8 @@ INPUT (from GiMeObj)
     node  : Longitude of node [rad] (R8)
     peri  : Argument of perihelion [rad] (R8)
     mt0   : Mean anomaly [rad] (R8)
-    jday  : Reference time of the orbital elements [JD] (R8)
-    hx    : Absolute magnitude of the object in the user's specified 'x' band
-            (R8)
+    jday  : Time of elements [JD] (R8)
+    hx    : Absolute magnitude of object in 'x' band, what ever this is (R8)
     color : Array of colors (10*R8)
                colors(1) : g-x
                colors(2) : r-x
@@ -53,7 +52,7 @@ INPUT (from GiMeObj)
     ph    : phase of lightcurve at epoch jday [rad] (R8)
     period: period of lightcurve [day] (R8)
     amp   : peak-to-peak amplitude of lightcurve [mag] (R8)
-    surnam: Survey directory name (CH10)
+    surnam: Survey directory name (CH)
 
 OUTPUT
     seed  : Random number generator seed (I4)
@@ -61,29 +60,26 @@ OUTPUT
 		0: not found 
 		1: found, but not tracked
             	2: found and tracked
+		3: characterized, but not tracked
+		4: characterized and tracked
     ra    : Right ascension at detection [rad] (R8)
     dec   : Declination at detection [rad] (R8)
     d_ra  : Right ascension rate [rad/day] (R8)
     d_dec : Declination rate [rad/day] (R8)
     r     : Sun-object distance [AU] (R8)
     delta : Earth-object distance [AU] (R8)
-    mag   : Apparent magnitude at detection (R8); This is computed from the
-            absolute magnitude, the distance from the Sun and Earth, the phase
-            angle (Bowel formalism), and a random uncertainty is added
-            according to Gaussian noise whose amplitude is determined from the
-            <mag_error> parameters in the efficiency files; The returned value
-            is given in the user defined 'x' filter
-    dmag  : Estimated uncertainty on magnitude (R8)
-    eff   : Efficiency of detection of object (function of mag and survey) (R8)
-    isur  : Identification number of the survey block the object was in (I4)
+    m_int : Intrinsic apparent magnitude, in x-band (R8)
+    m_rand: Averaged randomized magnitude, in detection filter (R8)
+    eff   : Actual efficiency of detection (R8)
+    isur  : Identification number of survey the object was in (I4)
     mt    : Mean anomaly at discovery [rad] (R8)
     jdayp : Time of discovery [JD] (R8)
     ic    : Index of color used for survey (I4)
-    surna : Detection survey name, for information (CH10) 
-    h_rand: Absolute randomized magnitude (R8)
+    surna : Detection survey name (CH10)
+    h_rand: Absolute randomized magnitude, in detection filter (R8)
 
 The Detos1 routine is part of the survey simulator and should not be modified
-in any way, as what appear to be innocent modifications could have dramatic
+in any way, as what appears to be innocent modifications could have dramatic
 effects on how the simulator works.  Advice on modifications is available
 (see README.contact file).
 

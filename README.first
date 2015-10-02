@@ -71,17 +71,21 @@ release --- README.first (this file)
    |
    |---- OSSOS -------- README.OSSOS
    |
+   |---- OSSOS-cfeps -- README.ossoscfeps
+   |
    |---- lookup ------- README.lookup
    |      \
    |       \----- example
    |
-   \---- parametric --- README.parametric
-           \
-            \---- example
+   |---- parametric --- README.parametric
+   |       \
+   |        \---- example
+   |
+   \---- Python ------- README.python
 		
 --------------------------------------------------------------------------------
 
-DESCRIPTION OF THE FOUR MAIN SUB-DIRECTORIES
+DESCRIPTION OF THE SIX MAIN SUB-DIRECTORIES
 
 src
   This directory contains the common source codes for the survey simulator
@@ -94,10 +98,24 @@ src
 
 cfeps
   This directory contains the pointing history and efficiency functions for 
-  each cfeps block; it also contains the list of real detected objects 
-  separated into various dynamical classes.  Other calibrated surveys could
-  be substituted (or added) once their characterization is specified in the 
-  correct format.
+  each cfeps block, including the cfeps presurvey 'block'; it also contains 
+  the list of real detected objects (cfeps.detections).  Other calibrated 
+  surveys could be substituted (or added) once their characterization is 
+  specified in the correct format.
+
+---------
+
+OSSOS
+  This directory contains the pointing history and efficiency functions for
+  each OSSOS block; it also contains the list of real detected objects
+  including their dynamical class. 
+
+---------
+
+OSSOS-cfeps
+   This is essentially the union of the two surveys, but see important
+   information in that subdirs README.ossoscfeps file about how care must
+   be taking when combining the survey.
 
 ---------
 
@@ -115,6 +133,14 @@ parametric
   This directory contains the source code for a GiMeObj routine that generates
   objects according to some parametric presciption, along with a Makefile to
   generate the executable and an example subdirectory.
+
+---------
+
+Python
+  This directory contains the source code for a GiMeObj routine that generates
+  objects according to some parametric presciption, along with a Makefile to
+  generate the executable. This example uses the Driver.py Python program as
+  driver instead of the usual Fortran program Driver.f.
 
 --------------------------------------------------------------------------------
 

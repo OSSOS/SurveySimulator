@@ -7,8 +7,9 @@ This directory contains the common source codes for the Survey Simulator
 
 The content of this directory is:
 
-src --------- README.python (this file)  Describes the architecture of the
-    |                                    driver and GiMeOjb routines
+src 
+  \---------- README.python (this file)  Describes the architecture of the
+   \                                     driver and GiMeOjb routines
     \-------- Driver.python              The driver program that rules them all
      \------- SurveySubs.f               A set of subroutines and functions that
       \                                  determine if an object was found, and
@@ -33,11 +34,13 @@ The workflow of the survey simulator driver is as follows:
 The GiMeObj routine (whose content should be determined by the user) returns 
 a single new object at each call.
 
-The Detos1 routine (in SUrveySubs.f) determines if the proposed object would
-have been detected and possibly tracked (meaning the orbit of a detected object
-is determined to high precision) by the survey(s) the user has chosen to
-simulate.  It is the tracked simulated detection list which must be compared to
-the true detections.
+The Detos1 routine determines if the proposed object would have been detected
+and possibly tracked (meaning the orbit of a detected object is determined to 
+high precision) by the survey(s) the user has chosen to simulate. It then
+decides if the object is characterized, i.e. is brighter than the
+characterization limit for the block and rate of motion it was discovered
+in. It is the characterized tracked simulated detection list which must be
+compared to the true detections.
 
 As currently written, Driver.py imports the module GiMeObj.so which contains
 the definition of the model. The preferred way to use this is to have one's
@@ -84,9 +87,9 @@ RUNNING
   - the name of the output file where the detected and tracked objects will be
     listed
 
-  An easy way of feeding these values into the driver is to write
-  them in a file, say "Driver.in", one line for each value, and execute the
-  program with redirection of standard input:
+  An easy way of feeding these values into the driver is to write them in a
+  file, say "Driver.in", one line for each value, and execute the program with
+  redirection of standard input:
 
     Driver.py < Driver.in
 
@@ -103,7 +106,8 @@ RUNNING
     non-tracked objects in the true survey.
 
     NOTE: in both files, the color is <mag in survey filter> - <mag in
-    reference "x" filter>, and the magnitude <mag> is given in the reference
-    "x" filter.
+    reference "x" filter>, the intrinsic magnitudes <m_int> and <H_int> are
+    given in the reference "x" filter, and the apparent magnitudes <m_rand> and
+    <H_rand> are given in the detection filter.
 
 --------------------------------------------------------------------------------

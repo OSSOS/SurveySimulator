@@ -8,12 +8,15 @@ Example compilation scripts can be found in the example subdirectories of
 
 The content of this directory is:
 
-src -------- README.src (this file)  Describes the architecture of the driver
-    |                                and GiMeOjb routines
+src
+  \--------- README.src (this file)  Describes the architecture of the driver
+   \                                 and GiMeOjb routines
     \------- README.surveysubs       Describes the detection routine and other
      \                               available utitlies
-      \----- Driver.f                The driver program that rules them all
-       \---- SurveySubs.f            A set of subroutines and functions that
+      \----- Driver.f                The driver program, in Fortran that rules
+       \                             them all
+        \--- Driver.py               The driver program, in Python
+         \-- SurveySubs.f            A set of subroutines and functions that
                                      determine if an object was found, and also
                                      provide interesting utilities
 
@@ -34,19 +37,44 @@ a single new object at each call.
 
 The Detos1 routine determines if the proposed object would have been detected
 and possibly tracked (meaning the orbit of a detected object is determined to 
-high precision) by the survey(s) the user has chosen to simulate.  It is the 
-tracked simulated detection list which must be compared to the true detections.
+high precision) by the survey(s) the user has chosen to simulate. It then
+decides if the object is characterized, i.e. is brighter than the
+characterization limit for the block and rate of motion it was discovered
+in. It is the characterized tracked simulated detection list which must be
+compared to the true detections.
 
-As currently written, Driver.f includes the file 'GiMeObj.f' which contains the
-definition of the model. The preferred way to use this is to have one's GiMeObj 
-routine in a file <whatever.f> and create a symobolic link to GiMeObj.f:
+
+COMPILING (Fortran version)
+  As currently written, Driver.f includes the file 'GiMeObj.f' which contains
+  the definition of the model. The preferred way to use this is to have one's
+  GiMeObj routine in a file <whatever.f> and create a symobolic link to
+  GiMeObj.f:
 
     ln -s <whatever.f> GiMeObj.f
 
-With this link, you can compile the driver and create an executable file
-called "SurveySimulator":
+  With this link, you can compile the driver and create an executable file
+  called "SurveySimulator":
 
     gfortran -O3 -o SurveySimulator Driver.f
+
+
+COMPILING (Python version)
+  The simplest way to create the executable for the survey simulator is 
+  to type the following command at the prompt (in the Python directory):
+
+    make
+
+  This will create the two modules GiMeObj.so and SurveySubs.so imported by
+  Driver.py. If you do not have the gfortran compiler installed you will need
+  to replace the compiler command in Makefile with the fortran compiler you
+  use.
+
+  One can create the modules directly:
+
+    ln -s InnerHotModel.f GiMeObj.f
+    f2py -c --f77exec=/usr/bin/gfortran --f77flags=-fPIC -m SurveySubs SurveySubs.f
+    f2py -c --f77exec=/usr/bin/gfortran --f77flags=-fPIC -m GiMeObj ./SurveySubs.so GiMeObj.f
+
 
 RUNNING
   The driver program provided with this package reads six parameters from the
@@ -75,12 +103,14 @@ RUNNING
     detected objects. The meaning of the values is given in the header of the 
     file. At the end of the file there is also the number of objects tested, 
     the number of objects detected, and the number of objects tracked.
-  - The second (called SimulTrack.dat in the examples) contains all the tracked 
-    objects. The meaning of the values is given in the header of the file.
+  - The second (called SimulTrack.dat in the examples) contains all the
+    characterized tracked objects. The meaning of the values is given in the
+    header of the file.
 
     NOTE: in both files, the color is <mag in survey filter> - <mag in
-    reference "x" filter>, and the magnitude <mag> is given in the reference
-    "x" filter.
+    reference "x" filter>, the intrinsic magnitudes <m_int> and <H_int> are
+    given in the reference "x" filter, and the apparent magnitudes <m_rand> and
+    <H_rand> are given in the detection filter.
 
 ------------------------------------------------------------------------------
 

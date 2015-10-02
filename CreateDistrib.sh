@@ -25,7 +25,7 @@ ln -s ${d/./} ../CurrentDistrib
 # Copy fix files
 cat > $d/README.version <<EOF
 
-Survey Simulator for OSSOSv3
+Survey Simulator for OSSOSv5
 
 Survey simulator as of $dt
 
@@ -35,8 +35,9 @@ cat >> $d/README.first <<EOF
 $df release
 EOF
 tail --line=+3 README.first >> $d/README.first
-cp -a README.contact cfeps OSSOS OSSOS-cfeps lookup parametric Python $d/
-cp src/Driver.f src/README.* $d/src/
+cp -a README.contact cfeps lookup parametric Python $d/
+cp -a ../OSSOS ../OSSOS-cfeps $d/
+cp src/Driver.{f,py} src/README.* $d/src/
 \rm -f $d/cfeps/*.py
 
 # Initialize SurveySubs.f

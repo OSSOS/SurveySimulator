@@ -12,6 +12,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c
 c J.-M. Petit  Observatoire de Besancon
 c Version 1 : January 2006
+c Version 2 : May 2013
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
@@ -33,31 +34,35 @@ c                colors(6) : V-x
 c                colors(7) : B-x
 c                colors(8) : R-x
 c                colors(9) : I-x
-c     gb    : opposition surge factor, Bowell formalism (R8)
-c     ph    : phase of lightcurve at epoch [rad] (R8)
+c     gb    : opposition surge factor G, Bowell formalism (R8)
+c     ph    : phase of lightcurve at epoch jday [rad] (R8)
 c     period: period of lightcurve [day] (R8)
 c     amp   : amplitude of lightcurve [mag] (R8)
 c     surnam: Survey directory name (CH)
 c
 c OUTPUT
 c     seed  : Random number generator seed (I4)
-c     flag  : Return flag. 0: not found; 1: found, not tracked;
-c             2: found and tracked (I4)
-c     ra    : Right ascension [rad] (R8)
-c     dec   : Declination [rad] (R8)
+c     flag  : Return flag (I4): 
+c                0: not found 
+c                1: found, but not tracked
+c                2: found and tracked
+c                3: characterized, but not tracked
+c                4: characterized and tracked
+c     ra    : Right ascension at detection [rad] (R8)
+c     dec   : Declination at detection [rad] (R8)
 c     d_ra  : Right ascension rate [rad/day] (R8)
 c     d_dec : Declination rate [rad/day] (R8)
 c     r     : Sun-object distance [AU] (R8)
 c     delta : Earth-object distance [AU] (R8)
 c     m_int : Intrinsic apparent magnitude, in x-band (R8)
-c     m_rand: Averaged randomized magnitude, in x-band (R8)
+c     m_rand: Averaged randomized magnitude, in detection filter (R8)
 c     eff   : Actual efficiency of detection (R8)
-c     isur  : Number of survey the object was in (I4)
+c     isur  : Identification number of survey the object was in (I4)
 c     mt    : Mean anomaly at discovery [rad] (R8)
 c     jdayp : Time of discovery [JD] (R8)
 c     ic    : Index of color used for survey (I4)
 c     surna : Detection survey name (CH10)
-c     h_rand: Absolute randomized magnitude (R8)
+c     h_rand: Absolute randomized magnitude, in detection filter (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c
 c Set of F2PY directive to create a Python module
@@ -437,10 +442,10 @@ c Record the survey number.
                               isur = i_sur
                               surna = sur_eff(i_sur)
      $                           (1:min(len(surna),len(sur_eff(1))))
-c Converting magnitude to 'x' band
+c Converting intrinsic magnitude to 'x' band, keeping apaprent
+c magnitude in discovery filter
                               ic = filt_i
                               m_int = m_int - color(ic)
-                              m_rand = m_rand - color(ic)
                               call AbsMag (r, delta, ros, m_rand, gb,
      $                          alpha, h_rand, ierr)
                               if (ierr .ne. 0) then

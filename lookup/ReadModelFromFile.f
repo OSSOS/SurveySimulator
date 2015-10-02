@@ -248,6 +248,10 @@ c objects. When reaching the end of the file, returns "ierr_d = 30".
          call GetDistrib (filena, lun_d, n_obj_max, n_obj, obj_a,
      $     obj_e, obj_i, obj_node, obj_peri, obj_m, obj_h, obj_jday,
      $     color0, comp, ierr_d)
+         if (n_obj .le. 0) then
+            ierr = -20
+            return
+         end if
          if (ierr_d .ne. 0) then
             if (ierr_d .eq. 10) then
                write (screen, *) 'Unable to open ', filena
@@ -465,7 +469,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
       implicit none
 
       real*8
-     $  a, e, i, capm, om, capom, h, Pi, drad, jday, color(*)
+     $  a, e, i, capm, om, capom, h, Pi, drad, jday, color(*), jd
 
       integer*4
      $  nw_max
@@ -484,13 +488,13 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 
       data opened /.false./
 
-      save opened
+      save opened, jd
 
       ierr = 0
       if (.not. opened) then
          open (unit=lun_in, file=filen, status='old', err=1000)
          opened = .true.
-         jday = 2453157.50000d0
+         jd = -1.d0
          do j = 1, 10
             color(j) = 0.d0
          end do
@@ -503,13 +507,14 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
       read (lun_in, '(a)', err=2000, end=3000) line
       if (line(1:1) .eq. '#') then
          if (line(1:25) .eq. '# Epoch of elements: JD =') then
-            read (line(26:100), *, err=1500, end=1500) jday
+            read (line(26:100), *, err=1500, end=1500) jd
          end if
          if (line(1:10) .eq. '# Colors =') then
             read (line(11:), *, err=1500, end=1500) (color(j),j=1,10)
          end if
          goto 1500
       end if
+      jday = jd
       call parse (line, nw_max, nw, word, lw)
       if (nw .lt. 7) goto 2000
       read (word(1), *) a

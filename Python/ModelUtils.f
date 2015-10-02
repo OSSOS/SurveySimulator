@@ -448,7 +448,7 @@ Cf2py intent(out) fe
       return
       end
 
-      real*8 function interp (x, y, val, n)
+      real*8 function interpol (x, y, val, n)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c This function linearly interpolates the function y(x) at value x=val.
 c
@@ -465,7 +465,7 @@ c     val   : Value of x at which to interpolate (R8)
 c     n     : Size of x and y arrays (I4)
 c
 c OUTPUT
-c     interp: Interpolated value (R8)
+c     interpol: Interpolated value (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) n
 Cf2py intent(in), depend(n) :: x
@@ -481,9 +481,9 @@ Cf2py intent(in) val
      $  x(*), y(*), val
 
       if (val .le. x(1)) then
-         interp = y(1)
+         interpol = y(1)
       else if (val .ge. x(n)) then
-         interp = y(n)
+         interpol = y(n)
       else
          ilo = 1
          ihi = n
@@ -495,12 +495,12 @@ Cf2py intent(in) val
             else if (x(i) .gt. val) then
                ihi = i
             else
-               interp = y(i)
+               interpol = y(i)
                return
             end if
             goto 1000
          end if
-         interp = y(ilo) + (y(ihi) - y(ilo))*(val - x(ilo))
+         interpol = y(ilo) + (y(ihi) - y(ilo))*(val - x(ilo))
      $     /(x(ihi) - x(ilo))
       end if
 

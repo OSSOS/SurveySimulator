@@ -7,7 +7,8 @@ classes.
 
 The content of this directory is:
 
-src ---------- README.cfeps (this file) Describes the content of the directory
+cfeps
+   \---------- README.cfeps (this file) Describes the content of the directory
     \--------- README.format            Describes format of a survey "block"
      \-------- pointings.list           List of pointings and times of the
       \                                 survey
@@ -16,7 +17,6 @@ src ---------- README.cfeps (this file) Describes the content of the directory
          \                              single letter) gives the fortnight the
           \                             data was acquired
            \-- presurvey-smooth.eff     Same for presurvey
-            \- CFEPS-*.detections       List of objects really detected in
-                                        CFEPS, separated by dynamical classes
+            \- CFEPS.detections         List of objects really detected in CFEPS
 
 --------------------------------------------------------------------------------
