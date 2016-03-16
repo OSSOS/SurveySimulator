@@ -8,7 +8,7 @@ Modules: SurveySubs.so GiMeObj.so Makefile
 	echo "Modules have been built"
 
 SurveySubs.so: SurveySubs.f Makefile
-	f2py -c --f77exec=$(FC) --f77flags=-fPIC -m SurveySubs SurveySubs.f
+	f2py -c --f77exec=$(FC) --f77flags=-fPIC --f90flags=-fPIC -m SurveySubs SurveySubs.f
 
 #GiMeObj.so: InnerBeltModel.f SurveySubs.so Makefile
 #	\rm -f GiMeObj.f

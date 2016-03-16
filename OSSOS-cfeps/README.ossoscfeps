@@ -1,0 +1,68 @@
+
+README.ossoscfeps
+
+COMBINED SURVEY ANALYSIS
+
+This subdir contains the COMBINED OSSOS and CFEPS surveys.  Mostly this is
+the union of the detection lists from the two surveys and the union of all
+the block characterizations into a single pointing-list file.
+
+HOWEVER,
+Using the two surveys jointly requires some care:
+1. There are some Duplicates (see file so labeled), which are objects that
+   CFEPS detected and which were (blindly, not targeted) re-detected in 
+   OSSOS (almost all are cold classical).  These objects have been RELABELED 
+   in the CFEPS.detections file with the OSSOS name and commented out (#). They
+   also rightfully appear in the OSSOSvX.detections file.
+2. CFEPS was dominantly in g band while OSSOS is in r band.  The OSSOS 
+   Survey Simulator outputs the magnitude of a synthetic detection in the
+   photometric band used as input for the absolute magnitude of the object
+   (band X). It also provides the difference between the magnitude of the
+   simulated detection in the filter of the survey that fictitiously detects
+   it and the magnitude in this X band (the color term). So to determine the
+   magnitude of the simulated object in the block that detects it, one must add
+   mag_X and the color term.
+     ** WARNING: The above behaviour may change ; it may be better to output
+        the object's mags (apparent, H, H_surmised) in the band that the block
+        it is detected in, giving the color term that allows one to go to X. **
+   If you are attempting to compare the magnitudes of the real detected objects
+   to your model, you need to come up with a scheme as to how you will compare
+   magnitudes when two bands are involved.
+
+--------------------------------------------------------------------------------
+
+This directory contains the pointing history, efficiency functions for each
+block, and the list of detected objects, in one file for OSSOS
+(OSSOSv7.detections) and another one for CFEPS (CFEPS.detections).
+
+This directory contains the pointing history, efficiency functions for each
+block, and the list of detected objects in (OSSOSv6.detections)
+
+The content of this directory is:
+
+ossoscfeps
+  \---- README.ossoscfeps (this file)  Describes content of the directory
+   \--------- README.format            Describes format of a survey "block"
+    \-------- pointings.list           List of pointings and times of the
+     \                                 survey, often grouped into chunks.
+      \------ LnX-smooth.eff           Efficiency function for CFEPS block.
+       \----- presurvey-smooth.eff     Efficiency function for presurvey
+        \---- 201ySn.eff               Efficiency functions for OSSOS blocks,
+         \                             where y gives the year (201y), S (a
+          \                            single letter) semester, and n the
+           \                           block name (eg, E, O, L, H, P)
+            \-- OSSOSv7.detections     List of objects really detected in
+            |                          OSSOS, with their dynamical class if 
+            |                          known, magnitude at detection, rate
+            |                          of motion, H mag, and more.
+             \- CFEPS.detections       List of CFEPS objects really detected 
+             |                         (those found again in OSSOS are listed
+             |                         again here, with ossos designations)
+              \---Duplicates           The duplicated OSSOS/CFEPS detections
+	    
+IMPORTANT: The dynamical classifications of the 
+  E and O block are almost all 'secure', and those for the 
+  L, H and P block are still often 'insecure', and the latter are thus
+     expected to change in the v8 release.
+
+--------------------------------------------------------------------------------

@@ -135,7 +135,7 @@ c and libration amplitude, or the name of a component in the GiMeObj model
 c that the object responds to.  The nchar variable (passed back to Driver)
 c allows the user to pring only the first nchar characters of this string.
 c
-c This routine uses logical unit 10 to access the file containing the model.
+c This routine uses logical unit 20 to access the file containing the model.
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 c

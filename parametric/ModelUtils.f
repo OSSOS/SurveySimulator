@@ -225,6 +225,58 @@ Cf2py intent(out) ierr
       return
       end
 
+      real*8 function offgau (nparam, param, inc)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine returns the unnormalized inclination "probability"
+c density as a non-zero centered gaussian.
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : August 2014
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     nparam: Number of parameters (I4)
+c     param : Parameters (n*R8)
+c     inc   : Inclination (R8)
+c
+c OUPUT
+c     offgau: Value of the inclination (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) nparam
+Cf2py intent(in), depend(nparam) :: param
+Cf2py intent(in) inc
+
+      implicit none
+
+      integer
+     $  nparam
+
+      real*8
+     $  param(*), inc
+
+      real*8
+     $  Pi, TwoPi
+
+      parameter
+     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi)
+
+      real*8
+     $  fe, s1, angle, t0, t1, t3
+
+      if (nparam .ne. 2) stop
+      t0 = param(1)
+      s1 = param(2)
+      angle = mod(inc, TwoPi)
+      if (angle .gt. Pi) angle = angle - TwoPi
+      t1 = 2.*s1**2
+      t3 = -(t0-angle)**2
+      fe = exp(t3/t1)
+      offgau = dsin(inc)*fe
+
+      return
+      end
+
       real*8 function onecomp (nparam, param, inc)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c This routine returns the unnormalized inclination "probability"
@@ -448,7 +500,7 @@ Cf2py intent(out) fe
       return
       end
 
-      real*8 function interpol (x, y, val, n)
+      real*8 function interp (x, y, val, n)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c This function linearly interpolates the function y(x) at value x=val.
 c
@@ -465,7 +517,7 @@ c     val   : Value of x at which to interpolate (R8)
 c     n     : Size of x and y arrays (I4)
 c
 c OUTPUT
-c     interpol: Interpolated value (R8)
+c     interp: Interpolated value (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) n
 Cf2py intent(in), depend(n) :: x
@@ -481,9 +533,9 @@ Cf2py intent(in) val
      $  x(*), y(*), val
 
       if (val .le. x(1)) then
-         interpol = y(1)
+         interp = y(1)
       else if (val .ge. x(n)) then
-         interpol = y(n)
+         interp = y(n)
       else
          ilo = 1
          ihi = n
@@ -495,12 +547,12 @@ Cf2py intent(in) val
             else if (x(i) .gt. val) then
                ihi = i
             else
-               interpol = y(i)
+               interp = y(i)
                return
             end if
             goto 1000
          end if
-         interpol = y(ilo) + (y(ihi) - y(ilo))*(val - x(ilo))
+         interp = y(ilo) + (y(ihi) - y(ilo))*(val - x(ilo))
      $     /(x(ihi) - x(ilo))
       end if
 
@@ -591,5 +643,41 @@ c H-mag distribution
 
       return
 
+      end
+
+      real*8 function qhot (np, p, q)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+c This function returns the probability of having perihelion distance "q"
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : May 2013
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+c INPUT
+c     np    : Number of parameters describing the distribution function (I4)
+c     p     : Array of parameters (np*R8)
+c     q     : Perihelion distance (R8)
+c
+c OUTPUT
+c     qhot  : Probability of q
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+c
+c Set of F2PY directives to create a Python module
+c
+Cf2py intent(in) np
+Cf2py intent(in) p
+Cf2py intent(in) q
+c
+      implicit none
+
+c Calling arguments
+      integer np
+      real*8 p(*), q
+
+      qhot = 1./((1.+exp((35.-q)/0.5))*(1.+exp((q-p(1))/0.5)))
+
+      return
       end
 

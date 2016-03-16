@@ -11,8 +11,82 @@ c    Since this routine is called once for every object created, it needs
 c to input its own model parameters once when it is first called, and
 c then save these values for future use.
 c
+c Calling sequence in SurveySimulator.f (survey simulator driver) is:
+c
+c Loop (some condition):
+c     call GiMeObj(arg_list_1)
+c     Check model ended:
+c         set exit condition
+c     call Detos1(arg_list_2)
+c     Check detection and tracking:
+c         store results
+c
+c where arg_list_1 is
+c (filena, seed, a, e, inc, node, peri, M, epoch, h, color, gb, ph,
+c  period, amp, comp, ierr)
+c with:
+c
+c INPUT
+c     filena: name of containing description of model, read in by the
+c             model subroutine "modname" (CH)
+c     seed  : Random number generator seed (I4)
+c
+c OUTPUT
+c     a     : semimajor axis (R8)
+c     e     : eccentricity (R8)
+c     inc   : Inclination [rad] (R8)
+c     node  : Longitude of node [rad] (R8)
+c     peri  : Argument of perihelion [rad] (R8)
+c     M     : Mean anomaly [rad] (R8)
+c     epoch : epoch of the orbital elements, in Julian Day (R8)
+c     h     : absolute magnitude of object in band filter "x" (R8)
+c     color : array of colors "y-x", where the index of "y" is as
+c             described in detos1 (10*R8)
+c                color(1) : g-x
+c                color(2) : r-x
+c                color(3) : i-x
+c                color(4) : z-x
+c                color(5) : u-x
+c                color(6) : V-x
+c                color(7) : B-x
+c                color(8) : R-x
+c                color(9) : I-x
+c     gb    : opposition surge factor, Bowell formalism (R8)
+c     ph    : phase of lightcurve at epoch [rad] (R8)
+c     period: period of lightcurve [day] (R8)
+c     amp   : amplitude of lightcurve [mag] (R8)
+c     commen: user specified string containing whatever the user wants (CH*100)
+c     nchar : number of characters in the comment string that should be
+c             printed out in output files if the object is detected;
+c             maximum of 100 (I4)
+c     ierr  : return code
+c                  0 : nominal run, things are good
+c                100 : end of model, exit after checking this object
+c                -10 : could not get all orbital elements, skip object
+c                -20 : something went grossly wrong, should quit
+c
+c The model subroutines can access files using logical unit numbers from
+c 20 to 25. This range in reseved for them and won't be used by the
+c drivers nor SurveySubs routines.
+c
+c It is good practice that when first started, the GiMeObj routine
+c writes a file describing the model used, the versino and the date of
+c the routine.
+c
+c Since this routine is called once for every object created, it needs
+c to get all the required parameters once when it is called the first
+c time, then save these values for future use.
+c
+c The following routine gives a working example of a model routine. It
+c is probably worth reading it through.
+c
+c The survey simulator expects orbital elements with respect to ecliptic
+c reference frame.
+c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-c File generated on 2013-06-25
+c
+c File generated on 2013-07-01
+c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 c Authors: J-M. Petit (Observatoire de Besancon, France)
 C          B. Gladman (University of British Columbia, Canada)
@@ -73,7 +147,7 @@ c and libration amplitude, or the name of a component in the GiMeObj model
 c that the object responds to.  The nchar variable (passed back to Driver)
 c allows the user to pring only the first nchar characters of this string.
 c
-c This routine uses logical unit 10 to access the file containing the model.
+c This routine uses logical unit 20 to access the file containing the model.
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 c

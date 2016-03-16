@@ -1,0 +1,55 @@
+# This is an efficiency file with analytic function
+#
+# All lines starting with '#' are ignored, so they are used for comments.
+#
+# The parameters are given using a "<key> = <value(s)> pair, one per line.
+# Some <keys> can only appear after a previous <key> had a specific value.
+#
+# See README.format and/or Template.eff for a description of the format of this
+# file.
+#
+rate_cut= 0.50   15.00   -23.00   30.00
+#
+mag_error= 0.06 0.28 24.8 0.3 24.4 -0.6
+#
+phot_frac= 0.013 0.152 0.835
+#
+track_frac= 1.0 25.35 -5.00
+#
+filter= r
+#
+rates=  0.50  2.50                                                            
+function= square
+square_param=   0.853278756       1.70171224E-02   24.5659218      0.146171063    
+# Goodness of fit (reduced chi^2):   1.027
+#
+# Limiting magnitude of the block
+mag_lim= 24.49
+#
+rates=  2.50  8.00                                                            
+function= square
+square_param=   0.892915845       1.36067364E-02   24.5188560      0.142120421    
+# Goodness of fit (reduced chi^2):   3.708
+#
+# Limiting magnitude of the block
+#mag_lim= 24.49
+mag_lim= 24.42
+#
+rates=  8.00 12.00                                                            
+function= square
+square_param=   0.881634057       8.88960995E-03   24.3678360      0.154908925    
+# Goodness of fit (reduced chi^2):   0.834
+#
+# Limiting magnitude of the block
+#mag_lim= 24.36
+mag_lim= 24.26
+#
+rates= 12.00 15.00                                                            
+function= square
+square_param=   0.865726590       9.02368128E-03   24.2520447      0.154222265    
+# Goodness of fit (reduced chi^2):   0.864
+#
+# Limiting magnitude of the block
+#mag_lim= 24.24
+mag_lim= 24.14
+#

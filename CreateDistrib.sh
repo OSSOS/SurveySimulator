@@ -25,7 +25,7 @@ ln -s ${d/./} ../CurrentDistrib
 # Copy fix files
 cat > $d/README.version <<EOF
 
-Survey Simulator for OSSOSv5
+Survey Simulator for OSSOSv7
 
 Survey simulator as of $dt
 
@@ -36,7 +36,9 @@ $df release
 EOF
 tail --line=+3 README.first >> $d/README.first
 cp -a README.contact cfeps lookup parametric Python $d/
-cp -a ../OSSOS ../OSSOS-cfeps $d/
+mkdir $d/OSSOS $d/OSSOS-cfeps
+cp ../OSSOS/* $d/OSSOS/
+cp ../OSSOS-cfeps/* $d/OSSOS-cfeps/
 cp src/Driver.{f,py} src/README.* $d/src/
 \rm -f $d/cfeps/*.py
 
