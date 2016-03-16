@@ -158,6 +158,9 @@ c        Determine if the object would be detected
 
 c        Check if detected and tracked, and write to output files
          if (flag .gt. 0) then
+
+c        m_int and h are in "x" band (filter of object creation)
+c        m_rand and h_rand are in discovery filter
             n_hits = n_hits + 1
             write (lun_h, 9000) a, e, inc/drad, a*(1.d0-e), r, mt/drad,
      $        m_rand, h_rand, color(ic),

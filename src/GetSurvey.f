@@ -1,5 +1,5 @@
-      subroutine GetSurvey (survey, lun_s, n_max, nb_max, nr_max, n_sur,
-     $  sur_w, sur_h, sur_ra, sur_de, sur_t, sur_ff, sur_co, sur_x,
+      subroutine GetSurvey (survey, lun_s, n_max, nb_max, nr_max,
+     $  n_sur, sur_pl, sur_ne, sur_t, sur_ff, sur_co, sur_x,
      $  sur_y, sur_z, sur_r, sur_t2, sur_x2, sur_y2, sur_z2, sur_r2,
      $  sur_ef, sur_nr, sur_rt, sur_en, sur_eb, sur_em, sur_mm, sur_rn,
      $  sur_rx, sur_an, sur_aw, sur_ta, sur_tm, sur_ts, sur_dm, sur_ph,
@@ -23,10 +23,8 @@ c     nb_max: Maximum number of bin in efficiency function (I4)
 c
 c OUTPUT
 c     n_sur : Number of pointings read (I4)
-c     sur_w : Width of FOV (n*R8)
-c     sur_h : Height of FOV (n*R8)
-c     sur_ra: RA of pointing (n*R8)
-c     sur_de: DEC of pointing (n*R8)
+c     sur_pl: Array of polygons (2,n_e_max,n*R8)
+c     sur_ne: Array of nuumber of edges in polygons (n*I4)
 c     sur_t : Time of pointing (n*R8)
 c     sur_ff: Filling factor (n*R8)
 c     sur_co: Observatory code (n*I4)
@@ -64,30 +62,32 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
       implicit none
 
       integer*4
-     $  n_bin_max, n_r_max
+     $  n_bin_max, n_r_max, n_e_max
 
       parameter
-     $  (n_bin_max=100, n_r_max=10)
+     $  (n_bin_max=100, n_r_max=10, n_e_max=41)
 
       integer*4
      $  n_max, nb_max, nr_max
 
       real*8
-     $  sur_w(*), sur_h(*), sur_ra(*), sur_de(*), sur_t(*),
+     $  sur_t(*),
      $  sur_ff(*), sur_x(*), sur_y(*), sur_z(*), sur_r(*),
      $  sur_t2(*), sur_x2(*), sur_y2(*), sur_z2(*), sur_r2(*),
      $  sur_eb(nb_max, nr_max, *), sur_em(nb_max, nr_max, *),
-     $  width, height, ra_p, dec_p, jday_p, ff, obspos(3), ros,
+     $  jday_p, ff, obspos(3), ros,
      $  rates(2, n_r_max), sur_rt(2, nr_max, *),
      $  eff_b(n_bin_max, n_r_max), eff_m(n_bin_max, n_r_max),
      $  sur_mm(*), sur_rn(*), sur_rx(*), sur_an(*), sur_ph(3,*),
      $  sur_aw(*), sur_ta(*), sur_tm(*), sur_ts(*), sur_dm(6,*), 
      $  sur_ml(nr_max,*), eta, obspos2(3), ros2, maglim(n_r_max),
-     $  jday_p2, rate_c(4), d_mag(6), rate, track(3), photf(3), tmp
+     $  jday_p2, rate_c(4), d_mag(6), rate, track(3), photf(3), tmp,
+     $  poly(2,n_e_max), sur_pl(2,n_e_max,*)
 
       integer*4
      $  sur_co(*), sur_en(nr_max,*), sur_nr(*), sur_f(*), nr, j,
-     $  eff_n(n_r_max), code, i, lun_s, n_sur, ierr, i1, i2, filt_i
+     $  eff_n(n_r_max), code, i, lun_s, n_sur, ierr, i1, i2, filt_i,
+     $  n_e, sur_ne(*)
 
       character
      $  survey*(*), sur_ef(*)*(*), eff_name*80
@@ -101,8 +101,8 @@ c Open and read in survey definitions
       call read_file_name (survey, i1, i2, finished, len(survey))
       n_sur = 0
  200  continue
-         call read_sur (survey(i1:i2), nb_max, lun_s, width, height,
-     $     ra_p, dec_p, jday_p, ff, code, obspos, ros, jday_p2,
+         call read_sur (survey(i1:i2), nb_max, lun_s, poly, n_e,
+     $     jday_p, ff, code, obspos, ros, jday_p2,
      $     obspos2, ros2, eff_name, nr, rates, eff_n, eff_b, eff_m,
      $     rate_c, track, d_mag, photf, maglim, filt_i, ierr)
 
@@ -124,10 +124,6 @@ c Open and read in survey definitions
          end if
 
          n_sur = n_sur + 1
-         sur_w(n_sur) = width
-         sur_h(n_sur) = height
-         sur_ra(n_sur) = ra_p
-         sur_de(n_sur) = dec_p
          sur_t(n_sur) = jday_p
          sur_ff(n_sur) = ff
          sur_co(n_sur) = code
@@ -156,6 +152,11 @@ c Open and read in survey definitions
          end do 
          sur_ef(n_sur) = eff_name
          sur_nr(n_sur) = nr
+         sur_ne(n_sur) = n_e
+         do j = 1, n_e+1
+            sur_pl(1,j,n_sur) = poly(1,j)
+            sur_pl(2,j,n_sur) = poly(2,j)
+         end do
 c         write (18, *) 'Survey number: ', n_sur
 c         write (18, *) sur_w(n_sur), sur_h(n_sur), sur_ra(n_sur),
 c     $     sur_de(n_sur)
@@ -262,7 +263,7 @@ c         write (18, *) n_sur, sur_mm(n_sur)
       return
       end
 
-      subroutine read_sur (dirn, nb_max, lun_in, w, h, ra, dec, jday,
+      subroutine read_sur (dirn, nb_max, lun_in, poly, n_e, jday,
      $  ff, code, pos, r, jday2, pos2, r2, efnam, nr, rates, eff_n,
      $  eff_b, eff_m, rate_c, track, d_mag, photf, maglim, filt_i, ierr)
 
@@ -282,10 +283,8 @@ c     nb_max: Maximum number of bin in efficiency function (I4)
 c     lun_in: File unit (I4)
 c
 c OUTPUT
-c     w     : field of view width (R8)
-c     h     : field of view height (R8)
-c     ra    : Pointing RA (R8)
-c     dec   : Pointing DEC (R8)
+c     poly  : Array of points to define a polygon ((2,n)*R8)
+c     n_e   : Number of edges in polygon (I4)
 c     jday  : Time of pointing (R8)
 c     ff    : Filling factor (R8)
 c     code  : Observatory code (I4)
@@ -316,7 +315,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
       implicit none
 
       integer*4
-     $  nw_max, nb_max
+     $  nw_max, nb_max, n_e
 
       real*8
      $  Pi, drad, TwoHours
@@ -328,7 +327,8 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
       real*8
      $  w, h, ra, dec, ff, pos(3), eff_b(nb_max, *), eff_m(nb_max, *),
      $  jday, r, vel(3), photf(3), maglim(*),
-     $  pos2(3), r2, jday2, rate_c(4), track(3), d_mag(*), rates(2,*)
+     $  pos2(3), r2, jday2, rate_c(4), track(3), d_mag(*), rates(2,*),
+     $  poly(2,*)
 
       integer
      $  lun_in, ierr, j, code, eff_n(*), nw, lw(nw_max), lun_e, ierr_e,
@@ -360,21 +360,71 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
       read (lun_in, '(a)', err=2000, end=3000) line
       if (line(1:1) .eq. '#') goto 1500
       call parse (line, nw_max, nw, word, lw)
-      if (nw .lt. 8) goto 2000
-      read (word(1), *, err=2000) w
-      w = w*drad/2.d0
-      read (word(2), *, err=2000) h
-      h = h*drad/2.d0
-      j = index(word(3), ':')
-      if (j .le. 0) then
-         read (word(3), *, err=2000) ra
+      if (word(1)(1:4) .eq. 'ears') then
+         if (nw .lt. 7) goto 2000
+         j = index(word(2), ':')
+         if (j .le. 0) then
+            read (word(2), *, err=2000) ra
+         else
+            call hms (word(2), ra)
+            ra = ra*15.d0
+         end if
+         ra = ra*drad
+         call hms (word(3), dec)
+         dec = dec*drad
+         call create_ears(ra, dec, poly, n_e)
+         do j = nw, 4, -1
+            word(j+1) = word(j)
+            lw(j+1) = lw(j)
+         end do
+         nw = nw + 1
+      else if (word(1)(1:4) .eq. 'poly') then
+         if (nw .lt. 8) goto 2000
+         read (word(2), *, err=2000) n_e
+         j = index(word(3), ':')
+         if (j .le. 0) then
+            read (word(3), *, err=2000) ra
+         else
+            call hms (word(3), ra)
+            ra = ra*15.d0
+         end if
+         ra = ra*drad
+         call hms (word(4), dec)
+         dec = dec*drad
+         do j = 1, n_e
+            read (lun_in, *, err=2000, end=3000) poly(1,j), poly(2,j)
+            poly(1,j) = poly(1,j)*drad
+            poly(2,j) = poly(2,j)*drad
+         end do
+         call create_poly(ra, dec, poly, n_e)
+c         write (6, *) 'This feature is not implemented yet.'
+c         goto 2000
       else
-         call hms (word(3), ra)
-         ra = ra*15.d0
+         if (word(1)(1:4) .eq. 'rect') then
+            do j = 2, nw
+               word(j-1) = word(j)
+               lw(j-1) = lw(j)
+            end do
+            nw = nw - 1
+         end if
+         if (nw .lt. 8) goto 2000
+         read (word(1), *, err=2000) w
+         w = w*drad/2.d0
+         read (word(2), *, err=2000) h
+         h = h*drad/2.d0
+         j = index(word(3), ':')
+         if (j .le. 0) then
+            read (word(3), *, err=2000) ra
+         else
+            call hms (word(3), ra)
+            ra = ra*15.d0
+         end if
+         ra = ra*drad
+         call hms (word(4), dec)
+         dec = dec*drad
+         call create_rectangle(w, h, ra, dec, poly, n_e)
       end if
-      ra = ra*drad
-      call hms (word(4), dec)
-      dec = dec*drad
+      call check_polygon(poly, n_e)
       read (word(5), *, err=2000) jday
       read (word(6), *, err=2000) ff
       read (word(7), *, err=2000) code
@@ -740,6 +790,173 @@ c            in_rates = .false.
       ierr = 0
       return
 
+      end
+
+      subroutine create_ears(ra, dec, poly, n_e)
+
+      implicit none
+
+      integer*4
+     $  n_e
+
+      real*8
+     $  ra, dec, dra, h, w, poly(2,*), e_w, e_h
+
+c Below values are from assuming a size of 1°x1° for the "central"
+c square and add 1/2° height and 1/9° width ears. However, looking at
+c the resulting polygons, they seem to be somewhat too large
+c      data
+c     $  h /0.008726646259971648d0/,
+c     $  w /0.008726646259971648d0/,
+c     $  e_h /0.004363323129985824d0/,
+c     $  e_w /0.0019392547244381439d0/
+c
+c Now, maybe we can do better. Let's look at image 1805373p.fits.
+c Pointing is (13:32:29.29; -9:31:03.9) or (203.122042; -9.517750)
+c Now, the corners of the "central" square are:
+c (13:30:29.97; -10:00:48.4) or (202.624875; -10.013444)
+c (13:34:27.66; -10:00:36.0) or (203.615250; -10.010000)
+c (13:34:26.45; -09:00:58.4) or (203.610208; -09.016222)
+c (13:30:29.44; -09:01:11.4) or (202.622667; -09.019833)
+c This is a "square" of 0.9753° x 0.9937°
+c
+c Now, add the ears:
+c (13:34:53.45; -09:16:26.2) or (203.722708; -09.273944)
+c (13:34:27.30; -09:16:26.1) or (203.613750; -09.273917)
+c (13:34:27.89; -09:45:09.2) or (203.616208; -09.752556)
+c (13:34:54.05; -09:45:04.4) or (203.725208; -09.751222)
+c This is a "rectangle" of 0.1075° x 0.4780°
+c
+c (13:30:29.09; -09:16:38.9) or (202.621208; -09.277472)
+c (13:30:02.88; -09:16:42.3) or (202.512000; -09.278417)
+c (13:30:03.18; -09:45:19.7) or (202.513250; -09.755472)
+c (13:30:29.33; -09:45:21.5) or (202.622208; -09.755972)
+c This is a "rectangle" of 0.1076° x 0.4778°
+c
+c So let's make the area 0.9753° x 0.9937° + 2 x 0.010755° x 0.4779° =
+c 0.979435239 sq.deg. The CCDs are 2048x4612 with pixels
+c 0.18689x0.18689" resulting in an area of 0.0254558 sq.deg. for each
+c CCD, or 1.0182 sq.deg. Oops, there is a big problem. I guess it's the
+c size of the pixels that's to big. Applying this size to the cenral
+c square yield something reasonable, with pixels covering less than the
+c whole size of the array. But the ears are in trouble. The pixel heigh
+c seems to be too large. Actually, the main problem is that the WCS is
+c not good enough, and the central horizontal gap has vanished, and
+c some pixels are enven overlapping. I need to get an image with
+c Stephen's header.
+c Officially, the header says the size of the pixel is 0.185"x0.185",
+c somewhat smaller than what JJ says, but I'll stick to what JJ says.
+C Actually, I cannot use Stephen's header with DS9 as the latter
+C doesn't know how to use the PVs, and is rather using the CDs.
+c
+c The horizontal size of the central square shuold be greater than
+c 9x2112 = 19008 pixels or 3552.4". This implies a gap of ~32 pixels
+c between the chips, in addition to the oversans, 32 pixels on each
+c side. I'll assume the small horizontal gap is similar in the center
+c of the frame. Then for the same 1° full size, the wisth of the large
+c gaps is 327 and 328 pixels.
+c
+c From all this, I assume a half width of 0.5°, a half height of 0.5°,
+c the width of the ears (32+2112)*0.18689" = 1/9°, and half height of
+c (2*4644+32)*0.18689" = 0.483837°
+c      data
+c     $  h /0.008726646259971648d0/,
+c     $  w /0.008726646259971648d0/,
+c     $  e_h /0.004222278224995352d0/,
+c     $  e_w /0.0019392547244381439d0/
+c
+c The above gives a lot of overlap. Using the PVs and CDs, I determined
+c the exact footprint of a series of MegaPrime40 frames (in ~/Research
+c /OSSOS/src/MegaPrime40.FOV) and averaged them. In addition to the
+c positions below, I also determined the pixel size: 0.186" x 0.1849"
+      data
+     $  h /0.008678d0/,
+     $  w /0.008545d0/,
+     $  e_h /0.004169d0/,
+     $  e_w /0.001913d0/
+
+      n_e = 12
+      poly(2,1) = dec - h
+      poly(2,12) = poly(2,1)
+      poly(2,13) = poly(2,1)
+      poly(2,6) = dec + h
+      poly(2,7) = poly(2,6)
+      poly(2,2) = dec - e_h
+      poly(2,3) = poly(2,2)
+      poly(2,10) = poly(2,2)
+      poly(2,11) = poly(2,2)
+      poly(2,4) = dec + e_h
+      poly(2,5) = poly(2,4)
+      poly(2,8) = poly(2,4)
+      poly(2,9) = poly(2,4)
+
+      dra = w/dcos(poly(2,1))
+      poly(1,1) = ra - dra
+      poly(1,13) = poly(1,1)
+      poly(1,12) = ra + dra
+      dra = w/dcos(poly(2,2))
+      poly(1,2) = ra - dra
+      poly(1,11) = ra + dra
+      dra = (w + e_w)/dcos(poly(2,2))
+      poly(1,3) = ra - dra
+      poly(1,10) = ra + dra
+      dra = (w + e_w)/dcos(poly(2,4))
+      poly(1,4) = ra - dra
+      poly(1,9) = ra + dra
+      dra = w/dcos(poly(2,4))
+      poly(1,5) = ra - dra
+      poly(1,8) = ra + dra
+      dra = w/dcos(poly(2,6))
+      poly(1,6) = ra - dra
+      poly(1,7) = ra + dra
+      return
+      end
+
+      subroutine create_rectangle(w, h, ra, dec, poly, n_e)
+
+      implicit none
+
+      integer*4
+     $  n_e
+
+      real*8
+     $  w, h, ra, dec, dra, poly(2,*)
+
+      n_e = 4
+      poly(2,1) = dec - h
+      poly(2,4) = poly(2,1)
+      poly(2,2) = dec + h
+      poly(2,3) = poly(2,2)
+      poly(2,5) = poly(2,1)
+
+      dra = w/dcos(poly(2,1))
+      poly(1,1) = ra - dra
+      poly(1,4) = ra + dra
+      dra = w/dcos(poly(2,2))
+      poly(1,2) = ra - dra
+      poly(1,3) = ra + dra
+      poly(1,5) = poly(1,1)
+      return
+      end
+
+      subroutine create_poly(ra, dec, poly, n_e)
+
+      implicit none
+
+      integer*4
+     $  n_e, j
+
+      real*8
+     $  ra, dec, dra, poly(2,*)
+
+      do j = 1, n_e
+         poly(2,j) = dec + poly(2,j)
+         poly(1,j) = ra + poly(1,j)/dcos(poly(2,j))
+      end do
+      poly(1,n_e+1) = poly(1,1)
+      poly(2,n_e+1) = poly(2,1)
+
+      return
       end
 
 c \subroutine{parse}

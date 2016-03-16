@@ -8,11 +8,14 @@ c This routine determines if a given object is seen by the survey
 c described in the directory \verb|surnam|.
 c An object is described by its ecliptic (J2000) barycentric osculating
 c elements given at time \verb|jday|.
+c This version uses polygons to describe the footprint of the block on
+c the sky.
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c
 c J.-M. Petit  Observatoire de Besancon
 c Version 1 : January 2006
 c Version 2 : May 2013
+c Version 3 : March 2016
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
@@ -103,10 +106,10 @@ Cf2py intent(out) h_rand
 
       integer*4
      $  n_sur_max, n_bin_max, n_r_max, screen, keybd, verbose,
-     $  lun_s, lun_h
+     $  lun_s, lun_h, n_e_max
 
       parameter
-     $  (n_sur_max = 1000, n_bin_max=100, n_r_max=10,
+     $  (n_sur_max = 1000, n_bin_max=100, n_r_max=10, n_e_max=41,
      $  screen = 6, keybd = 5, verbose = 9,
      $  lun_s = 13, lun_h = 6)
 
@@ -120,8 +123,8 @@ Cf2py intent(out) h_rand
       real*8
      $  a, e, inc, node, peri, mt, hx, h, jday, pos(3), m_int, m_rand,
      $  r, delta, alpha, ra, dec, pos2(3), r2, ra2, dec2, h_rand,
-     $  sur_w(n_sur_max), sur_h(n_sur_max), sur_ra(n_sur_max),
-     $  sur_dec(n_sur_max), sur_jday(n_sur_max), sur_ff(n_sur_max),
+     $  sur_pl(2,n_e_max,n_sur_max),
+     $  sur_jday(n_sur_max), sur_ff(n_sur_max),
      $  sur_x(n_sur_max), sur_y(n_sur_max), sur_z(n_sur_max),
      $  sur_r(n_sur_max), sur_x2(n_sur_max), sur_y2(n_sur_max),
      $  sur_z2(n_sur_max), sur_r2(n_sur_max), sur_jday2(n_sur_max),
@@ -136,12 +139,15 @@ Cf2py intent(out) h_rand
      $  obspos(3), ros, obspos2(3), ros2, mag_max, mag_faint, random,
      $  eta, track, jday_o, mt0, jdayp2, tmp, eff_lim,
      $  d_ra, d_dec, r_min, r_max, ang, ang_w,
-     $  track_max, track_mag, track_slope, angle, rate, delta_ra,
-     $  delta_dec, mag_peri, dmag, eff, ran3, gb, ph, period, amp
+     $  track_max, track_mag, track_slope, angle, rate, delta2,
+     $  mag_peri, dmag, eff, ran3, gb, ph, period, amp,
+     $  poly(2,n_e_max), p(2), ra_l, dec_l, d_ra_l, d_dec_l, r_l,
+     $  delta_l, m_int_l, m_rand_l, eff_l, mt_l, jdayp_l
 
       integer*4
      $  sur_code(n_sur_max), sur_eff_n(n_r_max, n_sur_max),
-     $  sur_nr(n_sur_max), sur_f(n_sur_max), i, filt_i, ic,
+     $  sur_nr(n_sur_max), sur_ne(n_sur_max), sur_f(n_sur_max), i,
+     $  filt_i, ic, n_e, point_in_polygon, flag_l,
      $  n_sur, i_sur, ierr, seed, incode, outcod, flag, isur, nph
 
       character
@@ -161,13 +167,14 @@ Cf2py intent(out) h_rand
       save
 
       flag = 0
+      flag_l = 0
 
       if (first) then
          first = .false.
 
 c Opens and reads in survey definitions
          call GetSurvey (surnam, lun_s, n_sur_max, n_bin_max, n_r_max,
-     $     n_sur, sur_w, sur_h, sur_ra, sur_dec, sur_jday, sur_ff,
+     $     n_sur, sur_pl, sur_ne, sur_jday, sur_ff,
      $     sur_code, sur_x, sur_y, sur_z, sur_r, sur_jday2,
      $     sur_x2, sur_y2, sur_z2, sur_r2, sur_eff, sur_nr, sur_rt,
      $     sur_eff_n, sur_eff_b, sur_eff_m, sur_mmag, sur_rn, sur_rx,
@@ -207,10 +214,10 @@ c         stop
       end if
 
 c Compute approximate maximum apparent 'x' magnitude
-      r = a*(1.d0 - e)
+      r_l = a*(1.d0 - e)
       h = hx - amp*0.5d0
 c mag_peri in 'x' filter
-      call AppMag (r, r-1.d0, 1.d0, h, gb, alpha, mag_peri, ierr)
+      call AppMag (r_l, r_l-1.d0, 1.d0, h, gb, alpha, mag_peri, ierr)
 
       if (mag_peri .le. mag_faint) then
          jday_o = -1.d30
@@ -221,16 +228,13 @@ c loop on surveys
             obspos(2) = sur_y(i_sur)
             obspos(3) = sur_z(i_sur)
             ros = sur_r(i_sur)
-            jdayp = sur_jday(i_sur)
+            jdayp_l = sur_jday(i_sur)
             obspos2(1) = sur_x2(i_sur)
             obspos2(2) = sur_y2(i_sur)
             obspos2(3) = sur_z2(i_sur)
             ros2 = sur_r2(i_sur)
             jdayp2 = sur_jday2(i_sur)
             ff = sur_ff(i_sur)
-            height = sur_h(i_sur)
-            ra_p = sur_ra(i_sur)
-            dec_p = sur_dec(i_sur)
             r_min = sur_rn(i_sur)
             r_max = sur_rx(i_sur)
             ang = sur_an(i_sur)
@@ -238,13 +242,17 @@ c loop on surveys
             track_max = sur_ta(i_sur)
             track_mag = sur_tm(i_sur)
             track_slope = sur_ts(i_sur)
-            width = sur_w(i_sur)
             filt_i = sur_f(i_sur)
             do i = 1, 6
                mag_err(i) = sur_dm(i,i_sur)
             end do
             do i = 1, 3
                photf(i) = sur_ph(i,i_sur)
+            end do
+            n_e = sur_ne(i_sur)
+            do i = 1, n_e+1
+               poly(1,i) = sur_pl(1,i,i_sur)
+               poly(2,i) = sur_pl(2,i,i_sur)
             end do
 
 c Quick and dirty trick to avoid some objects on not too faint surveys:
@@ -259,12 +267,13 @@ c mag_peri in 'x' filter
             if (mag_peri .le. mag_max) then
 
                newpos = .false.
-               if (abs(jdayp-jday_o) .gt. 0.1d0) then
-                  mt = mt0 + (twopi/(a**1.5d0*365.25d0))*(jdayp-jday)
-                  mt = mt - int(mt/twopi)*twopi
-                  call pos_cart (a, e, inc, node, peri, mt, pos(1),
+               if (abs(jdayp_l-jday_o) .gt. 0.1d0) then
+                  mt_l = mt0
+     $              + (twopi/(a**1.5d0*365.25d0))*(jdayp_l-jday)
+                  mt_l = mt_l - int(mt_l/twopi)*twopi
+                  call pos_cart (a, e, inc, node, peri, mt_l, pos(1),
      $              pos(2), pos(3))
-                  jday_o = jdayp
+                  jday_o = jdayp_l
                   newpos = .true.
                end if
                if (debug) then
@@ -272,17 +281,20 @@ c mag_peri in 'x' filter
                   write (verbose, *) pos(1), pos(2), pos(3), jday,
      $              jday_o
                   write (verbose, *) obspos(1), obspos(2), obspos(3),
-     $              jdayp
+     $              jdayp_l
                   write (verbose, *) obspos2(1), obspos2(2), obspos2(3),
      $              jdayp2
                end if
-               call DistSunEcl (jdayp, pos, r)
-               call RADECeclXV (pos, obspos, delta, ra, dec)
+               call DistSunEcl (jdayp_l, pos, r_l)
+               call RADECeclXV (pos, obspos, delta_l, ra_l, dec_l)
+               p(1) = ra_l
+               p(2) = dec_l
 c Get mag in actual survey filter.
                h = hx + color(filt_i)
-     $           + amp*0.5d0*sin((jdayp-jday)/period*twopi+ph)
+     $           + amp*0.5d0*sin((jdayp_l-jday)/period*twopi+ph)
 c mag in survey's filter
-               call AppMag (r, delta, ros, h, gb, alpha, m_int, ierr)
+               call AppMag (r_l, delta_l, ros, h, gb, alpha, m_int_l,
+     $           ierr)
                if (ierr .ne. 0) then
                   write (screen, *) 'AppMag: something''s wrong !'
                   write (screen, *) 'ierr = :', ierr
@@ -294,14 +306,14 @@ c Format angles for output
                if (debug) then
                   incode = 1
                   outcod = 1
-                  call Format (ra, incode, outcod, stra, ierr)
+                  call Format (ra_l, incode, outcod, stra, ierr)
                   if (ierr .ne. 0) then
                      write (screen, *) 'Error in formatting output.'
                      write (screen, *) 'ierr = ', ierr
                      stop
                   end if
                   outcod = 0
-                  call Format (dec, incode, outcod, stdec, ierr)
+                  call Format (dec_l, incode, outcod, stdec, ierr)
                   if (ierr .ne. 0) then
                      write (screen, *) 'Error in formatting output.'
                      write (screen, *) 'ierr = ', ierr
@@ -311,31 +323,28 @@ c Format angles for output
      $              '(3(f8.3, 1x), a13, 1x, a13)')
      $              mt0/drad, peri/drad, node/drad,
      $              stra, stdec
-                  write (verbose, *) ra/drad, dec/drad, m_int, mag_max
+                  write (verbose, *) ra_l/drad, dec_l/drad, m_int_l,
+     $              mag_max
                end if
 
 c Still any chance to see it (comparison in survey filter band) ?
 c sur_mmag(i_sur) in survey's filter
 c mag in survey's filter
-               if (m_int .le. sur_mmag(i_sur)) then
+               if (m_int_l .le. sur_mmag(i_sur)) then
 
 c Is the object in the FOV ?
 c
-c The pointing is the center of FOV. In the pointing file, the width and
-c height are the full width and height of FOV, in degree. When read from
-c the file by "read_sur", they have been divided by 2 and converted into
-c radians. So the following is ok.
-                  delta_dec = dabs(dec - dec_p)
-                  delta_ra = dabs(ra - ra_p)
-                  if (delta_ra .gt. Pi) delta_ra = TwoPi - delta_ra
-                  delta_ra = delta_ra*dcos(dec)
+c Here we use polygons.
+                  ierr = point_in_polygon(p, poly, n_e)
                   if (debug) then
                      write (verbose, *) 'Check for FOV.'
-                     write (verbose, *) delta_dec/drad, height/drad
-                     write (verbose, *) delta_ra/drad, width/drad
+                     write (verbose, *) n_e, ierr
+                     do i = 1, n_e+1
+                        write (verbose, *) poly(1,i)/drad, poly(2,i)
+     $                    /drad
+                     end do
                   end if
-                  if ((delta_dec .lt. height)
-     $              .and. (delta_ra .lt. width)) then
+                  if (ierr .gt. 0) then
 
 c Check for chip gaps, ..., the filling factor.
                      random = ran3(seed)
@@ -347,21 +356,28 @@ c Check for chip gaps, ..., the filling factor.
                            write (verbose, *) random, ff
                         end if
 c Well, how is its rate of motion ? Within the rate cut or not ?
-                        mt = mt0 + (twopi/(a**1.5d0*365.25d0))*(jday_o
-     $                    + jdayp2 - jdayp - jday)
-                        mt = mt - int(mt/twopi)*twopi
-                        call pos_cart (a, e, inc, node, peri, mt,
+                        mt_l = mt0 + (twopi/(a**1.5d0*365.25d0))*(jday_o
+     $                    + jdayp2 - jdayp_l - jday)
+                        mt_l = mt_l - int(mt_l/twopi)*twopi
+                        call pos_cart (a, e, inc, node, peri, mt_l,
      $                    pos2(1), pos2(2), pos2(3))
                         call DistSunEcl (jdayp2, pos2, r2)
-                        call RADECeclXV (pos2, obspos2, delta, ra2,
+                        call RADECeclXV (pos2, obspos2, delta2, ra2,
      $                    dec2)
-                        d_ra = ra - ra2
-                        if (d_ra .gt. Pi) d_ra = d_ra - TwoPi
-                        if (d_ra .lt. -Pi) d_ra = d_ra + TwoPi
-                        d_ra = d_ra/(jdayp2 - jdayp)*dcos(dec)
-                        d_dec = (dec2 - dec)/(jdayp2 - jdayp)
-                        rate = dsqrt(d_ra**2 + d_dec**2)
-                        angle = atan2(d_dec/rate, d_ra/rate)
+                        if (debug) then
+                           write (verbose, *)
+     $                       'Check for second position.'
+                           write (verbose, *) mt_l
+                           write (verbose, *) pos2(1), pos2(2), pos2(3)
+                           write (verbose, *) delta2, ra2, dec2
+                        end if
+                        d_ra_l = ra_l - ra2
+                        if (d_ra_l .gt. Pi) d_ra_l = d_ra_l - TwoPi
+                        if (d_ra_l .lt. -Pi) d_ra_l = d_ra_l + TwoPi
+                        d_ra_l = d_ra_l/(jdayp2 - jdayp_l)*dcos(dec_l)
+                        d_dec_l = (dec2 - dec_l)/(jdayp2 - jdayp_l)
+                        rate = dsqrt(d_ra_l**2 + d_dec_l**2)
+                        angle = atan2(d_dec_l/rate, d_ra_l/rate)
                         if (angle .lt. -Pi) angle = angle + TwoPi
                         if (angle .gt. Pi) angle = angle - TwoPi
                         rate_ok = (rate .ge. r_min)
@@ -380,40 +396,40 @@ c Well, how is its rate of motion ? Within the rate cut or not ?
                         if (rate_ok) then
 
 c Now check for the efficiency
-                           eff = eta(n_bin_max, sur_rt(1,1,i_sur),
+                           eff_l = eta(n_bin_max, sur_rt(1,1,i_sur),
      $                       sur_nr(i_sur), sur_eff_n(1,i_sur),
      $                       sur_eff_b(1,1,i_sur), sur_eff_m(1,1,i_sur),
-     $                       m_int, rate, sur_ml(1,i_sur), maglim)
+     $                       m_int_l, rate, sur_ml(1,i_sur), maglim)
                            random = ran3(seed)
                            if (debug) then
                               write (verbose, *)
-     $                          'In FOV of survey. Check detection.'
-                              write (verbose, *) random, eff, maglim
+     $                          'Rate OK. Check detection.'
+                              write (verbose, *) random, eff_l, maglim
                            end if
-                           if (random .le. eff) then
+                           if (random .le. eff_l) then
 c Compute "measured" magnitude with 1 to 3 averaged values
                               random = ran3(seed)
-                              call magran (m_int, mag_err, seed, tmp,
+                              call magran (m_int_l, mag_err, seed, tmp,
      $                          dmag)
-                              m_rand = tmp
+                              m_rand_l = tmp
                               if (random .gt. photf(1)) then
-                                 call magran (m_int, mag_err, seed, tmp,
-     $                             dmag)
-                                 m_rand = (m_rand + tmp)/2.d0
+                                 call magran (m_int_l, mag_err, seed,
+     $                             tmp, dmag)
+                                 m_rand_l = (m_rand_l + tmp)/2.d0
                               end if
                               if (random .gt. photf(1)+photf(2)) then
-                                 call magran (m_int, mag_err, seed, tmp,
-     $                             dmag)
-                                 m_rand = (2.d0*m_rand + tmp)/3.d0
+                                 call magran (m_int_l, mag_err, seed,
+     $                             tmp, dmag)
+                                 m_rand_l = (2.d0*m_rand_l + tmp)/3.d0
                               end if
 c Determine efficiency of detection for that magnitude
-                              eff = eta(n_bin_max, sur_rt(1,1,i_sur),
+                              eff_l = eta(n_bin_max, sur_rt(1,1,i_sur),
      $                          sur_nr(i_sur), sur_eff_n(1,i_sur),
      $                          sur_eff_b(1,1,i_sur),
-     $                          sur_eff_m(1,1,i_sur), m_rand, rate,
+     $                          sur_eff_m(1,1,i_sur), m_rand_l, rate,
      $                          sur_ml(1,i_sur), maglim)
 c Hurray ! We found it.
-                              flag = 1
+                              flag_l = 1
                               if (debug) then
                                  write (verbose, *)
      $                             'Hurray ! We found it.'
@@ -422,7 +438,7 @@ c Hurray ! We found it.
 c Determine if tracked
                               random = ran3(seed)
                               track = min(track_max,
-     $                          1.d0 + (m_rand - track_mag)
+     $                          1.d0 + (m_rand_l - track_mag)
      $                          *track_slope)
                               if (debug) then
                                  write (verbose, *)
@@ -430,37 +446,60 @@ c Determine if tracked
      $                             track
                               end if
                               if (random .le. track) then
-                                 flag = 2
+                                 flag_l = 2
                               end if
 c Decide if characterized or not
                               if (maglim .gt. 0.d0) then
-                                 if (m_rand .le. maglim) flag = flag + 2
+                                 if (m_rand_l .le. maglim)
+     $                             flag_l = flag_l + 2
                               else
-                                 if (eff .ge. eff_lim) flag = flag + 2
+                                 if (eff_l .ge. eff_lim)
+     $                             flag_l = flag_l + 2
                               end if
-c Record the survey number.
-                              isur = i_sur
-                              surna = sur_eff(i_sur)
-     $                           (1:min(len(surna),len(sur_eff(1))))
-c Converting intrinsic magnitude to 'x' band, keeping apaprent
+c Record what needs to be recorded.
+                              if (flag_l .gt. flag) then
+                                 isur = i_sur
+                                 surna = sur_eff(i_sur)
+     $                             (1:min(len(surna),len(sur_eff(1))))
+c Converting intrinsic magnitude to 'x' band, keeping apparent
 c magnitude in discovery filter
-                              ic = filt_i
-                              m_int = m_int - color(ic)
-                              call AbsMag (r, delta, ros, m_rand, gb,
-     $                          alpha, h_rand, ierr)
-                              if (ierr .ne. 0) then
-                                 write (screen, *)
-     $                             'AbsMag: something''s wrong !'
-                                 write (screen, *) 'ierr = :', ierr
-                                 write (screen, *) 'Survey number: ',
-     $                             i_sur
-                                 stop
+                                 ic = filt_i
+                                 m_int = m_int_l - color(ic)
+                                 m_rand = m_rand_l
+                                 r = r_l
+                                 delta = delta_l
+                                 call AbsMag (r, delta, ros, m_rand, gb,
+     $                             alpha, h_rand, ierr)
+                                 if (ierr .ne. 0) then
+                                    write (screen, *)
+     $                                'AbsMag: something''s wrong !'
+                                    write (screen, *) 'ierr = :', ierr
+                                    write (screen, *) 'Survey number: ',
+     $                                i_sur
+                                    stop
+                                 end if
+                                 if (debug) then
+                                    write (verbose, *)
+     $                                'All is good, h_rand.'
+                                    write (verbose, *) r, delta
+                                    write (verbose, *)
+     $                                m_rand, alpha, h_rand
+                                 end if
+                                 flag = flag_l
+                                 ra = ra_l
+                                 dec = dec_l
+                                 d_ra = d_ra_l
+                                 d_dec = d_dec_l
+                                 eff = eff_l
+                                 mt = mt_l
+                                 jdayp = jdayp_l
                               end if
-c We got it, and we know if it was tracked. So return now.
-                              return
+c We got it, and we know if it was tracked and/or characterized.
+c Return if tracked and characterized, otherwise keep looping.
+                              if (flag .ge. 4) return
                            else
-c                              write (6, *) 'Low efficiency: ', a, eff,
-c     $                          random, m_int, rate
+c                              write (6, *) 'Low efficiency: ', a, eff_l,
+c     $                          random, m_int_l, rate
                            end if
                         else
 c                           write (6, *) 'Rate out of range: ', a, r_min,
@@ -470,13 +509,10 @@ c     $                       r_max, rate, ang_w, dabs(ang - angle)
 c                        write (6, *) 'Falling in chip gaps: ', a,
 c     $                    ff, random
                      end if
-                  else
-c                     write (6, *) 'Not in FOV: ', a, width, height,
-c     $                 delta_ra, delta_dec
                   end if
                else
 c                  write (6, *) 'Too faint for this survey: ', a, i_sur,
-c     $              sur_mmag(i_sur), m_int, hx, filt_i, color(filt_i)
+c     $              sur_mmag(i_sur), m_int_l, hx, filt_i, color(filt_i)
                end if
             else
 c               write (6, *) 'Too faint (peri) for this survey: ', a,
