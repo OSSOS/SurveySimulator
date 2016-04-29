@@ -73,6 +73,8 @@ release --- README.first (this file)
    |
    |---- OSSOS-cfeps -- README.ossoscfeps
    |
+   |---- All_Surveys -- README.allsurveys
+   |
    |---- lookup ------- README.lookup
    |      \
    |       \----- example
@@ -85,7 +87,7 @@ release --- README.first (this file)
 		
 --------------------------------------------------------------------------------
 
-DESCRIPTION OF THE SIX MAIN SUB-DIRECTORIES
+DESCRIPTION OF THE EIGHT MAIN SUB-DIRECTORIES
 
 src
   This directory contains the common source codes for the survey simulator
@@ -115,7 +117,14 @@ OSSOS
 OSSOS-cfeps
    This is essentially the union of the two surveys, but see important
    information in that subdirs README.ossoscfeps file about how care must
-   be taking when combining the survey.
+   be taking when combining the surveys.
+
+---------
+
+All_Surveys
+   This is essentially the union of all surveys, CFEPS, HiLat, Mike A. and
+   OSSOS, but see important information in that subdirs README.allsuirveys file
+   about how care must be taking when combining the surveys.
 
 ---------
 

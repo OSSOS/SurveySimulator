@@ -58,6 +58,8 @@ while keep_going:
     seed,flag,ra,dec,d_ra,d_dec,r,delta,m_int,m_rand,eff,isur,mt,epochp,ic,surna,h_rand = SurveySubs.detos1(a,e,inc,node,peri,M,epoch,h,color,gb,ph,period,amp,survey_dir,seed)
 
     if flag > 0:
+# m_int and h are in "x" band (filter of object creation)
+# m_rand and h_rand are in discovery filter
         n_hits += 1
         f_detect.write('%8.3f %6.3f %8.3f %8.3f %8.3f %8.3f %8.3f %6.2f %5.2f %2d %8.3f %8.3f %6.2f %4.2f %8.5f %8.4f %8.5f %8.5f %6s %s\n' % (a, e, inc/drad, a*(1.-e), r, mt/drad, m_rand, h_rand, color[ic-1], flag, delta, m_int, h, eff, ra/drad/15., dec/drad, d_ra/drad*3600./24., d_dec/drad*3600./24., surna, comments[0:nchar]))
         if (flag > 2) and (num.mod(flag,2) == 0):
