@@ -1,7 +1,5 @@
 #! /bin/bash
 
-cd example
-
 if [ -f SimulDetect.dat ]; then
     \rm SimulDetect.dat
 fi

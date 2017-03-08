@@ -8,7 +8,7 @@ The Survey Simulator divides the sky coverage of all observations
 into 'blocks' of contiguous rectangular area.  The 
 pointings.list
 file lists each such rectangular block, one per line.
-Each such line should contains the name of an 'efficiency file'
+Each such line should contain the name of an 'efficiency file'
 that is in the same directory.  Although rare, different blocks in 
 the pointing file could share a single efficiency definition.
 
@@ -44,7 +44,7 @@ Some <keys> can only appear after a previous <key> had a specific value
 (see below). The list of keys and associated values is as follows
 
 - rate cut used for detection (the pipeline restrict detection to certain rates
-  and directions of motino on the sky)
+  and directions of motion on the sky)
 rate_cut= <r_min> <r_max> <angle> <half_width>
   <r_min>:      Lower rate cut (" arc/hour)
   <r_max>:      Upper rate cut (" arc/hour)

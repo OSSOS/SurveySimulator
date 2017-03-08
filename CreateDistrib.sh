@@ -7,6 +7,8 @@ da=`date +"%F"`
 dt=`LC_ALL=us date +"%d %b %Y"`
 df=`LC_ALL=us date +"%b %d/%Y"`
 v="2.0"
+intended_audience="OSSOS team"
+#intended_audience="General Public"
 
 # Create a clean distribution directory
 if [ -d $d ]; then
@@ -25,20 +27,24 @@ ln -s ${d/./} ../CurrentDistrib
 # Copy fix files
 cat > $d/README.version <<EOF
 
-Survey Simulator for OSSOSv9-pre
+Survey Simulator for OSSOSv9
 
 Survey simulator as of $dt
 
 EOF
 head -2 README.first > $d/README.first
 cat >> $d/README.first <<EOF
-$df release to OSSOS team
+$df release to $intended_audience
 EOF
 tail --line=+3 README.first >> $d/README.first
 cp -a README.contact lookup parametric Python $d/
 for s in cfeps OSSOS OSSOS-cfeps OSSOS-MA All_Surveys; do
     mkdir $d/$s
     cp ../$s/* $d/$s/
+done
+for s in cfeps OSSOS OSSOS-cfeps OSSOS-MA; do
+    \rm -f $d/$s/README.formats
+    ln -s ../All_Surveys/README.formats $d/$s/README.formats
 done
 cp src/Driver.{f,py} src/README.* src/ModelUtils.f $d/src/
 \rm -f $d/cfeps/*.py

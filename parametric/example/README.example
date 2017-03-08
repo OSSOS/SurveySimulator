@@ -3,7 +3,7 @@
 
 This directory contains the input files to run the survey simulator with a
 parametric model (the inner classical Kuiper Belt here), and compare the
-results to what was generated on our development machine, as a mean to nesure
+results to what was generated on our development machine, as a mean to ensure
 that the package copied correctly and compilation in your environment went
 well.
 
