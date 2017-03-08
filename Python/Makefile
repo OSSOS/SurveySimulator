@@ -25,5 +25,5 @@ GiMeObj.so: Res32Model.f SurveySubs.so Makefile
 clean:
 	\rm -f *.o core SurveySimulator
 
-test: SurveySimulator
-	./example/test.sh
+test: Modules
+	./test.sh

@@ -44,7 +44,7 @@ c             reject object if averaged randomized mag is fainter than
 c             40% limit.
 c             Discarded use of eta_trust.
 c
-c 2015-01-12: Changed API of detos1 to return surmized absoute magnitude
+c 2015-01-12: Changed API of detos1 to return surmized absolute magnitude
 c             obtained from averaged randomized mag. Hx and m_int are returned
 c             in the band filter used for the H distribution (X), while m_rand
 c             and H_rand are returned in the band filter of the survey the
@@ -56,4 +56,6 @@ c             FOV footprint. This allows for general polygons, or 40 CCD
 c             MegaPrime specific FOV. The routine is still compatible with the
 c             old input files.
 c
+c 2016-05-04: Continue looping on pointings until object is detected,
+c             characterized and tracked. Don't stop at first detection.
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*

@@ -6,3 +6,5 @@
 ./SimulTrack.dat
 ! Survey description directory name
 ! Name of model parameter file
+! Output file name for all simulated detections
+! Output file name for characterized, tracked simulated detections

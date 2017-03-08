@@ -1,6 +1,102 @@
-# File: CFEPS.detections
-#
-# cl p  j   k sh     object  mag e_mag Filt Hsur dist  e_dist    Nobs   time  av_xres av_yres max_x  max_y       a          e_a        e        e_e      i      e_i      Omega e_Omega    omega   e_omega      tperi    e_tperi   RAdeg   DEdeg      JD        rate
+Title: The Outer Solar System Origins Survey: 
+Authors: Bannister M.T., Kavelaars J.J., Petit J.-M., Gladman B.J., Gwyn S.D.J.,
+Table: Orbit and discovery properties of the characterized OSSOS objects
+================================================================================
+Byte-by-byte Description of file: CFEPS.CDS
+--------------------------------------------------------------------------------
+   Bytes Format Units       Label    Explanation (with possible notes)
+--------------------------------------------------------------------------------
+   1-  3 A3     ---         cl       Orbital population/class (1)
+   5-  5 A1     ---         p        Possibly additional information based on
+                                      class
+                                      IF cl=cent OR sca OR det:
+                                        no information ('x')
+                                      IF cl=res:
+                                        U or N indicating MMR planet (2)
+                                      IF cl=cla, portion of classical belt is
+                                        indicated as:
+                                          i : inner (a < a_(3:2 resonance) )
+                                          m : inner (a_(3:2 resonance) < a 
+                                                < a_(2:1 resonance) )
+                                          o : outer (a < a_(2:1 resonance) )
+                                                and not detached
+   7-  9 I3     ---         j        Resonant object is in the j : k resonance
+                                      (-1 is null)
+  11- 13 I3     ---         k        Resonant object is in the j : k resonance
+                                      (-1 is null)
+  15- 16 A2     ---         sh       [ISH] Orbit classification status (3)
+  18- 27 A10    ---         object   Object identifier/designation (4)
+                                      See ossos-survey.org/tnodb for a
+                                      correspondence list to MPC
+  29- 33 F5.2   mag         mag      Cleaned mean magnitude DURING DISCOVERY 
+                                      Cleaned = flagged photometry not part of
+                                      average
+  35- 39 F5.3   mag       e_mag      Uncertainty in magnitude
+                                      (applies to Hsur also)
+  41- 41 A1     ---         Filt     Filter used in discovery observation
+  43- 47 F5.2   mag         Hsur     Surmised Absolute magnitude H, in
+                                      discovery filter
+  49- 55 F7.3   AU          dist     Object distance at discovery (5)
+  57- 63 F7.3   AU        e_dist     Uncertainty in dist (6)
+  65- 68 I4     ---         Nobs     Number of observations available
+  70- 78 F9.4   years       time     Length of measured orbital arc
+                                      (last-first observation)
+  80- 85 F6.3   arcsec      av-xres  Mean orbit-fit residual, RA
+  87- 92 F6.3   arcsec      av-yres  Mean orbit-fit residual, DEC
+  94- 99 F6.3   arcsec      max-x    Maximum orbit-fit residual, RA
+ 101-106 F6.3   arcsec      max-y    Maximum orbit-fit residual, DEC
+ 108-118 F11.6  AU          a        Semimajor axis (5)
+ 120-129 F10.4  AU        e_a        Uncertainty in a (6)
+ 131-139 F9.6   ---         e        Orbital eccentricity (5)
+ 141-149 F9.6   ---       e_e        Uncertainty in e (6)
+ 151-157 F7.3   deg         i        Inclination to the ecliptic (5)
+ 159-165 F7.3   deg       e_i        Uncertainty in i (6)
+ 167-174 F8.3   deg         Omega    Longitude of ascending node
+ 176-182 F7.3   deg       e_Omega    Uncertainty in Omega
+ 184-191 F8.3   deg         omega    Argument of perihelion
+ 193-201 F9.3   deg       e_omega    Uncertainty in omega
+ 203-212 F10.3  d           tperi    Modified Julian Date of osculating
+                                      perihelion passage
+ 214-223 F10.3  d         e_tperi    Uncertainty in tperi
+ 225-231 F7.3   deg         RAdeg    Right ascension (J2000) at mean equinox of
+                                      discovery
+ 233-239 F7.3   deg         DEdeg    Declination (J2000) at mean equinox of
+                                      discovery
+ 241-253 F13.5  d           JD       Central Julian Date of of first discovery
+                                      image
+ 255-259 F5.2   arcsec/h    rate     Angular rate of sky motion at discovery
+--------------------------------------------------------------------------------
+Note (1): Orbital population/Dynamical class, based on scheme from 
+          Gladman et al. (2008), "Solar System beyond Neptune"
+    cen = centaur
+    sca = scattering disk object
+    cla = classical belt
+    res = in mean-motion resonance
+    det = detached object ( a>a_(2:1) and e>0.24 and non-resonant and
+           non-scattering )
+Note (2): Mean-motion resonance occupancy is checked for planets [U]ranus and
+    [N]eptune.
+Note (3): Orbit classification status:
+    First character:
+      I = the orbit classification is currently insecure; 
+    or
+      S = the orbit classification is secure.
+    Optional second character
+      H = human operator intervened and set the given orbit security status 
+Note (4): Survey designations here based on their OSSOS discovery, with a format
+    "o" for OSSOS, the last digit of the year in which the object was discovered
+    by OSSOS (3-6), the block ID letter (e,o) and the sequential number to give
+    unique identifiers, "PD" indicates previous discovery.
+       Object beginning "KO2" are Presurvey objects (Jones et al 2006, Icarus)
+       Object beginning "L" are CFEPS objects (Petit et al 2011, AJ))
+       Object beginning "HL" are Hilat Survey objects (Petit et al 2016, AJ))
+       Object beginning "ma" are from the PhD thesis of (Alexandersen et al
+        2016, AJ))
+Note (5): J2000 ecliptic barycentric coordinates.
+Note (6): Uncertainties from the covariance matrix of the orbital parameter
+           confidence regions as determined by the method described in
+           Bernstein and Khushalani (2000).
+--------------------------------------------------------------------------------
 xxx x  -1  -1 x    K02O01nt 23.80 0.170 R  6.05  59.018   4.579    8    0.0815  0.046  0.120  0.168  0.337   58.889224    30.2202  0.529878  1.093125 178.637   0.665  293.971  17.540   90.149    95.529  79927.183  50629.193 328.743 -13.461 2452491.90898  2.67
 res N   7   4 s      K02O03 23.30 0.170 R  7.33  39.093   0.001   28    4.0334  0.461  0.410  1.564  0.901   43.685749     0.0047  0.189021  0.000223   0.753   0.000  182.593   0.023   78.011     0.050  38671.954      5.780 328.806 -12.171 2452491.91434  3.20
 xxx x  -1  -1 x    K02O10nt 23.60 0.216 R  7.30  42.144   6.653    8    0.0816  0.081  0.110  0.141  0.270   45.495761    21.2109  0.480207  1.237844   2.586   2.149  120.029  23.406  316.881   102.162  69288.959  12142.173 329.202 -13.761 2452491.91710  3.03

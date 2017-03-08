@@ -1,12 +1,11 @@
 # Seed:  123456789
 #
-#   a      e        i        q        r        M      m_rand H_rand color flag delta    m_int   H_int eff   RA(H)     DEC    delta_ra delt_dec Surv.  Comments
-#
 # flag: >0: detected; >2: characterized; 0 mod(2): tracked
 # Survey: name of the block
 # delta_ra: distance from center of pointing [arcsec]
 # delt_dec: distance from center of pointing [arcsec]
 #
+#   a      e        i        q        r        M      m_rand H_rand color flag delta    m_int    H_int eff   RA(H)     DEC    delta_ra delt_dec Surv. Comments
   37.567  0.094    6.998   34.049   37.357  278.726   23.881   8.10 -0.80  3   36.376   24.932   9.15 0.59 22.01293 -12.7203  3.04960 -1.04512 presur h inner
   38.169  0.026   21.024   37.172   37.530   49.136   23.534   7.72  0.00  2   36.558   23.360   7.55 0.41 19.07513 -24.1670  3.13418 -0.55590 L4o-sm h inner
   38.359  0.009    5.436   38.000   38.581  127.098   23.734   7.83  0.00  4   37.593   23.772   7.86 0.48 16.11888 -22.2895  3.10044  0.63199 L5i-sm h inner

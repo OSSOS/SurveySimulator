@@ -95,11 +95,6 @@ c Open output files and write header
       open (unit=lun_h, file=det_outfile, status='new', err=9500)
       write (lun_h, '(''# Seed: '', i10)') seed
       write (lun_h, '(''#'')')
-      write (lun_h, '(a,a,a)')
-     $  '#   a      e        i        q        r        M      m_rand',
-     $  ' H_rand color flag delta    m_int   H_int eff   RA(H)     DEC',
-     $  '    delta_ra delt_dec Surv.  Comments'
-      write (lun_h, '(''#'')')
       write (lun_h, '
      $(''# flag: >0: detected; >2: characterized; 0 mod(2): tracked'')')
       write (lun_h, '(''# Survey: name of the block'')')
@@ -108,12 +103,15 @@ c Open output files and write header
       write (lun_h, '(''# delt_dec: distance from center of pointing'',
      $  '' [arcsec]'')')
       write (lun_h, '(''#'')')
+      write (lun_h, '(a,a,a)')
+     $  '#   a      e        i        q        r        M      m_rand',
+     $  ' H_rand color flag delta    m_int    H_int eff   RA(H)  ',
+     $  '   DEC    delta_ra delt_dec Surv. Comments'
 
       open (unit=lun_t, file=trk_outfile, status='new', err=9501)
       write (lun_t, '(a,a)')
      $  '#   a      e        i        q        r        M      m_rand',
      $  ' H_rand color Comments'
-      write (lun_t, '(''#'')')
 
 c Initialize counters
       n_hits = 0

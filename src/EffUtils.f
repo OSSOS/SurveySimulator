@@ -1,4 +1,4 @@
-      real*8 function eta_raw (nb_max, rates, nr, eff_n, eff_b,
+      real*8 function eta_raw (rates, nr, eff_n, eff_b,
      $  eff_m, mdum, rdum, ml, maglim)
 
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -15,10 +15,12 @@ c Version 3 : June 2013
 c             Added efficiency dependance on rate
 c Version 4 : April 2014
 c             Added limiting magnitude determination function of rate
+c Version 5 : May 2016
+c             Changed API to remove size of arrays, added parameter
+c             statement to define array sizes (in include file)
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
-c     nb_max: Maximum number of bin in efficiency function (I4)
 c     rates : Rates limits for efficiency function (2,n*R8)
 c     nr    : Number of efficiency fucntions (I4)
 c     eff_n : Number of efficiency bins (n*I4)
@@ -31,15 +33,26 @@ c
 c OUTPUT
 c     maglim: Limiting magnitude at given rate (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) rates
+Cf2py intent(in) nr
+Cf2py intent(in) eff_n
+Cf2py intent(in) eff_b
+Cf2py intent(in) eff_m
+Cf2py intent(in) mdum
+Cf2py intent(in) rdum
+Cf2py intent(in) ml
+Cf2py intent(out) maglim
 
       implicit none
 
+      include 'param.inc'
+
       integer*4
-     $  ilo, ihi, i, eff_n(*), nr, nb_max, ir
+     $  ilo, ihi, i, eff_n(*), nr, ir
 
       real*8
-     $  m, x, tanh, eff_b(nb_max,*), eff_m(nb_max,*), mdum, rdum,
-     $  rates(2,*), r, ml(*), maglim
+     $  m, x, tanh, eff_b(n_bin_max,n_r_max), eff_m(n_bin_max,n_r_max),
+     $  mdum, rdum, rates(2,n_r_max), r, ml(n_r_max), maglim
 
       tanh(x) = (exp(x) - exp(-x))/(exp(x) + exp(-x))
 
@@ -149,63 +162,7 @@ c Unsupported efficiency function type.
       return
       end
 
-      real*8 function eta_trust (nb_max, rates, nr, eff_n, eff_b,
-     $  eff_m, mdum, rdum, ml, maglim)
-
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-c This routine computes the efficiency at a given magnitude, keeping
-c only the part that can be trusted for actual detectability of the
-c theoretical magnitude ($\eta > 0.2$).
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-c
-c J-M. Petit  Observatoire de Besancon
-c Version 1 : October 2006
-c Version 3 : June 2013
-c             Added efficiency dependance on rate
-c Version 4 : April 2014
-c             Added limiting magnitude determination function of rate
-c
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-c INPUT
-c     nb_max: Maximum number of bin in efficiency function (I4)
-c     rates : Rates limits for efficiency function (2,n*R8)
-c     nr    : Number of efficiency fucntions (I4)
-c     eff_n : Number of efficiency bins (n*I4)
-c     eff_b : Magnitude bin center (nb_max,n*R8)
-c     eff_m : Efficiency for that magnitude (nb_max,n*R8)
-c     mdum  : magnitude (R8)
-c     rdum  : rate of motion (R8)
-c     ml    : Limiting magnitudes for rate ranges (n*R8)
-c
-c OUTPUT
-c     maglim: Limiting magnitude at given rate (R8)
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-
-      implicit none
-
-      integer*4
-     $  eff_n(*), nr, nb_max
-
-      real*8
-     $  eta_raw, eff_b(nb_max,*), eff_m(nb_max,*), mdum, rdum, limtrust,
-     $  rates(2,*), ml(*), maglim
-
-      external
-     $  eta_raw
-
-      data
-     $  limtrust /0.2d0/
-
-      save limtrust
-
-      eta_trust = eta_raw(nb_max, rates, nr, eff_n, eff_b, eff_m,
-     $  mdum, rdum, ml, maglim)
-      if (eta_trust .lt. limtrust) eta_trust = 0.d0
-
-      return
-      end
-
-      real*8 function eta (nb_max, rates, nr, eff_n, eff_b,
+      real*8 function eta (rates, nr, eff_n, eff_b,
      $  eff_m, mdum, rdum, ml, maglim)
 
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -220,10 +177,12 @@ c Version 3 : June 2013
 c             Added efficiency dependance on rate
 c Version 4 : April 2014
 c             Added limiting magnitude determination function of rate
+c Version 5 : May 2016
+c             Changed API to remove size of arrays, added parameter
+c             statement to define array sizes (in include file)
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
-c     nb_max: Maximum number of bin in efficiency function (I4)
 c     rates : Rates limits for efficiency function (2,n*R8)
 c     nr    : Number of efficiency fucntions (I4)
 c     eff_n : Number of efficiency bins (n*I4)
@@ -236,15 +195,26 @@ c
 c OUTPUT
 c     maglim: Limiting magnitude at given rate (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) rates
+Cf2py intent(in) nr
+Cf2py intent(in) eff_n
+Cf2py intent(in) eff_b
+Cf2py intent(in) eff_m
+Cf2py intent(in) mdum
+Cf2py intent(in) rdum
+Cf2py intent(in) ml
+Cf2py intent(out) maglim
 
       implicit none
 
+      include 'param.inc'
+
       integer*4
-     $  eff_n(*), nr, nb_max
+     $  eff_n(n_r_max), nr
 
       real*8
-     $  eta_raw, eff_b(nb_max,*), eff_m(nb_max,*), mdum, rdum, lim,
-     $  rates(2,*), ml(*), maglim
+     $  eta_raw, eff_b(n_bin_max,n_r_max), eff_m(n_bin_max,n_r_max),
+     $  mdum, rdum, lim, rates(2,n_r_max), ml(n_r_max), maglim
 
       external
      $  eta_raw
@@ -254,7 +224,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 
       save lim
 
-      eta = eta_raw(nb_max, rates, nr, eff_n, eff_b, eff_m, mdum, rdum,
+      eta = eta_raw(rates, nr, eff_n, eff_b, eff_m, mdum, rdum,
      $  ml, maglim)
       if (eta .lt. lim) eta = 0.d0
 

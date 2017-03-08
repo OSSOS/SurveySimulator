@@ -17,6 +17,10 @@ cfeps
          \                              single letter) gives the fortnight the
           \                             data was acquired
            \-- presurvey-smooth.eff     Same for presurvey
-            \- CFEPS.detections         List of objects really detected in CFEPS
+            \- CFEPS.detections         List of objects really detected in
+	    |                           CFEPS, with their dynamical  class if
+            |                           known, magnitude at detection, rate of
+            |                           motion, H mag, and more.
+             \- CFEPS.CDS               Same as CFEPS.detections, in CDS format.
 
 --------------------------------------------------------------------------------

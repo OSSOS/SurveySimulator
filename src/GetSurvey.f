@@ -1,4 +1,4 @@
-      subroutine GetSurvey (survey, lun_s, n_max, nb_max, nr_max,
+      subroutine GetSurvey (survey, lun_s,
      $  n_sur, sur_pl, sur_ne, sur_t, sur_ff, sur_co, sur_x,
      $  sur_y, sur_z, sur_r, sur_t2, sur_x2, sur_y2, sur_z2, sur_r2,
      $  sur_ef, sur_nr, sur_rt, sur_en, sur_eb, sur_em, sur_mm, sur_rn,
@@ -13,13 +13,14 @@ c J-M. Petit  Observatoire de Besancon
 c Version 1 : February 2004
 c Version 2 : October 2004
 c Version 3 : January 2006
+c Version 4 : May 2016
+c             Changed API to remove size of arrays, added parameter
+c             statement to define array sizes (in include file)
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
 c     survey: Survey directory name (CH)
 c     lun_s : Logical unit for file (I4)
-c     n_max : Maximum number of pointings to read (I4)
-c     nb_max: Maximum number of bin in efficiency function (I4)
 c
 c OUTPUT
 c     n_sur : Number of pointings read (I4)
@@ -40,9 +41,9 @@ c     sur_r2: Distance from observatory to Sun 2 hours later (n*R8)
 c     sur_ef: Name of efficiency function file (n*CH80)
 c     sur_nr: Number of efficiency functions per pointing (n*I4)
 c     sur_rt: Rates limits for efficiency function ([rad/day]) (2,n*R8)
-c     sur_en: Number of bins in efficiency function (nr_max,n*I4)
-c     sur_eb: Bin centers for efficiency function (nb_max,nr_max,n*R8)
-c     sur_em: Efficiency at bin center (nb_max,nr_max,n*R8)
+c     sur_en: Number of bins in efficiency function (n_r_max,n*I4)
+c     sur_eb: Bin centers for efficiency function (n_bin_max,n_r_max,n*R8)
+c     sur_em: Efficiency at bin center (n_bin_max,n_r_max,n*R8)
 c     sur_mm: Limiting magnitude for each survey (n*R8)
 c     sur_rn: Lower rate cut ([rad/day]) (n*R8)
 c     sur_rx: Upper rate cut ([rad/day]) (n*R8)
@@ -53,44 +54,80 @@ c     sur_tm: Tracking fraction magnitude intercept (n*R8)
 c     sur_ts: Tracking fraction magtnidue slope (n*R8)
 c     sur_dm: Magnitude error parameters (6,n*R8)
 c     sur_ph: Photometric measurments fractions (3,n*R8)
-c     sur_ml: Limiting magnitude of survey (nr_max,n*R8)
+c     sur_ml: Limiting magnitude of survey (n_r_max,n*R8)
 c     sur_f : Filter used for this survey (n*I4)
 c     ierr  : Error code (I4)
 c                0 : nominal run
 c              100 : Maximum number of objects reached
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) survey
+Cf2py intent(in) lun_s
+Cf2py intent(out) n_sur
+Cf2py intent(out) sur_pl
+Cf2py intent(out) sur_ne
+Cf2py intent(out) sur_t
+Cf2py intent(out) sur_ff
+Cf2py intent(out) sur_co
+Cf2py intent(out) sur_x
+Cf2py intent(out) sur_y
+Cf2py intent(out) sur_z
+Cf2py intent(out) sur_r
+Cf2py intent(out) sur_t2
+Cf2py intent(out) sur_x2
+Cf2py intent(out) sur_y2
+Cf2py intent(out) sur_z2
+Cf2py intent(out) sur_r2
+Cf2py intent(out) sur_ef
+Cf2py intent(out) sur_nr
+Cf2py intent(out) sur_rt
+Cf2py intent(out) sur_en
+Cf2py intent(out) sur_eb
+Cf2py intent(out) sur_em
+Cf2py intent(out) sur_mm
+Cf2py intent(out) sur_rn
+Cf2py intent(out) sur_rx
+Cf2py intent(out) sur_an
+Cf2py intent(out) sur_aw
+Cf2py intent(out) sur_ta
+Cf2py intent(out) sur_tm
+Cf2py intent(out) sur_ts
+Cf2py intent(out) sur_dm
+Cf2py intent(out) sur_ph
+Cf2py intent(out) sur_ml
+Cf2py intent(out) sur_f
+Cf2py intent(out) ierr
+
       implicit none
 
-      integer*4
-     $  n_bin_max, n_r_max, n_e_max
-
-      parameter
-     $  (n_bin_max=100, n_r_max=10, n_e_max=41)
-
-      integer*4
-     $  n_max, nb_max, nr_max
+      include 'param.inc'
 
       real*8
-     $  sur_t(*),
-     $  sur_ff(*), sur_x(*), sur_y(*), sur_z(*), sur_r(*),
-     $  sur_t2(*), sur_x2(*), sur_y2(*), sur_z2(*), sur_r2(*),
-     $  sur_eb(nb_max, nr_max, *), sur_em(nb_max, nr_max, *),
+     $  sur_t(n_sur_max), sur_ff(n_sur_max), sur_x(n_sur_max),
+     $  sur_y(n_sur_max), sur_z(n_sur_max), sur_r(n_sur_max),
+     $  sur_t2(n_sur_max), sur_x2(n_sur_max), sur_y2(n_sur_max),
+     $  sur_z2(n_sur_max), sur_r2(n_sur_max),
+     $  sur_eb(n_bin_max, n_r_max, n_sur_max),
+     $  sur_em(n_bin_max, n_r_max, n_sur_max),
      $  jday_p, ff, obspos(3), ros,
-     $  rates(2, n_r_max), sur_rt(2, nr_max, *),
+     $  rates(2, n_r_max), sur_rt(2, n_r_max, n_sur_max),
      $  eff_b(n_bin_max, n_r_max), eff_m(n_bin_max, n_r_max),
-     $  sur_mm(*), sur_rn(*), sur_rx(*), sur_an(*), sur_ph(3,*),
-     $  sur_aw(*), sur_ta(*), sur_tm(*), sur_ts(*), sur_dm(6,*), 
-     $  sur_ml(nr_max,*), eta, obspos2(3), ros2, maglim(n_r_max),
+     $  sur_mm(n_sur_max), sur_rn(n_sur_max), sur_rx(n_sur_max),
+     $  sur_an(n_sur_max), sur_ph(3,n_sur_max),
+     $  sur_aw(n_sur_max), sur_ta(n_sur_max), sur_tm(n_sur_max),
+     $  sur_ts(n_sur_max), sur_dm(6,n_sur_max), 
+     $  sur_ml(n_r_max,n_sur_max), eta, obspos2(3),
+     $  ros2, maglim(n_r_max),
      $  jday_p2, rate_c(4), d_mag(6), rate, track(3), photf(3), tmp,
-     $  poly(2,n_e_max), sur_pl(2,n_e_max,*)
+     $  poly(2,n_e_max), sur_pl(2,n_e_max,n_sur_max)
 
       integer*4
-     $  sur_co(*), sur_en(nr_max,*), sur_nr(*), sur_f(*), nr, j,
+     $  sur_co(n_sur_max), sur_en(n_r_max,n_sur_max), sur_nr(n_sur_max),
+     $  sur_f(n_sur_max), nr, j,
      $  eff_n(n_r_max), code, i, lun_s, n_sur, ierr, i1, i2, filt_i,
-     $  n_e, sur_ne(*)
+     $  n_e, sur_ne(n_sur_max)
 
       character
-     $  survey*(*), sur_ef(*)*(*), eff_name*80
+     $  survey*(*), sur_ef(n_sur_max)*(*), eff_name*80
 
       logical
      $  finished
@@ -101,7 +138,7 @@ c Open and read in survey definitions
       call read_file_name (survey, i1, i2, finished, len(survey))
       n_sur = 0
  200  continue
-         call read_sur (survey(i1:i2), nb_max, lun_s, poly, n_e,
+         call read_sur (survey(i1:i2), lun_s, poly, n_e,
      $     jday_p, ff, code, obspos, ros, jday_p2,
      $     obspos2, ros2, eff_name, nr, rates, eff_n, eff_b, eff_m,
      $     rate_c, track, d_mag, photf, maglim, filt_i, ierr)
@@ -203,7 +240,7 @@ c               write (18, *) 'Rate: ', rate
                ff = 40.d0
  250           continue
                   ff = ff - 0.1d0
-                  ros = eta(nb_max, rates, sur_nr(n_sur),
+                  ros = eta(rates, sur_nr(n_sur),
      $              eff_n, eff_b, eff_m, ff, rate, maglim, tmp)
 c                  write (18, *) ff, ros
                   if ((ros .eq. 0.d0) .and. (ff .ge. -0.05d0)) goto 250
@@ -263,7 +300,7 @@ c         write (18, *) n_sur, sur_mm(n_sur)
       return
       end
 
-      subroutine read_sur (dirn, nb_max, lun_in, poly, n_e, jday,
+      subroutine read_sur (dirn, lun_in, poly, n_e, jday,
      $  ff, code, pos, r, jday2, pos2, r2, efnam, nr, rates, eff_n,
      $  eff_b, eff_m, rate_c, track, d_mag, photf, maglim, filt_i, ierr)
 
@@ -275,11 +312,13 @@ c
 c J-M. Petit  Observatoire de Besancon
 c Version 1 : February 2004
 c Version 2 : October 2004
+c Version 3 : May 2016
+c             Changed API to remove size of arrays, added parameter
+c             statement to define array sizes (in include file)
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
 c     dirn  : Name of directory with survey definition (CH)
-c     nb_max: Maximum number of bin in efficiency function (I4)
 c     lun_in: File unit (I4)
 c
 c OUTPUT
@@ -311,28 +350,49 @@ c               10 : unable to open pointing file
 c               20 : error reading record
 c               30 : end of file reached
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) dirn
+Cf2py intent(in) lun_in
+Cf2py intent(out) poly
+Cf2py intent(out) n_e
+Cf2py intent(out) jday
+Cf2py intent(out) ff
+Cf2py intent(out) code
+Cf2py intent(out) pos
+Cf2py intent(out) r
+Cf2py intent(out) jday2
+Cf2py intent(out) pos2
+Cf2py intent(out) r2
+Cf2py intent(out) efnam
+Cf2py intent(out) nr
+Cf2py intent(out) rates
+Cf2py intent(out) eff_n
+Cf2py intent(out) eff_b
+Cf2py intent(out) eff_m
+Cf2py intent(out) rate_c
+Cf2py intent(out) track
+Cf2py intent(out) d_mag
+Cf2py intent(out) photf
+Cf2py intent(out) maglim
+Cf2py intent(out) filt_i
+Cf2py intent(out) ierr
 
       implicit none
 
+      include 'param.inc'
+
       integer*4
-     $  nw_max, nb_max, n_e
+     $  n_e
 
       real*8
-     $  Pi, drad, TwoHours
-
-      parameter
-     $  (Pi = 3.141592653589793d0, drad = Pi/180.0D0, nw_max = 10,
-     $  TwoHours = 2.d0/24.d0)
-
-      real*8
-     $  w, h, ra, dec, ff, pos(3), eff_b(nb_max, *), eff_m(nb_max, *),
-     $  jday, r, vel(3), photf(3), maglim(*),
-     $  pos2(3), r2, jday2, rate_c(4), track(3), d_mag(*), rates(2,*),
-     $  poly(2,*)
+     $  w, h, ra, dec, ff, pos(3), eff_b(n_bin_max, n_r_max),
+     $  eff_m(n_bin_max, n_r_max),
+     $  jday, r, vel(3), photf(3), maglim(n_r_max),
+     $  pos2(3), r2, jday2, rate_c(4), track(3), d_mag(6),
+     $  rates(2,n_r_max), poly(2,n_e_max)
 
       integer
-     $  lun_in, ierr, j, code, eff_n(*), nw, lw(nw_max), lun_e, ierr_e,
-     $  i1, i2, i3, i4, filt_i, nr
+     $  lun_in, ierr, j, code, eff_n(n_r_max), nw, lw(nw_max), lun_e,
+     $  ierr_e, i1, i2, i3, i4, filt_i, nr
 
       character
      $  line*100, dirn*(*), efnam*(*), word(nw_max)*80, fname*100
@@ -440,7 +500,7 @@ c Ephemerides).
 c Open and read in efficiency function
       fname(1:i2-i1+2) = dirn(i1:i2)//'/'
       fname(i2-i1+3:) = efnam
-      call read_eff (fname, nb_max, lun_e, eff_b, eff_m, eff_n,
+      call read_eff (fname, lun_e, eff_b, eff_m, eff_n,
      $  rates, nr, rate_c, d_mag, photf, track, maglim, filt_i, ierr_e)
 
       if (ierr_e .eq. 10) then
@@ -501,7 +561,7 @@ c The same, 2 hours later
 
       end
 
-      subroutine read_eff (filen, nb_max, lun_in, bin, eff, eff_n,
+      subroutine read_eff (filen, lun_in, bin, eff, eff_n,
      $  rates, nrates, rate_c, mag_er, photf, track, maglim, filt_i,
      $  ierr)
 
@@ -511,28 +571,33 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c
 c J-M. Petit  Observatoire de Besancon
 c Version 1 : February 2004
+c Version 2 : April 2013
+c             Changed to read new pointings and efficiency file format
+c Version 5 : May 2016
+c             Changed API to remove size of arrays, added parameter
+c             statement to define array sizes (in include file)
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
 c     filen : object element file name
-c     nb_max: Maximum number of bin in efficiency function (I4)
 c     lun_in: File unit
 c
 c OUTPUT
-c     bin   : Magnitude bin center (nb_max,n*R8)
-c     eff   : Efficiency for that bin (nb_max,n*R8)
-c     eff_n : Number of bins in efficiency (n*I4)
+c     bin   : Magnitude bin center (n_bin_max,n_r_max*R8)
+c     eff   : Efficiency for that bin (n_bin_max,n_r_max*R8)
+c     eff_n : Number of bins in efficiency (n_r_max*I4)
+c               -4 : so-called "square" function
 c               -3 : piecewise linear function
 c               -2 : double hyperbolic tangent
 c               -1 : single hyperbolic tangent
 c               >0 : number of bins in lookup table
-c     rates : Rates limits for efficiency function ([rad/day]) (2,n*R8)
+c     rates : Rates limits for efficiency function ([rad/day]) (2,n_r_max*R8)
 c     nrates: Number of efficiency fucntions (I4)
 c     rate_c: rate cut parameters ([rad/day] and [rad]) (4*R8)
 c     mag_er: Magnitude error parameters (6*R8)
-c     photf : Photometric peasurments fractions (3*R8)
+c     photf : Photometric measurments fractions (3*R8)
 c     track : tracking fraction parameters (3*R8)
-c     maglim: Limiting magnitude of survey (n*R8)
+c     maglim: Limiting magnitude of survey (n_r_max*R8)
 c     filt_i: filter index (I4)
 c                1 : g
 c                2 : r
@@ -547,31 +612,39 @@ c     ierr  : Error code
 c                0 : nominal run
 c               10 : unable to open filen
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py inten(in) filen
+Cf2py inten(in) lun_in
+Cf2py intent(out) bin
+Cf2py intent(out) eff
+Cf2py intent(out) eff_n
+Cf2py intent(out) rates
+Cf2py intent(out) nrates
+Cf2py intent(out) rate_c
+Cf2py intent(out) mag_er
+Cf2py intent(out) photf
+Cf2py intent(out) track
+Cf2py intent(out) maglim
+Cf2py intent(out) filt_i
+Cf2py intent(out) ierr
 
       implicit none
 
-      real*8
-     $  pi, drad
-
-      integer*4
-     $  nw_max, nb_max
-
-      parameter
-     $  (pi = 3.141592653589793d0, drad = pi/180.0d0, nw_max = 10)
+      include 'param.inc'
 
       real*8
-     $  bin(nb_max, *), eff(nb_max, *), rate_c(4), mag_er(*), track(3),
-     $  rates(2,*), photf(3), maglim(*)
+     $  bin(n_bin_max, n_r_max), eff(n_bin_max, n_r_max), rate_c(4),
+     $  mag_er(6), track(3), rates(2, n_r_max), photf(3),
+     $  maglim(n_r_max)
 
       integer
-     $  lun_in, ierr, eff_n(*), eq_ind, nw, lw(nw_max), i, nrates, j,
-     $  filt_i
+     $  lun_in, ierr, eff_n(n_r_max), eq_ind, nw, lw(nw_max), i, nrates,
+     $  j, filt_i
 
       character
      $  line*100, filen*(*), word(nw_max)*80
 
       logical
-     $  rcut, tr, fi, mag, in_rates, in_func, rate(0:10), ph
+     $  rcut, tr, fi, mag, in_rates, in_func, rate(0:n_r_max), ph
 
       rcut = .false.
       tr = .false.

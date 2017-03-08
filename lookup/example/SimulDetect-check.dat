@@ -1,12 +1,11 @@
 # Seed:  123456789
 #
-#   a      e        i        q        r        M      m_rand H_rand color flag delta    m_int   H_int eff   RA(H)     DEC    delta_ra delt_dec Surv.  Comments
-#
 # flag: >0: detected; >2: characterized; 0 mod(2): tracked
 # Survey: name of the block
 # delta_ra: distance from center of pointing [arcsec]
 # delt_dec: distance from center of pointing [arcsec]
 #
+#   a      e        i        q        r        M      m_rand H_rand color flag delta    m_int    H_int eff   RA(H)     DEC    delta_ra delt_dec Surv. Comments
   34.976  0.112    4.377   31.059   38.753  162.785   23.679   7.77  0.00  3   37.783   23.643   7.73 0.72  4.84464  23.0789  3.29155 -0.44531 L3w-sm resonant  
   42.481  0.342    0.092   27.952   28.113  354.349   23.650   9.12  0.00  4   27.147   23.476   8.95 0.64  8.82055  17.8694  4.08751  1.13844 L7a-sm resonant  
   42.287  0.118    1.413   37.297   37.338    6.387   24.073   8.31  0.00  4   36.348   23.916   8.15 0.60 15.21980 -19.4343  3.10758  0.87273 L4k-sm resonant  

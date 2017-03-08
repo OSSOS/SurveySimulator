@@ -16,6 +16,11 @@ c J.-M. Petit  Observatoire de Besancon
 c Version 1 : January 2006
 c Version 2 : May 2013
 c Version 3 : March 2016
+c Version 4 : May 2016
+c             Changed API to remove size of arrays, added parameter
+c             statement to define array sizes (in include file).
+c             Continue looping on pointings until object is detected,
+c             characterized and tracked. Don't stop at first detection.
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
@@ -104,21 +109,14 @@ Cf2py intent(out) h_rand
 
       implicit none
 
+      include 'param.inc'
+
       integer*4
-     $  n_sur_max, n_bin_max, n_r_max, screen, keybd, verbose,
-     $  lun_s, lun_h, n_e_max
+     $  screen, keybd, verbose, lun_s, lun_h
 
       parameter
-     $  (n_sur_max = 1000, n_bin_max=100, n_r_max=10, n_e_max=41,
-     $  screen = 6, keybd = 5, verbose = 9,
+     $  (screen = 6, keybd = 5, verbose = 9,
      $  lun_s = 13, lun_h = 6)
-
-      real*8
-     $  Pi, TwoPi, drad, eps
-
-      parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi,
-     $  drad = Pi/180.0d0, eps = 1.d-14)
 
       real*8
      $  a, e, inc, node, peri, mt, hx, h, jday, pos(3), m_int, m_rand,
@@ -173,7 +171,7 @@ Cf2py intent(out) h_rand
          first = .false.
 
 c Opens and reads in survey definitions
-         call GetSurvey (surnam, lun_s, n_sur_max, n_bin_max, n_r_max,
+         call GetSurvey (surnam, lun_s,
      $     n_sur, sur_pl, sur_ne, sur_jday, sur_ff,
      $     sur_code, sur_x, sur_y, sur_z, sur_r, sur_jday2,
      $     sur_x2, sur_y2, sur_z2, sur_r2, sur_eff, sur_nr, sur_rt,
@@ -396,7 +394,7 @@ c Well, how is its rate of motion ? Within the rate cut or not ?
                         if (rate_ok) then
 
 c Now check for the efficiency
-                           eff_l = eta(n_bin_max, sur_rt(1,1,i_sur),
+                           eff_l = eta(sur_rt(1,1,i_sur),
      $                       sur_nr(i_sur), sur_eff_n(1,i_sur),
      $                       sur_eff_b(1,1,i_sur), sur_eff_m(1,1,i_sur),
      $                       m_int_l, rate, sur_ml(1,i_sur), maglim)
@@ -423,7 +421,7 @@ c Compute "measured" magnitude with 1 to 3 averaged values
                                  m_rand_l = (2.d0*m_rand_l + tmp)/3.d0
                               end if
 c Determine efficiency of detection for that magnitude
-                              eff_l = eta(n_bin_max, sur_rt(1,1,i_sur),
+                              eff_l = eta(sur_rt(1,1,i_sur),
      $                          sur_nr(i_sur), sur_eff_n(1,i_sur),
      $                          sur_eff_b(1,1,i_sur),
      $                          sur_eff_m(1,1,i_sur), m_rand_l, rate,

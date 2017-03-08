@@ -28,15 +28,15 @@ track_file = raw_input()
 # Open detection file and write header
 f_detect = open(detect_file, 'w')
 f_detect.write ('# Seed: %10d\n#\n' % (seed))
-f_detect.write ('#   a      e        i        q        r        M      m_rand H_rand color flag delta    m_int   H_int eff   RA(H)     DEC    delta_ra delt_dec Surv.  Comments\n#\n')
 f_detect.write ('# flag: >0: detected; >2: characterized; 0 mod(2): tracked\n')
 f_detect.write ('# Survey: name of the block\n')
 f_detect.write ('# delta_ra: distance from center of pointing [arcsec]\n')
 f_detect.write ('# delt_dec: distance from center of pointing [arcsec]\n#\n')
+f_detect.write ('#   a      e        i        q        r        M      m_rand H_rand color flag delta    m_int   H_int eff   RA(H)     DEC    delta_ra delt_dec Surv.  Comments\n')
 
 # Open tracked detection file (no header)
 f_track = open(track_file, 'w')
-f_track.write ('#   a      e        i        q        r        M      m_rand H_rand color Comment\n#\n')
+f_track.write ('#   a      e        i        q        r        M      m_rand H_rand color Comment\n')
 
 keep_going = True
 n_iter, n_hits, n_track = 0, 0, 0

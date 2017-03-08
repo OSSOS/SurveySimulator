@@ -25,33 +25,33 @@ ln -s ${d/./} ../CurrentDistrib
 # Copy fix files
 cat > $d/README.version <<EOF
 
-Survey Simulator for OSSOSv8
+Survey Simulator for OSSOSv9-pre
 
 Survey simulator as of $dt
 
 EOF
 head -2 README.first > $d/README.first
 cat >> $d/README.first <<EOF
-$df release
+$df release to OSSOS team
 EOF
 tail --line=+3 README.first >> $d/README.first
 cp -a README.contact lookup parametric Python $d/
-for s in cfeps OSSOS OSSOS-cfeps All_Surveys; do
+for s in cfeps OSSOS OSSOS-cfeps OSSOS-MA All_Surveys; do
     mkdir $d/$s
     cp ../$s/* $d/$s/
 done
-cp src/Driver.{f,py} src/README.* $d/src/
+cp src/Driver.{f,py} src/README.* src/ModelUtils.f $d/src/
 \rm -f $d/cfeps/*.py
 
 # Initialize SurveySubs.f
 cd src
-grep -i -v "^c.*include" SurveySubs.f > zzzz0
-n=`grep -i include zzzz0 | grep -i -v "[a-z].*include" | wc -l`
+cp SurveySubs.f zzzz0
+n=`grep -i include zzzz0 | grep -i -v "[a-z].*include" | grep -i -v "include 'param.inc'" | wc -l`
 
-# Now loop on including "include" files
+# Now loop on including "include" files, except "include 'param.inc'"
 while [ $n -gt 0 ]; do
     cp zzzz0 zzzz1
-    grep -i include zzzz0 | grep -i -v "[a-z].*include" | (
+    grep -i include zzzz0 | grep -i -v "[a-z].*include" | grep -i -v "include 'param.inc'" | (
 	while read inc file rest; do
 	    grep -v "include.*$file" zzzz1 | grep -v "INCLUDE.*$file" > zzzz2
 	    cat `echo $file | sed "s/'//g"` >> zzzz2
@@ -59,8 +59,13 @@ while [ $n -gt 0 ]; do
 	done
     )
     \mv zzzz1 zzzz0
-    n=`grep -i include zzzz0 | grep -i -v "[a-z].*include" | wc -l`
+    n=`grep -i include zzzz0 | grep -i -v "[a-z].*include" | grep -i -v "include 'param.inc'" | wc -l`
 done
+
+# Now inline the "include 'param.inc'" statements.
+cp zzzz0 zzzz1
+../InlineIncludeParam.py
+\rm -f zzzz1
 
 # Move the result in the distribution directory
 cp SurveySubsHistory ../$d/src/SurveySubs.f
