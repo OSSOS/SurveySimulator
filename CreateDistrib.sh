@@ -27,7 +27,7 @@ ln -s ${d/./} ../CurrentDistrib
 # Copy fix files
 cat > $d/README.version <<EOF
 
-Survey Simulator for OSSOSv9
+Survey Simulator for OSSOSv10
 
 Survey simulator as of $dt
 
@@ -37,7 +37,7 @@ cat >> $d/README.first <<EOF
 $df release to $intended_audience
 EOF
 tail --line=+3 README.first >> $d/README.first
-cp -a README.contact lookup parametric Python $d/
+cp -a eupl* README.contact lookup parametric Python $d/
 for s in cfeps OSSOS OSSOS-cfeps OSSOS-MA All_Surveys; do
     mkdir $d/$s
     cp ../$s/* $d/$s/

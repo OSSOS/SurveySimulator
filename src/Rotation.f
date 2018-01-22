@@ -16,6 +16,9 @@ c*** OUTPUT
 c       posecl  : output vector in ecliptic frame
 c
 c******************************************************
+Cf2py intent(in) epsilon
+Cf2py intent(in) poseq
+Cf2py intent(out) posecl
       implicit none
 
       real*8
@@ -47,12 +50,15 @@ c
 c
 c*** INPUT
 c       epsilon : obliquity
-c       poseq   : input vector in ecliptic frame
+c       posecl  : input vector in ecliptic frame
 c
 c*** OUTPUT
-c       posecl  : output vector in equatorial frame
+c       poseq   : output vector in equatorial frame
 c
 c******************************************************
+Cf2py intent(in) epsilon
+Cf2py intent(in) posecl
+Cf2py intent(out) poseq
       implicit none
 
       real*8
@@ -92,13 +98,16 @@ c
 c OUTPUT
 c     posout: Position in new frame (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) alpha
+Cf2py intent(in) posin
+Cf2py intent(out) posout
       implicit none
 
       integer
      $  i
 
       real*8
-     $  alpha, posin(*), posout(*), pos(3), ca, sa
+     $  alpha, posin(3), posout(3), pos(3), ca, sa
 
       do i = 1, 3
          pos(i) = posin(i)
@@ -132,13 +141,16 @@ c
 c OUTPUT
 c     posout: Position in new frame (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) alpha
+Cf2py intent(in) posin
+Cf2py intent(out) posout
       implicit none
 
       integer
      $  i
 
       real*8
-     $  alpha, posin(*), posout(*), pos(3), ca, sa
+     $  alpha, posin(3), posout(3), pos(3), ca, sa
 
       do i = 1, 3
          pos(i) = posin(i)
@@ -172,13 +184,16 @@ c
 c OUTPUT
 c     posout: Position in new frame (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) alpha
+Cf2py intent(in) posin
+Cf2py intent(out) posout
       implicit none
 
       integer
      $  i
 
       real*8
-     $  alpha, posin(*), posout(*), pos(3), ca, sa
+     $  alpha, posin(3), posout(3), pos(3), ca, sa
 
       do i = 1, 3
          pos(i) = posin(i)

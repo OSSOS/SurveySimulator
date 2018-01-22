@@ -58,4 +58,9 @@ c             old input files.
 c
 c 2016-05-04: Continue looping on pointings until object is detected,
 c             characterized and tracked. Don't stop at first detection.
+c
+c 2017-06-25: Increased the maximum number of pointings in 'pointings.list'
+c             file to allow Schwamb et al. (2010) survey. Increased n_sur_max
+c             from 1000 to 3000, and reduced n_bin_max from 100 to 30 to save
+c             storage space.
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*

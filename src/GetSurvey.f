@@ -26,14 +26,14 @@ c OUTPUT
 c     n_sur : Number of pointings read (I4)
 c     sur_pl: Array of polygons (2,n_e_max,n*R8)
 c     sur_ne: Array of nuumber of edges in polygons (n*I4)
-c     sur_t : Time of pointing (n*R8)
+c     sur_t : Time of pointing (n*R8) [days]
 c     sur_ff: Filling factor (n*R8)
 c     sur_co: Observatory code (n*I4)
 c     sur_x : ICRF x coordinate of observatory (n*R8)
 c     sur_y : ICRF y coordinate of observatory (n*R8)
 c     sur_z : ICRF z coordinate of observatory (n*R8)
 c     sur_r : Distance from observatory to Sun (n*R8)
-c     sur_t2: Time of pointing 2 hours later (n*R8)
+c     sur_t2: Time of pointing 2 hours later (n*R8) [days]
 c     sur_x2: ICRF x coordinate of observatory 2 hours later (n*R8)
 c     sur_y2: ICRF y coordinate of observatory 2 hours later (n*R8)
 c     sur_z2: ICRF z coordinate of observatory 2 hours later (n*R8)
@@ -127,7 +127,7 @@ Cf2py intent(out) ierr
      $  n_e, sur_ne(n_sur_max)
 
       character
-     $  survey*(*), sur_ef(n_sur_max)*(*), eff_name*80
+     $  survey*(*), sur_ef(n_sur_max)*80, eff_name*80
 
       logical
      $  finished
@@ -324,12 +324,12 @@ c
 c OUTPUT
 c     poly  : Array of points to define a polygon ((2,n)*R8)
 c     n_e   : Number of edges in polygon (I4)
-c     jday  : Time of pointing (R8)
+c     jday  : Time of pointing (R8) [days]
 c     ff    : Filling factor (R8)
 c     code  : Observatory code (I4)
 c     pos   : Observatory position (3*R8)
 c     r     : Observatory distance to Sun (R8)
-c     jday2 : Time of pointing 2 hours later (R8)
+c     jday2 : Time of pointing 2 hours later (R8) [days]
 c     pos2  : Observatory position 2 hours later (3*R8)
 c     r2    : Observatory distance to Sun 2 hours later (R8)
 c     efnam : Efficiency file name (CH)

@@ -1,7 +1,12 @@
 #! /bin/bash
 
+cd example
+
 if [ -f SimulDetect.dat ]; then
     \rm SimulDetect.dat
+fi
+if [ -f SimulTrack.dat ]; then
+    \rm SimulTrack.dat
 fi
 time ../SurveySimulator < Driver.in > LOG
 a=`head -10 SimulDetect.dat | tail -1 | awk '{print $1}'`

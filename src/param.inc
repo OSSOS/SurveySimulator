@@ -3,7 +3,7 @@
      $  n_sur_max, n_bin_max, n_r_max, n_e_max, nw_max
 
       parameter
-     $  (n_sur_max = 1000, n_bin_max=100, n_r_max=10, n_e_max=41,
+     $  (n_sur_max = 3000, n_bin_max=30, n_r_max=10, n_e_max=41,
      $  nw_max = 10)
 
       real*8
