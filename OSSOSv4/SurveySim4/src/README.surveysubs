@@ -1,0 +1,258 @@
+
+--------------------------------------------------------------------------------
+
+The SurveySubs.f file contains all routines and functions needed to determine
+whether an object would have been seen by the survey or not. 
+The entry point is the "Detos1" routine.
+Detos1 MUST be suppied with osculating orbital elements with respect to the
+BARYCENTRIC J2000 ecliptic reference frame.
+
+In addition to this work horse, SurveySubs.f also provides a series of utility
+routines and functions (uniform random number generator, gaussian random number
+generator, exponential-law random number generator, sin(x)*gaussian(x)
+probability function, sin(i)^2*gaussian(x) probability function, random number
+generator according to any user defined probability density function) that are
+described below.
+
+WARNING: The simulator draws MANY random numbers; an usual failure mode
+  is to have a random number generator that enters a periodicity.  Usage
+  of the ran3() routine we supply has avoided this issue for us.
+
+--------------------------------------------------------------------------------
+
+In case one want to write her own driver, the API (list of arguments,
+arg_list_2 above) for Detos1 is
+
+    (a, e, inc, node, peri, mt0, jday, hx, color, gb, ph, period, amp, surnam,
+     seed, flag, ra, dec, d_ra, d_dec, r, delta, mag, dmag, eff, isur, mt,
+     jdayp, ic, surna, h_rand)
+
+with:
+
+INPUT (from GiMeObj)
+    a     : Semi-major axis [AU] (R8)
+    e     : Eccentricity (R8)
+    inc   : Inclination [rad] (R8)
+    node  : Longitude of node [rad] (R8)
+    peri  : Argument of perihelion [rad] (R8)
+    mt0   : Mean anomaly [rad] (R8)
+    jday  : Reference time of the orbital elements [JD] (R8)
+    hx    : Absolute magnitude of the object in the user's specified 'x' band
+            (R8)
+    color : Array of colors (10*R8)
+               colors(1) : g-x
+               colors(2) : r-x
+               colors(3) : i-x
+               colors(4) : z-x
+               colors(5) : u-x
+               colors(6) : V-x
+               colors(7) : B-x
+               colors(8) : R-x
+               colors(9) : I-x
+    gb    : opposition surge factor G, Bowell formalism (R8)
+    ph    : phase of lightcurve at epoch jday [rad] (R8)
+    period: period of lightcurve [day] (R8)
+    amp   : peak-to-peak amplitude of lightcurve [mag] (R8)
+    surnam: Survey directory name (CH10)
+
+OUTPUT
+    seed  : Random number generator seed (I4)
+    flag  : Return flag (I4): 
+		0: not found 
+		1: found, but not tracked
+            	2: found and tracked
+    ra    : Right ascension at detection [rad] (R8)
+    dec   : Declination at detection [rad] (R8)
+    d_ra  : Right ascension rate [rad/day] (R8)
+    d_dec : Declination rate [rad/day] (R8)
+    r     : Sun-object distance [AU] (R8)
+    delta : Earth-object distance [AU] (R8)
+    mag   : Apparent magnitude at detection (R8); This is computed from the
+            absolute magnitude, the distance from the Sun and Earth, the phase
+            angle (Bowel formalism), and a random uncertainty is added
+            according to Gaussian noise whose amplitude is determined from the
+            <mag_error> parameters in the efficiency files; The returned value
+            is given in the user defined 'x' filter
+    dmag  : Estimated uncertainty on magnitude (R8)
+    eff   : Efficiency of detection of object (function of mag and survey) (R8)
+    isur  : Identification number of the survey block the object was in (I4)
+    mt    : Mean anomaly at discovery [rad] (R8)
+    jdayp : Time of discovery [JD] (R8)
+    ic    : Index of color used for survey (I4)
+    surna : Detection survey name, for information (CH10) 
+    h_rand: Absolute randomized magnitude (R8)
+
+The Detos1 routine is part of the survey simulator and should not be modified
+in any way, as what appear to be innocent modifications could have dramatic
+effects on how the simulator works.  Advice on modifications is available
+(see README.contact file).
+
+--------------------------------------------------------------------------------
+
+UTILITIES
+  The package also provides utility routines to help writing one's own GiMeObj
+  model routine. These include the following routines:
+
+--------------------------------------------------------------------------------
+
+      subroutine pos_cart (a, ecc, inc, capo, smallo, capm, x, y, z)
+
+This routine transforms orbital elements into cartisian coordinates, positions
+only.
+
+INPUT
+    a     : Semi-major axis [AU] (R8)
+    e     : Eccentricity (R8)
+    inc   : Inclination [rad] (R8)
+    capo  : Longitude of node [rad] (R8)
+    smallo: Argument of perihelion [rad] (R8)
+    capm  : Mean anomaly [rad] (R8)
+
+OUTPUT
+    x     : X cartesian coordinate of object [AU] (R8)
+    y     : Y cartesian coordinate of object [AU] (R8)
+    z     : Z cartesian coordinate of object [AU] (R8)
+
+
+--------------------------------------------------------------------------------
+
+      subroutine osc_el (mu, x, y, z, vx, vy, vz, a, ecc, inc, capo, smallo,
+     $                   capm) 
+
+This routine transforms cartisian variables into orbital elements.
+
+INPUT
+    mu    : Mass of central body. Sets the unit of time once the unit of length
+            is given. Use (2*Pi)^2 to have [Yr] as time unit (R8)
+    x     : X cartesian coordinate of object [AU] (R8)
+    y     : Y cartesian coordinate of object [AU] (R8)
+    z     : Z cartesian coordinate of object [AU] (R8)
+    vx    : X cartesian velocity of object [AU/unit_time] (R8)
+    vy    : Y cartesian velocity of object [AU/unit_time] (R8)
+    vz    : Z cartesian velocity of object [AU/unit_time] (R8)
+
+OUPUT
+    a     : Semi-major axis [AU] (R8)
+    e     : Eccentricity (R8)
+    inc   : Inclination [rad] (R8)
+    capo  : Longitude of node [rad] (R8)
+    smallo: Argument of perihelion [rad] (R8)
+    capm  : Mean anomaly [rad] (R8)
+
+
+--------------------------------------------------------------------------------
+
+      subroutine Format (angle, incode, outcod, string, ierr)
+
+This routine formats an angle (in rd) into deg, min, sec or hour, min,
+sec. Output is a string.
+
+INPUT
+    angle : angle to format, radians (r8)
+    incode: 1 input in radian; 0 input in decimal degrees (i)
+    outcod: 1 converts to hours,min,sec; 0 converts to deg.,min,sec (i)
+
+OUTPUT
+    string: Output string (CH)
+    ierr  : Error code
+               0 : nominal run
+              10 : input data code
+              20 : wrong conversion code
+
+
+--------------------------------------------------------------------------------
+
+      subroutine dgauss (i, y)
+
+This routine gives a random value with gaussian probability, with 0
+mean and standard deviation 1.
+
+INPUT
+    i     : Seed for random number generator (I4)
+
+OUTPUT
+    i     : Seed for random number generator (I4)
+    y     : Random value (R8)
+
+
+--------------------------------------------------------------------------------
+
+      real*8 FUNCTION ran3(i)
+
+This function returns a "random" number using an initial seed and a modulo
+algorithm. It has a much longer periodicity than psalun and should then be
+prefered for problems consuming very many random numbers.
+
+INPUT
+    i     : Seed (I4)
+
+OUTPUT
+    ran3  : Random number (R8)
+
+
+--------------------------------------------------------------------------------
+
+      subroutine zero2pi (var)
+
+This function resets variable 'var' to be between 0 and 2pi
+
+INPUT/OUPUT
+    var   : Variable to reset to be between 0 and 2*Pi (R8)
+
+
+--------------------------------------------------------------------------------
+
+      subroutine cal2jul (iyyy, mm, dd, jul)
+
+This routine computes the Julian Day from time given in
+Year, Month, Day (decimal).
+
+INPUT
+    iyyy  : Year (I4)
+    mm    : Month (I4)
+    dd    : Decimal Day (R8)
+
+OUTPUT
+    mjd   : Julian Day (R8)
+
+--------------------------------------------------------------------------------
+
+OTHER UTILITIES
+  The package also provides a utility to determine the absolute magnitude of a
+  real detected object, given its orbital elements in Bernstein & Kushalani
+  form, its measured magnitude and the epoch of measurement:
+
+--------------------------------------------------------------------------------
+
+      subroutine ObjAbs (a, e, inc, node, peri, tperi, jday, mag,
+     $  code, gb, alpha, h, ra, dec, ierr)
+
+This routine determines the absolute magnitude of an object and its
+sky position (RA, DEC) given its orbital elements (Berstein &
+Kushalani format), measured magnitude and epoch of observation.
+
+INPUT
+    a     : Semi-major axis [AU] (R8)
+    e     : Eccentricity (R8)
+    inc   : Inclination [rad] (R8)
+    node  : Longitude of node [rad] (R8)
+    peri  : Argument of perihelion [rad] (R8)
+    tperi : Time of perihelion passage [JD] (R8)
+    jday  : Epoch of observation [JD] (R8)
+    mag   : Apparent magnitude of object (R8)
+    code  : Observatory code (I4)
+             001 : GAIA
+             002 : Geocentric, Mignard's code
+             500 : Geocentric
+    gb    : opposition surge factor, Bowell formalism (R8)
+
+OUTPUT
+    alpha : Phase angle [rad] (R8)
+    h     : Absolute magnitude of object (R8)
+    ra    : Right Ascension (R8)
+    dec   : Declination (R8)
+    ierr  : Error code (I4)
+               0 : nominal run
+              10 : wrong input data
+             100 : date of call earlier than xjdbeg
+             200 : date of call later   than xjdend
