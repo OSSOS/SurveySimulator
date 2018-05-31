@@ -241,7 +241,7 @@ c     param : Parameters (n*R8)
 c     inc   : Inclination (R8)
 c
 c OUPUT
-c     offgau: Value of the inclination (R8)
+c     offgau: Value of the probability (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) nparam
 Cf2py intent(in), depend(nparam) :: param
@@ -293,7 +293,7 @@ c     param : Parameters (n*R8)
 c     inc   : Inclination (R8)
 c
 c OUPUT
-c     onecomp: Value of the inclination (R8)
+c     onecomp: Value of the probability (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) nparam
 Cf2py intent(in), depend(nparam) :: param
@@ -344,7 +344,7 @@ c     param : Parameters (n*R8)
 c     inc   : Inclination (R8)
 c
 c OUPUT
-c     onecompjmp: Value of the inclination (R8)
+c     onecompjmp: Value of the probability (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) nparam
 Cf2py intent(in), depend(nparam) :: param
@@ -575,10 +575,11 @@ c Version 1 : April 2004
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
-c     inc   : inclination requested (radian) (R8)
+c     seed  : seed for the random number generator (I4)
+c     h_params: parameters for the distribution (3*R8)
 c
 c OUTPUT
-c     fe    : ecliptic inclination distribution (R8)
+c     size_dist_one: Random value of H (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c
 c Set of F2PY directives to create a Python module
@@ -595,6 +596,8 @@ c
      $  ran3
 c
 c H-mag distribution 
+c
+c Functions have been triple-checked as of 2018-05-04. OK.
       slope = h_params(3)
       h0s10 = 10.d0**(slope*h_params(1))
       h1s10 = 10.d0**(slope*h_params(2))
@@ -606,6 +609,33 @@ c H-mag distribution
       end
 
       real*8 function size_dist_two (seed, h_params)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This function draws a number according to a 2slope exponential
+c differential distribution specified by "h_params":
+c
+c   P(h) d_h = A \exp{(h*h_params(4))} d_h
+c
+c with h_params(1) <= h <= h_params(2)
+c
+c   P(h) d_h = B \exp{(h*h_params(5))} d_h
+c
+c with h_params(2) <= h <= h_params(3)
+c
+c continuous at H1 = h_params(2)
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : April 2014
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     seed  : seed for the random number generator (I4)
+c     h_params: parameters for the distribution (3*R8)
+c
+c OUTPUT
+c     size_dist_two: Random value of H (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c
 c Set of F2PY directives to create a Python module
 c
@@ -624,7 +654,9 @@ c
       external
      $  ran3
 c
-c H-mag distribution 
+c H-mag distribution
+c
+c Functions have been triple-checked as of 2018-05-04. OK.
       sl1 = h_params(4)
       sl2 = h_params(5)
       h0s1 = 10.d0**(sl1*h_params(1))
@@ -639,6 +671,75 @@ c H-mag distribution
       else
          size_dist_two = log10((random-xi1)/(1.d0-xi1)*(h2s2 - h1s2)
      $     + h1s2)/sl2
+      end if
+
+      return
+
+      end
+
+      real*8 function size_dist_two_straight (seed, h_params)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This function draws a number according to a 2-slope exponential
+c cumulative distribution specified by "h_params" (2 straight lines in
+c semilog for cumulative):
+c
+c   P(<=h) = A 10^{(h*h_params(4))}
+c
+c with h_params(1) <= h <= h_params(2)
+c
+c   P(<=h) = B 10^{(h*h_params(5))}
+c
+c with h_params(2) < h <= h_params(3)
+c
+c continuous at H1 = h_params(2)
+c   (A = B 10^{(h_params(5)-h_params(4))*h_params(2)})
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : May 2018
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     seed  : seed for the random number generator (I4)
+c     h_params: parameters for the distribution (3*R8)
+c
+c OUTPUT
+c     size_dist_two_straight: Random value of H (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c Set of F2PY directives to create a Python module
+c
+Cf2py intent(in,out) seed
+Cf2py intent(in) h_param
+c
+      implicit none
+
+      integer*4
+     $  seed
+
+      real*8
+     $  h_params(5), h0s1, h1s1, h1s2, h2s2, h12s2, random, sl1, sl2,
+     $  ran3
+
+      external
+     $  ran3
+c
+c H-mag distribution
+c
+c Functions have been triple-checked as of 2018-05-04. OK.
+      sl1 = h_params(4)
+      sl2 = h_params(5)
+      h0s1 = 10.d0**(sl1*h_params(1))
+      h1s1 = 10.d0**(sl1*h_params(2))
+      h1s2 = 10.d0**(sl2*h_params(2))
+      h2s2 = 10.d0**(sl2*h_params(3))
+      h12s2 = h1s2/h2s2
+      random=ran3(seed)
+      if (random .le. h12s2) then
+         size_dist_two_straight = log10(random*h1s1/h12s2)/sl1
+      else
+         size_dist_two_straight = log10(random*h2s2)/sl2
       end if
 
       return
@@ -676,8 +777,7 @@ c Calling arguments
       integer np
       real*8 p(*), q
 
-      qhot = 1./((1.+exp((35.-q)/0.5))*(1.+exp((q-p(1))/0.5)))
+      qhot = 1./((1.+exp((p(3)-q)/p(4)))*(1.+exp((q-p(1))/p(2))))
 
       return
       end
-

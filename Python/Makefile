@@ -4,11 +4,14 @@
 ### also works with ifort and f77
 FC = /usr/bin/gfortran
 
-Modules: SurveySubs.so GiMeObj.so Makefile
+Modules: SurveySubs.so GiMeObj.so ModelUtils.so Makefile
 	echo "Modules have been built"
 
 SurveySubs.so: SurveySubs.f Makefile
 	f2py -c --f77exec=$(FC) --f77flags=-fPIC --f90flags=-fPIC -m SurveySubs SurveySubs.f
+
+ModelUtils.so: ModelUtils.f Makefile
+	f2py -c --f77exec=$(FC) --f77flags=-fPIC --f90flags=-fPIC -m ModelUtils ./SurveySubs.so ModelUtils.f
 
 #GiMeObj.so: InnerBeltModel.f SurveySubs.so Makefile
 #	\rm -f GiMeObj.f

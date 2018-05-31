@@ -373,6 +373,9 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c This routine convert osculating elements back and forth between
 c invariable plane and ecliptic plane.
 c Uses invar_ecl to do the work.
+c
+c ANGLES ARE GIVEN IN RADIAN !!!
+c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) ieqec
 Cf2py intent(in) ai
@@ -566,6 +569,9 @@ c Uses ref_ecl to do the work.
 c Reference frame is given by Omega (om), the node longitude (rotation
 c around Z axis of ecliptic) and Epsilon (eps), the inclination of the
 c reference frame (rotation around node axis of ecliptic).
+c
+c ANGLES ARE GIVEN IN RADIAN !!!
+c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) ieqec
 Cf2py intent(in) ai
@@ -629,6 +635,9 @@ c Uses ref_ecl_osc to do the work.
 c Reference frame is given by Omega (om), the node longitude (rotation
 c around Z axis of ecliptic) and Epsilon (eps), the inclination of the
 c reference frame (rotation around node axis of ecliptic).
+c
+c ANGLES ARE GIVEN IN RADIAN !!!
+c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) ieqec
 Cf2py intent(in) ii
@@ -660,6 +669,76 @@ Cf2py intent(out) ierr
      $  noo, peo, mo, eps, om, ierr)
 
       return
+      end
+
+      subroutine forced_plane(a, ifd, Omfd)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+c This routine returns the inclination iforced and node Omforced of the
+c forced plane as a function of semimajor-axis in the region of the
+c main classical Kuiper belt, according to second order theory with all
+c 8 planets.
+c
+c The fit is valid only between 38 and 50 au.
+c
+c Returns degrees.
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : April 2018
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+c INPUT
+c     a     : semimajor-axis [au] (R8)
+c
+c OUTPUT
+c     ifd   : Inclination of forced plane [deg] (R8)
+c     Omfd  : Node of forced plane [deg] (R8)
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+c
+c Set of F2PY directives to create a Python module
+c
+Cf2py intent(in) a
+Cf2py intent(out) ifd
+Cf2py intent(out) Omfd
+c
+      implicit none
+
+c Calling arguments
+      real*8 a, ifd, Omfd
+
+c Internal variables
+      real*8 cil(3), cih(3), col(5), coh(5), alpha, beta, gamma, delta
+
+      data
+     $  cil /-0.488840342d0, 40.7399788d0, 0.113652855d0/,
+     $  cih /0.386772037d0, 40.2969894d0, 0.147950292d0/,
+     $  col /10.6460190d0, -258.080994d0, 34.8588257d0,
+     $      -1212.39307d0, 98.5600891d0/,
+     $  coh /38.5527039d0, -1522.00745d0, 1.09003317d0,
+     $      51.9270477d0, 1155.09644d0/,
+     $  alpha /1.d0/
+
+      if ((a .lt. 38.d0) .or. (a .gt. 50.)) then
+         ifd = 0.d0
+         Omfd = 0.d0
+      else if (a .le. 40.5d0) then
+         ifd = 10.d0**(cil(1)/(a - cil(2)) + cil(3))
+         beta = -((col(1) + col(3))*a + col(2) + col(4))
+         gamma = (col(1)*a + col(2))*(col(3)*a + col(4)) - col(5)
+         delta = max(0., beta**2 - 4.d0*alpha*gamma)
+         Omfd = (-beta + sqrt(delta))/(2.d0*alpha)
+      else
+         ifd = 10.d0**(cih(1)/(a - cih(2)) + cih(3))
+         beta = -((coh(1) + coh(3))*a + coh(2) + coh(4))
+         gamma = (coh(1)*a + coh(2))*(coh(3)*a + coh(4)) - coh(5)
+         delta = max(0., beta**2 - 4.d0*alpha*gamma)
+         Omfd = (-beta - sqrt(delta))/(2.d0*alpha)
+      end if
+      ifd = min(ifd, 40.d0)
+      return
+
       end
 
       subroutine ztopi (var)

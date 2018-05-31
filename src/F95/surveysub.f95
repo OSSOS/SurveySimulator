@@ -410,7 +410,7 @@ contains
                                d_ra = d_ra_l
                                d_dec = d_dec_l
                                eff = eff_l
-                               mt = mt_l
+                               mt = o_ml%m
                                jdayp = obspos(1)%jday
                             end if
 ! We got it, and we know if it was tracked and/or characterized.

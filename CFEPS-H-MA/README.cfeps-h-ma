@@ -1,0 +1,43 @@
+
+README.cfeps-h-ma
+
+COMBINED SURVEY ANALYSIS
+
+This subdir contains the COMBINED CFEPS, HiLat and Mike A; surveys.
+Mostly this is the union of the detection lists for all surveys and the
+union of all the block characterizations into a single pointing-list file.
+
+HOWEVER,
+Using the all surveys jointly requires some care:
+1. CFEPS was dominantly in g band while other surveys are in r band.  The OSSOS
+   Survey Simulator outputs the "measured" apparent magnitude m_rand and the 
+   surmised absolute magnitude H_rand of a synthetic detection in the
+   photometric band of the block it is detected in. The input intrinsic
+   absolute magnitude and the corresponding magnitude at distance of discovery
+   are given in X band. It also provides the difference between the magnitude
+   of the simulated detection in the filter of the survey that fictitiously
+   detects it and the magnitude in this X band (the color term).
+
+   If you are attempting to compare the magnitudes of the real detected objects
+   to your model, you need to come up with a scheme as to how you will compare
+   magnitudes when two bands are involved.
+
+--------------------------------------------------------------------------------
+
+This directory contains the pointing history, efficiency functions for each
+block, and the list of detected objects, in two files for all surveys
+(OSSOSv10.detections and OSSOSv10.CDS).
+
+The content of this directory is:
+
+ossoscfeps
+  \---- README.cfeps-h-ma (this file)  Describes content of the directory
+   \--------- README.format            Describes format of a survey "block"
+    \-------- pointings.list           List of pointings and times of the
+    |                                  survey, often grouped into chunks.
+     \------- LnX-smooth.eff           Efficiency function for CFEPS block.
+      \------ presurvey-smooth.eff     Efficiency function for presurvey
+       \----- HLn*-smooth.eff          Efficiency function for HiLat
+        \---- ma*.eff                  Efficiency function for Mike A.
+	    
+--------------------------------------------------------------------------------

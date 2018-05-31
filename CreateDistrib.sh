@@ -27,7 +27,7 @@ ln -s ${d/./} ../CurrentDistrib
 # Copy fix files
 cat > $d/README.version <<EOF
 
-Survey Simulator for OSSOSv10
+Survey Simulator for OSSOSv11
 
 Survey simulator as of $dt
 

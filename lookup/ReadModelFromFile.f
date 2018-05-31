@@ -203,9 +203,11 @@ c Internal storage
       integer*4
      $  i_obj,                  ! Index of current object in array
      $  n_obj,                  ! Number of objects in arrays
-     $  ierr_d                  ! Return code for GetDistrib
+     $  ierr_d,                 ! Return code for GetDistrib
+     $  i1, i2                  ! Dummy indices
       logical
      $  end_of_file,            ! Tells if we've reached end of file
+     $  finished,               ! Tells if string is empty
      $  first                   ! Tells if first call to routine
 
 c Lightcurve and opposition surge effect parameters
@@ -230,11 +232,13 @@ c Make sure variables are retained from call to call
 
 c This is the first call
       if (first) then
+         call read_file_name(filena, i1, i2, finished, len(filena))
 c Writes a file describing the model that was used.
          open (unit=lun_ll, file='ModelUsed.dat', access='sequential',
      $     status='unknown')
-         write (lun_ll, '(a)')
-     $     '# Model from file ', filena, ', version 1.0, 2013-05-14'
+         write (lun_ll, '(a,a,a)')
+     $     '# Model from file ', filena(i1:i2),
+     $     ', version 1.0, 2013-05-14'
          close (lun_ll)
 c Change "first" so this is not called anymore
          first = .false.
