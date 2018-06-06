@@ -1,0 +1,8 @@
+# List of objects re-detected in OSSOS that were part of CFEPS
+o3e20PD   L4h05PD   
+o3e37PD   L4h13     
+
+These two objects have been DELETED from the CFEPS.detections list
+
+BEFORE using the OSSOSv4 release jointly with CFEPS, we strongly
+encourage talking to Jean-Marc Petit or Brett Gladman
