@@ -7,7 +7,7 @@ classes.
 
 The content of this directory is:
 
-cfeps
+CFEPS
    \---------- README.cfeps (this file) Describes the content of the directory
     \--------- README.format            Describes format of a survey "block"
      \-------- pointings.list           List of pointings and times of the
