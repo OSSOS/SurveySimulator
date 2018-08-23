@@ -170,7 +170,7 @@ contains
          lun_ll = 21,           &! Logical unit number for logging
          screen = 6              ! Logical unit number for screen writing
     real (kind=8), parameter :: &
-         Pi = 3.141592653589793d0, &! Pi
+         Pi = 3.141592653589793238d0, &! Pi
          TwoPi = 2.0d0*Pi,         &! 2*Pi
          drad = Pi/180.0d0          ! Degree to radian convertion: Pi/180
 
@@ -418,7 +418,7 @@ contains
     type(t_orb_m) :: o_m
     real (kind=8) :: h, jday, color(*)
     real (kind=8), save :: jd
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, drad = Pi/180.0D0
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, drad = Pi/180.0D0
     integer, parameter :: nw_max = 20
     integer :: lun_in, ierr, j, nw, lw(nw_max)
     character :: line*100, filen*(*), word(nw_max)*80, co*10

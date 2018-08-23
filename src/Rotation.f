@@ -403,7 +403,7 @@ Cf2py intent(out) ierr
      $  ieqec, ierr
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
      $  mu = TwoPi**2)
 
       aid = ai
@@ -601,7 +601,7 @@ Cf2py intent(out) ierr
      $  ieqec, ierr
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
      $  mu = TwoPi**2)
 
       aid = ai

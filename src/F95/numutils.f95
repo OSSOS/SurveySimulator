@@ -40,7 +40,7 @@ contains
     implicit none
 
     integer :: ierr
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, raddeg = 180.0d0/Pi
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, raddeg = 180.0d0/Pi
     real (kind=8) :: r, delta, robs, h, g, alpha, mag, denom, phi1, phi2
 
     ierr = 0
@@ -138,7 +138,7 @@ contains
 
     data &
          compte /0/, &
-         pi /3.14159265358979d0/
+         pi /3.141592653589793238d0/
 
     if (compte.eq.0) then
        y1=ran3(i)
@@ -245,7 +245,7 @@ contains
     implicit none
 
     type(t_v3d) :: pos
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi
     real (kind=8) :: lat, long, r
 
     r = dsqrt (pos%x**2 + pos%y**2 + pos%z**2)
@@ -372,7 +372,7 @@ contains
     real (kind=8) :: var
 
 !Some values better set up as parameters
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi
 
 771 if (var .gt. TwoPi) then
        var = var - TwoPi
@@ -503,7 +503,7 @@ contains
     type(t_orb_p) :: o_p
     type(t_orb_m) :: o_m
     type(t_v3d) :: pos, obpos, tmp
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi, &
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, &
          drad = Pi/180.0d0
     integer, parameter :: screen = 6
     real (kind=8) :: h, jday, alpha, ra, dec, gb, mag

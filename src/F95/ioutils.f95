@@ -195,7 +195,7 @@ contains
 !f2py intent(out) ierr
     implicit none
 
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, raddeg = 180.0d0/Pi
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, raddeg = 180.0d0/Pi
     integer :: deg, mn, ierr, incode, outcod, si
     real (kind=8) :: angle, sec, rm, w
     character :: string*13

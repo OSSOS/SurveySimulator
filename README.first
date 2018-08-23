@@ -80,26 +80,26 @@ A pictorial guide of this release and the main README files available is:
 release --- README.first (this file)
  \      \-- README.contact 
   \
-   \---- src ---------- README.src
-   |         \--------- README.surveysubs
+   \---- src ------------ README.src
+   |         \----------- README.surveysubs
    |
-   |---- cfeps -------- README.cfeps
+   |---- CFEPS ---------- README.cfeps
    |
-   |---- OSSOS -------- README.OSSOS
+   |---- OSSOS ---------- README.OSSOS
    |
-   |---- OSSOS-cfeps -- README.ossoscfeps
+   |---- All_r_Surveys -- README.allrsurveys
    |
-   |---- All_Surveys -- README.allsurveys
+   |---- All_Surveys ---- README.allsurveys
    |
-   |---- lookup ------- README.lookup
+   |---- lookup --------- README.lookup
    |      \
-   |       \----- example
+   |       \------- example
    |
-   |---- parametric --- README.parametric
+   |---- parametric ----- README.parametric
    |       \
-   |        \---- example
+   |        \------ example
    |
-   \---- Python ------- README.python
+   \---- Python --------- README.python
 		
 --------------------------------------------------------------------------------
 
@@ -130,17 +130,16 @@ OSSOS
 
 ---------
 
-OSSOS-cfeps
-   This is essentially the union of the two surveys, but see important
-   information in that subdirs README.ossoscfeps file about how care must
-   be taking when combining the surveys.
+All_Surveys
+   This is essentially the union of all surveys: CFEPS, HiLat, Alexandersen and
+   OSSOS, but SEE IMPORTANT INFORMATION in that subdir's README.allsurveys file
+   about how care must be taking when combining the surveys.
 
 ---------
 
-All_Surveys
-   This is essentially the union of all surveys: CFEPS, HiLat, Alexandersen and
-   OSSOS, but SEE IMPORTANT INFORMATION in that subdirs README.allsurveys file
-   about how care must be taking when combining the surveys.
+All_r_Surveys
+   This is similar to the above, restricted to objects detected with the
+   MegaPrime r filter (OSSOS, Alexandersen, HiLat and L3h block from CFEPS).
 
 ---------
 

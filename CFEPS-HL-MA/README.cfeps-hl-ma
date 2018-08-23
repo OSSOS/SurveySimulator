@@ -26,18 +26,18 @@ Using the all surveys jointly requires some care:
 
 This directory contains the pointing history, efficiency functions for each
 block, and the list of detected objects, in two files for all surveys
-(OSSOSv10.detections and OSSOSv10.CDS).
+(CFEPS-HL-MA.detections and CFEPS-HL-MA.CDS).
 
 The content of this directory is:
 
-ossoscfeps
-  \---- README.cfeps-h-ma (this file)  Describes content of the directory
-   \--------- README.format            Describes format of a survey "block"
-    \-------- pointings.list           List of pointings and times of the
-    |                                  survey, often grouped into chunks.
-     \------- LnX-smooth.eff           Efficiency function for CFEPS block.
-      \------ presurvey-smooth.eff     Efficiency function for presurvey
-       \----- HLn*-smooth.eff          Efficiency function for HiLat
-        \---- ma*.eff                  Efficiency function for Mike A.
+CFEPS-HL-MA
+  \---- README.cfeps-hl-ma (this file)  Describes content of the directory
+   \--------- README.format             Describes format of a survey "block"
+    \-------- pointings.list            List of pointings and times of the
+    |                                   survey, often grouped into chunks.
+     \------- LnX-smooth.eff            Efficiency function for CFEPS block.
+      \------ presurvey-smooth.eff      Efficiency function for presurvey
+       \----- HLn*-smooth.eff           Efficiency function for HiLat
+        \---- ma*.eff                   Efficiency function for Mike A.
 	    
 --------------------------------------------------------------------------------

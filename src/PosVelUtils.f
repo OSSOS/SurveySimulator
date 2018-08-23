@@ -35,7 +35,7 @@ Cf2py intent(out) ierr
      $  ind, ierr, n_planets, istat
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
      $  jday_min = 2415020.0, jday_max = 2488070.0, n_planets = 8,
      $  mu = TwoPi**2)
 
@@ -300,7 +300,7 @@ Cf2py intent(out) ierr
      $  ind, ierr, n_planets
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
      $  jday_min = 2415020.0, jday_max = 2488070.0, n_planets = 8)
 
       real*8
@@ -421,7 +421,7 @@ Cf2py intent(out) ierr
      $  ind, ierr, n_planets, istat
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
      $  jday_min = 2415020.0, jday_max = 2488070.0, n_planets = 8,
      $  mu = TwoPi**2)
 

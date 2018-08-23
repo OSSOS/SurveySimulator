@@ -560,7 +560,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
      $  r, delta, robs, h, g, alpha, mag, Pi, raddeg, denom, phi1, phi2
 
       parameter
-     $  (Pi = 3.141592653589793d0, raddeg = 180.0d0/Pi)
+     $  (Pi = 3.141592653589793238d0, raddeg = 180.0d0/Pi)
 
       ierr = 0
       denom = 2.d0*r*delta
@@ -667,7 +667,7 @@ Cf2py intent(out) ierr
      $  string*13
 
       parameter
-     $  (Pi = 3.141592653589793d0, raddeg = 180.0d0/Pi)
+     $  (Pi = 3.141592653589793238d0, raddeg = 180.0d0/Pi)
 
       ierr = 0
       if (incode .eq. 1) then
@@ -741,7 +741,7 @@ Cf2py intent(out) y
 
       data
      1  compte /0/,
-     1  pi /3.14159265358979d0/
+     1  pi /3.141592653589793238d0/
 
       save x1, x2, compte, pi
 
@@ -859,7 +859,7 @@ Cf2py intent(out) r
      $  pos(3), lat, long, r, Pi, TwoPi
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi)
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi)
 
       r = dsqrt (pos(1)**2 + pos(2)**2 + pos(3)**2)
       long = datan2(pos(2), pos(1))
@@ -995,7 +995,7 @@ cSome values better set up as parameters
      $  TwoPi                   ! 2*Pi
 c Set the values
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi)
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi)
 
   771 if (var .gt. TwoPi) then
              var = var - TwoPi
@@ -1146,7 +1146,7 @@ Cf2py intent(out) ierr
      $  screen
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi,
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi,
      $  drad = Pi/180.0d0, screen = 6)
 
       real*8

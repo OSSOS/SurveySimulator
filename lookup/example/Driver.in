@@ -1,6 +1,6 @@
 123456789		! Random number generator seed
 0			! Number of tracked detections
-../../cfeps
+../../CFEPS
 ./L7model-3.0-9.0
 ./SimulDetect.dat
 ./SimulTrack.dat

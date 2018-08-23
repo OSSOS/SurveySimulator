@@ -38,16 +38,16 @@ $df release to $intended_audience
 EOF
 tail --line=+3 README.first >> $d/README.first
 cp -a eupl* README.contact lookup parametric Python $d/
-for s in cfeps CFEPS-H-MA OSSOS OSSOS-cfeps OSSOS-MA All_Surveys; do
+for s in CFEPS OSSOS All_r_Surveys All_Surveys; do
     mkdir $d/$s
     cp ../$s/* $d/$s/
 done
-for s in cfeps CFEPS-H-MA OSSOS OSSOS-cfeps OSSOS-MA; do
+for s in CFEPS OSSOS All_r_Surveys; do
     \rm -f $d/$s/README.formats
     ln -s ../All_Surveys/README.formats $d/$s/README.formats
 done
 cp src/Driver.{f,py} src/README.* src/ModelUtils.f $d/src/
-\rm -f $d/cfeps/*.py
+\rm -f $d/CFEPS/*.py
 
 # Initialize SurveySubs.f
 cd src

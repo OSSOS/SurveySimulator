@@ -351,7 +351,7 @@ contains
  
     implicit none
 
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, &
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, mu = TwoPi**2
     type(t_orb_m) :: o_mi, o_mo, o_md
     type(t_v3d) :: posi, poso, veli, velo
@@ -528,7 +528,7 @@ contains
 !f2py intent(out) ierr
     implicit none
 
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, &
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, mu = TwoPi**2
     type(t_orb_m) :: o_mi, o_mo, o_md
     type(t_v3d) :: posi, poso, veli, velo

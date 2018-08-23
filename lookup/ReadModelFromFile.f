@@ -180,7 +180,7 @@ c Some values better set up as parameters
      $  drad                    ! Degree to radian convertion: Pi/180
 c Set the values
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi, lun_d = 20,
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, lun_d = 20,
      $  drad = Pi/180.0d0, n_obj_max = 1000, screen = 6, lun_ll = 21)
 
 c Internal storage
@@ -479,7 +479,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
      $  nw_max
 
       parameter
-     $  (Pi = 3.141592653589793d0, drad = Pi/180.0D0, nw_max = 20)
+     $  (Pi = 3.141592653589793238d0, drad = Pi/180.0D0, nw_max = 20)
 
       integer
      $  lun_in, ierr, j, nw, lw(nw_max)

@@ -1,8 +1,0 @@
-83742394		! Random number generator seed
-100			! Number of tracked detections
-./cfeps
-./Resonance_3_2-g.in
-./SimulDetect.dat
-./SimulTrack.dat
-! Survey description directory name
-! Name of model parameter file

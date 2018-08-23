@@ -10,5 +10,5 @@
      $  Pi, drad, TwoHours, eps, TwoPi
 
       parameter
-     $  (Pi = 3.141592653589793d0, drad = Pi/180.0D0,
+     $  (Pi = 3.141592653589793238d0, drad = Pi/180.0D0,
      $  TwoHours = 2.d0/24.d0, TwoPi = 2.0d0*Pi, eps = 1.d-14)

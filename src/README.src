@@ -313,7 +313,7 @@ OUTPUT
 
 The two remaining critical concepts of the survey simulator are:
 
-1. How are detections blocks defined?  See ../cfeps/README.cfeps.
+1. How are detections blocks defined?  See ../CFEPS/README.cfeps.
 2. What does the output from a run look like?  See
    ../parametric/README.parametric.
 	(The lookup-table version+example should be learned last, or

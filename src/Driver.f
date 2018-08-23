@@ -56,7 +56,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
       real*8 Pi, TwoPi, drad
 
-      parameter (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi,
+      parameter (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi,
      $  drad = Pi/180.0d0)
 
 c color array NEEDS to be length 10 or more!

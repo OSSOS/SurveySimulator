@@ -259,7 +259,7 @@ Cf2py intent(in) inc
      $  Pi, TwoPi
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi)
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi)
 
       real*8
      $  fe, s1, angle, t0, t1, t3
@@ -311,7 +311,7 @@ Cf2py intent(in) inc
      $  Pi, TwoPi
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi)
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi)
 
       real*8
      $  fe, s1, angle, t1, t3
@@ -362,7 +362,7 @@ Cf2py intent(in) inc
      $  Pi, TwoPi
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi)
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi)
 
       real*8
      $  fe, s1, angle, t1, t3
@@ -485,7 +485,7 @@ Cf2py intent(out) fe
      $  Pi, TwoPi
 
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi)
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi)
 
       real*8
      $  inc, fe, a, s1, s2, angle, t1, t2, t3

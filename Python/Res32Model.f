@@ -232,8 +232,8 @@ c Some values better set up as parameters
      $  drad                    ! Degree to radian convertion: Pi/180
 c Set the values
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi, drad = Pi/180.0d0,
-     $  lun_m = 20, lun_ll = 21)
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi,
+     $  drad = Pi/180.0d0, lun_m = 20, lun_ll = 21)
 
 c Internal storage
       integer*4
@@ -672,7 +672,7 @@ cSome values better set up as parameters
      $  TwoPi                   ! 2*Pi
 c Set the values
       parameter
-     $  (Pi = 3.141592653589793d0, TwoPi = 2.0d0*Pi)
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi)
 
   771 if (var .gt. TwoPi) then
              var = var - TwoPi

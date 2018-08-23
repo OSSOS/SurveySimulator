@@ -33,7 +33,7 @@ contains
     implicit none
 
     integer, parameter :: n_planets = 8
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, &
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, jday_min = 2415020.0, jday_max = 2488070.0, &
          mu = TwoPi**2
     type(t_v3d) :: pos, vel, pos_p, vel_p
@@ -268,7 +268,7 @@ contains
 !f2py intent(out) ierr
     implicit none
 
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, &
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, jday_min = 2415020.0, jday_max = 2488070.0
     integer, parameter :: n_planets = 8
     type(t_orb_m) :: o_m
@@ -383,7 +383,7 @@ contains
 
     implicit none
 
-    real (kind=8), parameter :: Pi = 3.141592653589793d0, TwoPi = 2.d0*Pi, &
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, jday_min = 2415020.0, jday_max = 2488070.0, &
          mu = TwoPi**2
     integer, parameter :: n_planets = 8
