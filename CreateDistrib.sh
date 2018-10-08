@@ -41,6 +41,7 @@ cp -a eupl* README.contact lookup parametric Python $d/
 for s in CFEPS OSSOS All_r_Surveys All_Surveys; do
     mkdir $d/$s
     cp ../$s/* $d/$s/
+    \rm $d/$s/*pointings
 done
 for s in CFEPS OSSOS All_r_Surveys; do
     \rm -f $d/$s/README.formats

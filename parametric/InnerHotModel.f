@@ -70,7 +70,7 @@ c 20 to 25. This range in reseved for them and won't be used by the
 c drivers nor SurveySubs routines.
 c
 c It is good practice that when first started, the GiMeObj routine
-c writes a file describing the model used, the versino and the date of
+c writes a file describing the model used, the version and the date of
 c the routine.
 c
 c Since this routine is called once for every object created, it needs
@@ -78,14 +78,17 @@ c to get all the required parameters once when it is called the first
 c time, then save these values for future use.
 c
 c The following routine gives a working example of a model routine. It
-c is probably worth reading it through.
+c is probably worth reading it through carefully the first time.
 c
 c The survey simulator expects orbital elements with respect to ecliptic
-c reference frame.
+c reference frame since it is in that frame that orbits are propogated
+c for observability.  You may, however, want to generate orbits with respect
+c to a different reference plane and convert at the end just before passing
+c the orbit back.
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 c
-c File generated on 2013-07-01
+c File generated on 2017-09-01
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 c Authors: J-M. Petit (Observatoire de Besancon, France)
@@ -115,10 +118,10 @@ c     node  : Longitude of ascending node [rad] (R8)
 c     peri  : Argument of perihelion [rad] (R8)
 c     M     : Mean anomaly [rad] (R8)
 c     epoch : epoch for M (and rotational phase below), in Julian Day (R8)
-c     h     : Absolute magnitude of object in 'x' band (R8)
+c     h     : Absolute magnitude of object in 'x' band (R8)  Often x = r.
 c     color : Array of colors (10*R8), "y-x", where the index "y" is:
 c                colors(1) : g-x
-c                colors(2) : r-x
+c                colors(2) : r-x         will be zero if x band is r.
 c                colors(3) : i-x
 c                colors(4) : z-x
 c                colors(5) : u-x
@@ -145,7 +148,7 @@ c wish; this comment string will be printed in the driver on the output
 c line of each detection.  Examples of the comment might be resonance name
 c and libration amplitude, or the name of a component in the GiMeObj model
 c that the object responds to.  The nchar variable (passed back to Driver)
-c allows the user to pring only the first nchar characters of this string.
+c allows the user to print only the first nchar characters of this string.
 c
 c This routine uses logical unit 20 to access the file containing the model.
 c
@@ -304,16 +307,16 @@ c     Determination of "i" distribution. Width was read as brown_params(1)
  1200 continue
 c     This utitily returns, when there is one parameter, an i drawn from
 c      a sin(i)*gaussian inclination distribution.
+c     The 7 below is a unique code assigned to this distribution for speed.
       call incdism (seed, nparam, param, incmin, incmax, inc,
      $  7, ierr, onecomp)
-c BG: What the heck is "7" above????
 c     Rejects if inclination in the nu8 secular instability zone
       if ( (inc .gt. inimin) .and. (inc .lt. inimax) ) goto 1200
 
 c     This is the hot component.  This is an example of using the optional
 c     character strings to log information about the detected objects.
 c     More useful for resonances, where libration amplitude and mode could
-c     be logged, for example
+c     be logged, for example.  Note this 7 and the one above are unrelated.
       commen = 'h inner'
       nchar = 7
 
