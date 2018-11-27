@@ -589,6 +589,74 @@ contains
     return
   end subroutine ref_ecl_inc_node
 
+  subroutine forced_plane(a, ifd, Omfd)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+! This routine returns the inclination iforced and node Omforced of the
+! forced plane as a function of semimajor-axis in the region of the
+! main classical Kuiper belt, according to second order theory with all
+! 8 planets.
+!
+! The fit is valid only between 38 and 50 au.
+!
+! Returns degrees.
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : April 2018
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+! INPUT
+!     a     : semimajor-axis [au] (R8)
+!
+! OUTPUT
+!     ifd   : Inclination of forced plane [deg] (R8)
+!     Omfd  : Node of forced plane [deg] (R8)
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+!
+! Set of F2PY directives to create a Python module
+!
+!f2py intent(in) a
+!f2py intent(out) ifd
+!f2py intent(out) Omfd
+    implicit none
+
+! Calling arguments
+    real (kind=8) ::  a, ifd, Omfd
+
+! Internal variables
+    real (kind=8) :: cil(3), cih(3), col(5), coh(5), alpha, beta, gamma, delta
+
+    data &
+         cil /-0.488840342d0, 40.7399788d0, 0.113652855d0/, &
+         cih /0.386772037d0, 40.2969894d0, 0.147950292d0/,  &
+         col /10.6460190d0, -258.080994d0, 34.8588257d0, -1212.39307d0, 98.5600891d0/, &
+         coh /38.5527039d0, -1522.00745d0, 1.09003317d0, 51.9270477d0, 1155.09644d0/, &
+         alpha /1.d0/
+
+    if ((a .lt. 38.d0) .or. (a .gt. 50.)) then
+       ifd = 0.d0
+       Omfd = 0.d0
+    else if (a .le. 40.5d0) then
+       ifd = 10.d0**(cil(1)/(a - cil(2)) + cil(3))
+       beta = -((col(1) + col(3))*a + col(2) + col(4))
+       gamma = (col(1)*a + col(2))*(col(3)*a + col(4)) - col(5)
+       delta = max(0., beta**2 - 4.d0*alpha*gamma)
+       Omfd = (-beta + sqrt(delta))/(2.d0*alpha)
+    else
+       ifd = 10.d0**(cih(1)/(a - cih(2)) + cih(3))
+       beta = -((coh(1) + coh(3))*a + coh(2) + coh(4))
+       gamma = (coh(1)*a + coh(2))*(coh(3)*a + coh(4)) - coh(5)
+       delta = max(0., beta**2 - 4.d0*alpha*gamma)
+       Omfd = (-beta - sqrt(delta))/(2.d0*alpha)
+    end if
+    ifd = min(ifd, 40.d0)
+ 
+    return
+
+  end subroutine forced_plane
+
   subroutine ztopi (var)
 
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
