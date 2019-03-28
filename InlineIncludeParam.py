@@ -11,25 +11,25 @@ def read_file_raw(fichier):
     iter = 0
     while True:
         try:
-	    f = file(fichier,'r')
-	except IOError:
+            f = open(fichier,'r')
+        except IOError:
             try:
                 fg = gzip.open(fichier+'.gz','r')
             except IOError:
-                print 'Cannot open', fichier, ' nor ', fichier+'.gz'
+                print ('Cannot open', fichier, ' nor ', fichier+'.gz')
                 iter += 1
                 if iter > 5:
-                    print 'Something is wrong, quitting!'
+                    print ('Something is wrong, quitting!')
                     lines = None
                     break
-                fichier = raw_input('Please re-enter the file name: ')
+                fichier = input('Please re-enter the file name: ')
             else:
                 lines = fg.readlines()
                 fg.close()
                 break
         else:
-	    lines = f.readlines()
-	    f.close()
+            lines = f.readlines()
+            f.close()
             break
     return lines
 

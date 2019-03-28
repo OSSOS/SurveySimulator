@@ -202,7 +202,7 @@ c mag_max in 'x' filter
             mag_max = sur_mmag(i_sur) - color(sur_f(i_sur))
             if (mag_max .gt. mag_faint) mag_faint = mag_max
             if (debug) then
-               write (verbose, *), i_sur, mag_max, mag_faint
+               write (verbose, *) i_sur, mag_max, mag_faint
             end if
          end do
          if (debug) then
@@ -266,8 +266,11 @@ c mag_peri in 'x' filter
 
                newpos = .false.
                if (abs(jdayp_l-jday_o) .gt. 0.1d0) then
-                  mt_l = mt0
-     $              + (twopi/(a**1.5d0*365.25d0))*(jdayp_l-jday)
+c $\Delta M = \sqrt(k^2 M_tot/a^3) \Delta t$
+c where $M_tot$ is the total mass of the system, and
+c $k^2 = (2 \Pi / 365.25)^2$
+                  mt_l = mt0 + sqrt(gmb)
+     $              *(twopi/(a**1.5d0*365.25d0))*(jdayp_l-jday)
                   mt_l = mt_l - int(mt_l/twopi)*twopi
                   call pos_cart (a, e, inc, node, peri, mt_l, pos(1),
      $              pos(2), pos(3))
@@ -346,16 +349,16 @@ c Here we use polygons.
 
 c Check for chip gaps, ..., the filling factor.
                      random = ran3(seed)
+                     if (debug) then
+                        write (verbose, *)
+     $                    'In FOV of survey. Check filling factor.'
+                        write (verbose, *) random, ff
+                     end if
                      if (random .le. ff) then
 
-                        if (debug) then
-                           write (verbose, *)
-     $                       'In FOV of survey. Check filling factor.'
-                           write (verbose, *) random, ff
-                        end if
 c Well, how is its rate of motion ? Within the rate cut or not ?
                         mt_l = mt0 + (twopi/(a**1.5d0*365.25d0))*(jday_o
-     $                    + jdayp2 - jdayp_l - jday)
+     $                    + jdayp2 - jdayp_l - jday)*sqrt(gmb)
                         mt_l = mt_l - int(mt_l/twopi)*twopi
                         call pos_cart (a, e, inc, node, peri, mt_l,
      $                    pos2(1), pos2(2), pos2(3))
@@ -367,7 +370,7 @@ c Well, how is its rate of motion ? Within the rate cut or not ?
      $                       'Check for second position.'
                            write (verbose, *) mt_l
                            write (verbose, *) pos2(1), pos2(2), pos2(3)
-                           write (verbose, *) delta2, ra2, dec2
+                           write (verbose, *) delta2, ra2/drad,dec2/drad
                         end if
                         d_ra_l = ra_l - ra2
                         if (d_ra_l .gt. Pi) d_ra_l = d_ra_l - TwoPi
@@ -447,6 +450,11 @@ c Determine if tracked
                                  flag_l = 2
                               end if
 c Decide if characterized or not
+                              if (debug) then
+                                 write (verbose, *)
+     $                             'Checking for characterization. ',
+     $                             m_rand_l, maglim, eff_l, eff_lim
+                              end if
                               if (maglim .gt. 0.d0) then
                                  if (m_rand_l .le. maglim)
      $                             flag_l = flag_l + 2
@@ -796,10 +804,12 @@ Cf2py intent(out) magerr
       implicit none
 
       real*8
-     $  mag_t, mag_er(*), magerr, mag, tmp, mag_th
+     $  mag_t, mag_er(*), magerr, mag, tmp, mag_th, ran3
 
       integer*4
      $  seed, i
+
+      external ran3
 
       mag_th = mag_t
 c      tmp = log10(mag_er(2)/mag_er(1))/(mag_er(3)-21.d0)
@@ -813,7 +823,13 @@ c         magerr = max(mag_er(1)*10.d0**(tmp*(mag_er(3)-21.d0))
          magerr = max(mag_er(1)*10.d0**(mag_er(2)*(mag_er(3)-21.d0))
      $     - (mag_th - mag_er(3))*mag_er(4), 0.d0)
       end if
-      call dgauss(seed, tmp)
+c      call dgauss(seed, tmp)
+      tmp = ran3(seed)
+      if (tmp .le. 0.5) then
+         tmp = sqrt(6.d0)*(sqrt(2.d0*tmp) - 1.d0)
+      else
+         mag = sqrt(6.d0)*(1.d0 - sqrt(2.d0*(1.d0-tmp)))
+      end if
       mag = mag_th + magerr*tmp
 c      write (19, *) (mag_er(i), i=1,6)
 c      write (19, *) mag_th, magerr, tmp, mag
@@ -1150,6 +1166,15 @@ Cf2py intent(out) ierr
      $  drad = Pi/180.0d0, screen = 6)
 
       real*8
+     $  gmb
+
+      parameter
+     $  (gmb = 1.d0+1.d0/6023600.0d0+1.d0/408523.71d0
+     $  +1.d0/328900.56d0+1.d0/3098708.0d0+1.d0/1047.3486d0
+     $  +1.d0/3497.898d0+1.d0/22902.98d0+1.d0/19412.24d0
+     $  +1.d0/1.35d8)
+
+      real*8
      $  a, e, inc, node, peri, tperi, mt, h, jday, pos(3),
      $  r, delta, alpha, ra, dec, obpos(3), ros, gb, tmp(3),
      $  mag
@@ -1166,7 +1191,10 @@ Cf2py intent(out) ierr
          write (screen, *) 'ierr = ', ierr
          return
       end if
-      mt = (twopi/(a**1.5d0*365.25d0))*(jday-tperi)
+c $\Delta M = \sqrt(k^2 M_tot/a^3) \Delta t$
+c where $M_tot$ is the total mass of the system, and
+c $k^2 = (2 \Pi / 365.25)^2$
+      mt = (twopi/(a**1.5d0*365.25d0))*(jday-tperi)*sqrt(gmb)
       mt = mt - int(mt/twopi)*twopi
       call pos_cart (a, e, inc, node, peri, mt, pos(1),
      $  pos(2), pos(3))

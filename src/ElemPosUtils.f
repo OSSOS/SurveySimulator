@@ -16,6 +16,8 @@ c \verb|a, e, inc, capo, smallo, capm| = osculating elements \\
 c \verb|x, y, z, vx, vy, vz| = cartesian variables: $X, Y, Z, Px, Py, Pz$
 c \end{verse}
 c
+c Angles are in [radian]
+c
 c \subsubsection{Declarations}
 c
 Cf2py intent(in) mu
@@ -174,6 +176,8 @@ c \begin{verse}
 c \verb|a, e, inc, capo, smallo, capm| = osculating elements \\
 c \verb|x, y, z| = cartesian variables: $X, Y, Z$
 c \end{verse}
+c
+c Angles are in [radian]
 c
 c \subsubsection{Declarations}
 c

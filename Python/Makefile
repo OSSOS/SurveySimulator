@@ -9,9 +9,11 @@ Modules: SurveySubs.so GiMeObj.so ModelUtils.so Makefile
 
 SurveySubs.so: SurveySubs.f Makefile
 	f2py -c --f77exec=$(FC) --f77flags=-fPIC --f90flags=-fPIC -m SurveySubs SurveySubs.f
+	mv SurveySubs.*.so SurveySubs.so
 
 ModelUtils.so: ModelUtils.f Makefile
 	f2py -c --f77exec=$(FC) --f77flags=-fPIC --f90flags=-fPIC -m ModelUtils ./SurveySubs.so ModelUtils.f
+	mv ModelUtils.*.so ModelUtils.so
 
 #GiMeObj.so: InnerBeltModel.f SurveySubs.so Makefile
 #	\rm -f GiMeObj.f
@@ -24,6 +26,7 @@ GiMeObj.so: Res32Model.f SurveySubs.so Makefile
 	ln -s Res32Model.f GiMeObj.f
 	f2py -c --f77exec=$(FC) --f77flags=-fPIC -m GiMeObj ./SurveySubs.so GiMeObj.f
 	\rm GiMeObj.f
+	mv GiMeObj.*.so GiMeObj.so
 
 clean:
 	\rm -f *.o core SurveySimulator

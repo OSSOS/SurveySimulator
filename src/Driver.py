@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import sys
 sys.path.append('.')
@@ -11,19 +11,19 @@ import GiMeObj
 
 # Read in driver arguments
 # Seed for random number generator
-str = raw_input()
+str = input()
 seed = int(str.split()[0])
 # Maximum number of detections (>0) or -maximum number of trials (<0)
-str=raw_input()
+str=input()
 n_track_max = int(str.split()[0])
 # Directory containing the characterization files
-survey_dir = raw_input()
+survey_dir = input()
 # File with model parameters
-distri_file = raw_input()
+distri_file = input()
 # Output file for detections
-detect_file = raw_input()
+detect_file = input()
 # Output file for tracked objects
-track_file = raw_input()
+track_file = input()
 
 # Open detection file and write header
 f_detect = open(detect_file, 'w')
