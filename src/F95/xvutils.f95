@@ -4,7 +4,7 @@ module xvutils
   use rot
 
 contains
-  subroutine BaryXV (jday, pos, vel, ierr)
+  subroutine BaryXV0 (jday, pos, vel, ierr)
 
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine gives the position and velocity in ecliptic heliocentric
@@ -68,6 +68,95 @@ contains
     msys = mu
     do ind = 1, n_planets
        call PlanetXV (ind, jday, pos_p, vel_p, istat)
+       if (istat .ne. 0) then
+          ierr = istat
+          return
+       end if
+       mp = mu/masses(ind)
+       msys = msys + mp
+       pos%x = pos%x + mp*pos_p%x
+       pos%y = pos%y + mp*pos_p%y
+       pos%z = pos%z + mp*pos_p%z
+       vel%x = vel%x + mp*vel_p%x
+       vel%y = vel%y + mp*vel_p%y
+       vel%z = vel%z + mp*vel_p%z
+    end do
+    pos%x = pos%x/msys
+    pos%y = pos%y/msys
+    pos%z = pos%z/msys
+    vel%x = vel%x/msys
+    vel%y = vel%y/msys
+    vel%z = vel%z/msys
+
+    return
+
+  end subroutine BaryXV0
+
+  subroutine BaryXV (jday, pos, vel, ierr)
+
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! This routine gives the position and velocity in ecliptic heliocentric
+! reference frame of the Solar System barycenter at a given time. Uses
+! PlanetXV.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : February 2004
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     jday  : Time of elements (Julian day) (R8)
+!
+! OUTPUT
+!     pos   : Position vector (3*R8)
+!     vel   : Velocity vector (3*R8)
+!     ierr  : Error code (I4)
+!                0 : nominal run
+!               20 : jday out of range
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) jday
+!f2py intent(out) pos
+!f2py intent(out) vel
+!f2py intent(out) ierr
+      implicit none
+
+    integer, parameter :: n_planets = 9
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
+         drad = Pi/180.d0, jday_min = 2415020.0, jday_max = 2488070.0, &
+         mu = TwoPi**2
+    type(t_v3d) :: pos, vel, pos_p, vel_p
+    real (kind=8) :: jday
+    integer :: ind, ierr, istat
+    real (kind=8) :: masses(n_planets), msys, mp
+
+    data masses /6023600.0d0,   &  ! Mercury
+                  408523.71d0,  &  ! Venus
+                  328900.56d0,  &  ! Earth + Moon
+                 3098708.0d0,   &  ! Mars
+                    1047.3486d0,&  ! Jupiter
+                    3497.898d0, &  ! Saturn
+                   22902.98d0,  &  ! Uranus
+                   19412.24d0,  &  ! Neptune
+                       1.35d8/     ! Pluto
+
+    ierr = 0
+
+! Jday out of range.
+    if ((jday .lt. jday_min) .or. (jday .gt. jday_max)) then
+       ierr = 20
+       return
+    end if
+
+! Ok, do the math.
+    pos%x = 0.d0
+    pos%y = 0.d0
+    pos%z = 0.d0
+    vel%x = 0.d0
+    vel%y = 0.d0
+    vel%z = 0.d0
+    msys = mu
+    do ind = 1, n_planets
+       call PlanetXV1 (ind, jday, pos_p, vel_p, istat)
        if (istat .ne. 0) then
           ierr = istat
           return
@@ -269,7 +358,7 @@ contains
     implicit none
 
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
-         drad = Pi/180.d0, jday_min = 2415020.0, jday_max = 2488070.0
+         drad = Pi/180.d0, jday_min = 2415020.0d0, jday_max = 2488070.0d0
     integer, parameter :: n_planets = 8
     type(t_orb_m) :: o_m
     real (kind=8) :: jday
@@ -384,7 +473,7 @@ contains
     implicit none
 
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
-         drad = Pi/180.d0, jday_min = 2415020.0, jday_max = 2488070.0, &
+         drad = Pi/180.d0, jday_min = 2415020.0d0, jday_max = 2488070.0d0, &
          mu = TwoPi**2
     integer, parameter :: n_planets = 8
     type(t_v3d) :: pos, vel
@@ -428,6 +517,247 @@ contains
     return
 
   end subroutine PlanetXV
+
+  subroutine PlanetElem1 (ind, jday, o_m, ierr)
+
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! This routine gives the osculating elements in heliocentric reference
+! frame of a planet at a given time. From given elements and rates.
+! Valid roughly from 1800 to 2050.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : February 2004
+! Version 2 : January 2019
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     ind   : Planet index (I4)
+!                1 : Mercury
+!                2 : Venus
+!                3 : Earth
+!                4 : Mars
+!                5 : Jupiter
+!                6 : Saturn
+!                7 : Uranus
+!                8 : Neptune
+!                9 : Pluto
+!     jday  : Time of elements (Julian day) (R8)
+!
+! OUTPUT
+!     o_m   : Orbital elements (t_orb_m)
+!     ierr  : Error code (I4)
+!                0 : nominal run
+!               10 : Unknown planet index
+!               20 : jday out of range
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) ind
+!f2py intent(in) jday
+!f2py intent(out) o_m
+!f2py intent(out) ierr
+    implicit none
+
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
+         drad = Pi/180.d0, jday_min = 2378496.5d0, jday_max = 2469807.5d0
+    integer, parameter :: n_planets = 9
+    type(t_orb_m) :: o_m
+    real (kind=8) :: jday
+    integer :: ind, ierr
+    real (kind=8) :: a_p(n_planets), e_p(n_planets), i_p(n_planets), &
+         node_p(n_planets), peri_p(n_planets), capm_p(n_planets), &
+         da_p(n_planets), de_p(n_planets), di_p(n_planets), &
+         dnode_p(n_planets), dperi_p(n_planets), dcapm_p(n_planets), &
+         jday_p, dt
+
+! Elements are given in heliocentric reference frame.
+    data &
+         jday_p /2451545.0/, &
+         a_p / 0.38709893, 0.72333199, 1.00000011, 1.52366231, &
+         5.20336301, 9.53707032, 19.19126393, 30.06896348/, &
+         e_p /0.20563069, 0.00677323, 0.01671022, 0.09341233, &
+         0.04839266, 0.05415060, 0.04716771, 0.00858587/, &
+         i_p /7.00487, 3.39471, 0.00005, 1.85061, 1.30530, 2.48446, &
+         0.76986, 1.76917/, &
+         node_p /48.33167, 76.68069, -11.26064, 49.57854, 100.55615, &
+         113.71504, 74.22988, 131.72169/, &
+         peri_p /77.45645, 131.53298, 102.94719, 336.04084, 14.75385, &
+         92.43194, 170.96424, 44.97135/, &
+         capm_p /252.25084000, 181.97973000, 100.46435000, 355.45332000, &
+         34.40438000, 49.94432000, 313.23218000, 304.88003000/, &
+         da_p/0.00000066, 0.00000092, -0.00000005, -0.00007221, &
+         0.00060737, -0.00301530, 0.00152025, -0.00125196/, &
+         de_p/0.00002527, -0.00004938, -0.00003804, 0.00011902, &
+         -0.00012880, -0.00036762, -0.00019150, 0.00002510/, &
+         di_p/-23.51, -2.86, -46.94, -25.47, -4.15, 6.11, -2.09, -3.64/, &
+         dnode_p /-446.30, -996.89, -18228.25, -1020.19, 1217.17, &
+         -1591.05, -1681.40, -151.25/, &
+         dperi_p /573.57, -108.80, 1198.28, 1560.78, 839.93, -1948.89, &
+         1312.56, -844.43/, &
+         dcapm_p /538101628.29, 210664136.06, 129597740.63, 68905103.78, &
+         10925078.35, 4401052.95, 1542547.79, 786449.21/
+    data &
+         jday_p /2451545.0d0/, &
+         a_p / 0.38709927d0, 0.72333566d0, 1.00000261d0, 1.52371034d0, &
+         5.20288700d0, 9.53667594d0, 19.18916464d0, 30.06992276d0, &
+         39.48211675d0/, &
+         e_p / 0.20563593d0, 0.00677672d0, 0.01671123d0, 0.09339410d0, &
+         0.04838624d0, 0.05386179d0, 0.04725744d0, 0.00859048d0, &
+         0.24882730d0/, &
+         i_p / 7.00497902d0, 3.39467605d0, -0.00001531d0, 1.84969142d0, &
+         1.30439695d0, 2.48599187d0, 0.77263783d0, 1.77004347d0, &
+         17.14001206d0/, &
+         capl_p / 252.25032350d0, 181.97909950d0, 100.46457166d0, &
+         -4.55343205d0, 34.39644051d0, 49.95424423d0, 313.23810451d0, &
+         -55.12002969d0, 238.92903833d0/, &
+         peri_p / 77.45779628d0, 131.60246718d0, 102.93768193d0, &
+         -23.94362959d0, 14.72847983d0, 92.59887831d0, 170.95427630d0, &
+         44.96476227d0, 224.06891629d0/, &
+         node_p / 48.33076593d0, 76.67984255d0, 0.0d0, 49.55953891d0, &
+         100.47390909d0, 113.66242448d0, 74.01692503d0, 131.78422574d0, &
+         110.30393684d0/, &
+         da_p / 0.00000037d0, 0.00000390d0, 0.00000562d0, 0.00001847d0, &
+         -0.00011607d0, -0.00125060d0, -0.00196176d0, 0.00026291d0, &
+         -0.00031596d0/, &
+         de_p / 0.00001906d0, -0.00004107d0, -0.00004392d0, 0.00007882d0, &
+         -0.00013253d0, -0.00050991d0, -0.00004397d0, 0.00005105d0, &
+         0.00005170d0/, &
+         di_p / -0.00594749d0, -0.00078890d0, -0.01294668d0, &
+         -0.00813131d0, -0.00183714d0, 0.00193609d0, -0.00242939d0, &
+         0.00035372d0, 0.00004818d0/, &
+         dcapl_p / 149472.67411175d0, 58517.81538729d0, 35999.37244981d0, &
+         19140.30268499d0, 3034.74612775d0, 1222.49362201d0, &
+         428.48202785d0, 218.45945325d0, 145.20780515d0/, &
+         dperi_p / 0.16047689d0, 0.00268329d0, 0.32327364d0, &
+         0.44441088d0, 0.21252668d0, -0.41897216d0, 0.40805281d0, &
+         -0.32241464d0, -0.04062942d0/, &
+         dnode_p / -0.12534081d0, -0.27769418d0, 0.0d0, -0.29257343d0, &
+         0.20469106d0, -0.28867794d0, 0.04240589d0, -0.00508664d0, &
+         -0.01183482d0/
+
+    ierr = 0
+
+! Wrong planet index.
+    if ((ind .lt. 1) .or. (ind .gt. n_planets)) then
+       ierr = 10
+       return
+    end if
+
+! Jday out of range.
+    if ((jday .lt. jday_min) .or. (jday .gt. jday_max)) then
+       ierr = 20
+       return
+    end if
+
+! Ok, do the math.
+! Rates are given in arcsecond per century, and angles in degree. Also we
+! have all longitudes, when we need arguments. So tranformin arguments
+! and radians.
+    dt = (jday - jday_p)/365.25d0/100.d0
+    o_m%a = a_p(ind) + dt*da_p(ind)
+    o_m%e = e_p(ind) + dt*de_p(ind)
+    o_m%inc = (i_p(ind) + dt*di_p(ind))*drad
+    o_m%node = (node_p(ind) + dt*dnode_p(ind))*drad
+
+! Longitude of pericenter
+    o_m%peri = (peri_p(ind) + dt*dperi_p(ind))*drad
+
+! Mean longitude. Change to mean anomaly
+    o_m%m = (capm_p(ind) + dt*dcapm_p(ind))*drad - o_m%peri
+
+! Now get argument of pericenter
+    o_m%peri = o_m%peri - o_m%node
+
+    return
+
+  end subroutine PlanetElem1
+
+  subroutine PlanetXV1 (ind, jday, pos, vel, ierr)
+
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! This routine gives the position and velocity in ecliptic heliocentric
+! reference frame of a planet at a given time. Uses PlanetElem1.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : February 2004
+! Version 2 : January 2019    
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     ind   : Planet index (I4)
+!                1 : Mercury
+!                2 : Venus
+!                3 : Earth
+!                4 : Mars
+!                5 : Jupiter
+!                6 : Saturn
+!                7 : Uranus
+!                8 : Neptune
+!                9 : Pluto    
+!     jday  : Time of elements (Julian day) (R8)
+!
+! OUTPUT
+!     pos   : Position vector (3*R8)
+!     vel   : Velocity vector (3*R8)
+!     ierr  : Error code (I4)
+!                0 : nominal run
+!               10 : Unknown planet index
+!               20 : jday out of range
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) ind
+!f2py intent(in) jday
+!f2py intent(out) pos
+!f2py intent(out) vel
+!f2py intent(out) ierr
+
+    implicit none
+
+    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
+         drad = Pi/180.d0, jday_min = 2415020.0d0, jday_max = 2488070.0d0, &
+         mu = TwoPi**2
+    integer, parameter :: n_planets = 9
+    type(t_v3d) :: pos, vel
+    real (kind=8) :: jday
+    integer :: ind, ierr, istat
+    type(t_orb_m) :: o_m
+    real (kind=8) :: masses(n_planets), gm
+
+    data masses /6023600.0d0,   &  ! Mercury
+                  408523.7d0,   &  ! Venus
+                  328900.56d0,  &  ! Earth + Moon
+                 3098708.0d0,   &  ! Mars
+                    1047.3486d0,&  ! Jupiter
+                    3497.898d0, &  ! Saturn
+                   22902.98d0,  &  ! Uranus
+                   19412.24d0,  &  ! Neptune
+                       1.35d8/     ! Pluto
+
+    ierr = 0
+
+! Wrong planet index.
+    if ((ind .lt. 1) .or. (ind .gt. n_planets)) then
+       ierr = 10
+       return
+    end if
+
+! Jday out of range.
+    if ((jday .lt. jday_min) .or. (jday .gt. jday_max)) then
+       ierr = 20
+       return
+    end if
+
+! Ok, do the math.
+    call PlanetElem1 (ind, jday, o_m, istat)
+    if (istat .ne. 0) then
+       ierr = istat
+       return
+    end if
+    gm = mu*(1.d0 + 1.d0/masses(ind))
+    call coord_cart (gm, o_m, pos, vel)
+
+    return
+
+  end subroutine PlanetXV1
 
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine gives the cartesian coordinates of the Earth at a given

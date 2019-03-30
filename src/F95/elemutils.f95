@@ -19,6 +19,8 @@ contains
 ! \verb|x, y, z, vx, vy, vz| = cartesian variables: $X, Y, Z, Px, Py, Pz$
 ! \end{verse}
 !
+! Angles are in [radian]
+!
 ! \subsubsection{Declarations}
 !
 !f2py intent(in) mu
@@ -161,6 +163,8 @@ contains
 ! \verb|a, e, inc, node, peri, m| = osculating elements \\
 ! \verb|x, y, z| = cartesian variables: $X, Y, Z$
 ! \end{verse}
+!
+! Angles are in [radian]
 !
 ! \subsubsection{Declarations}
 !

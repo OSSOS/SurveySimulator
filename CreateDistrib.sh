@@ -16,6 +16,7 @@ if [ -d $d ]; then
 fi
 mkdir $d
 mkdir $d/src
+mkdir $d/srcF95
 if [ -e ../CurrentDistrib ]; then
     \rm ../CurrentDistrib
 fi
@@ -48,7 +49,10 @@ for s in CFEPS OSSOS All_r_Surveys; do
     ln -s ../All_Surveys/README.formats $d/$s/README.formats
 done
 cp src/Driver.{f,py} src/README.* src/ModelUtils.f $d/src/
+cp src/F95/*.f95 src/F95/Makefile $d/srcF95/
+cp src/README.* $d/srcF95/
 \rm -f $d/CFEPS/*.py
+\rm -f $d/srcF95/test*f95
 
 # Initialize SurveySubs.f
 cd src

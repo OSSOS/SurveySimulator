@@ -596,7 +596,8 @@ contains
 ! main classical Kuiper belt, according to second order theory with all
 ! 8 planets.
 !
-! The fit is valid only between 38 and 50 au.
+! The fit is valid only between 35 au and 47.74 au (2:1 MMR).
+! Returns 0 for a < 35 au, and the invariable plane for a > 47.74 au
 !
 ! Returns degrees.
 !
@@ -604,6 +605,7 @@ contains
 !
 ! J-M. Petit  Observatoire de Besancon
 ! Version 1 : April 2018
+! Version 2 : March 2019
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 ! INPUT
@@ -626,30 +628,50 @@ contains
     real (kind=8) ::  a, ifd, Omfd
 
 ! Internal variables
-    real (kind=8) :: cil(3), cih(3), col(5), coh(5), alpha, beta, gamma, delta
+    real (kind=8) :: ci0(4), ci1(3), ci2(3), ci3(3), co0(3), co1(3), co2(5), &
+         co3(5), alpha, beta, gamma, delta
 
     data &
-         cil /-0.488840342d0, 40.7399788d0, 0.113652855d0/, &
-         cih /0.386772037d0, 40.2969894d0, 0.147950292d0/,  &
-         col /10.6460190d0, -258.080994d0, 34.8588257d0, -1212.39307d0, 98.5600891d0/, &
-         coh /38.5527039d0, -1522.00745d0, 1.09003317d0, 51.9270477d0, 1155.09644d0/, &
+         ci0 /-0.115657583d0,34.8097343d0,7.79198557d-02,-1.06252408d0/, &
+         ci1 /-0.392018467d0, 40.5282974d0, 0.137285933/, &
+         ci2 /-0.391531527d0, 40.6837921d0, 0.190758109/, &
+         ci3 /0.391087621d0, 40.2941360d0, 0.146276891/, &
+         co0 /971.35006612732775d0, -50.061061665365997d0, &
+              0.74715152013989472d0/, &
+         co1 /4694.6567730091410d0, -249.62252879980477d0, &
+              3.4214148236506192d0/, &
+         co2 /11.7058372d0, -294.139587d0, 30.8862801d0, &
+              -1049.41772d0, 15.2022839d0/, &
+         co3 /30.4611244d0, -1203.70593d0, 2.47961617d0, &
+              -16.6130295d0, 302.805359d0/, &
          alpha /1.d0/
 
-    if ((a .lt. 38.d0) .or. (a .gt. 50.)) then
+    if (a .lt. 35.d0) then
        ifd = 0.d0
        Omfd = 0.d0
-    else if (a .le. 40.5d0) then
-       ifd = 10.d0**(cil(1)/(a - cil(2)) + cil(3))
-       beta = -((col(1) + col(3))*a + col(2) + col(4))
-       gamma = (col(1)*a + col(2))*(col(3)*a + col(4)) - col(5)
+    else if (a .lt. 37.d0) then
+       ifd = (ci0(1)/(a - ci0(2)) + ci0(3)*a + ci0(4))
+       Omfd = co0(1) + co0(2)*a + co0(3)*a*a
+    else if (a .lt. 39.41d0) then
+       ifd = 10.d0**(ci1(1)/(a - ci1(2)) + ci1(3))
+       Omfd = co1(1) + co1(2)*a + co1(3)*a*a
+    else if (a .lt. 40.47d0) then
+       ifd = 10.d0**(ci2(1)/(a - ci2(2)) + ci2(3))
+       beta = -((co2(1) + co2(3))*a + co2(2) + co2(4))
+       gamma = (co2(1)*a + co2(2))*(co2(3)*a + co2(4)) - co2(5)
        delta = max(0., beta**2 - 4.d0*alpha*gamma)
+! Here we use the (-b + sqrt(\Delta))/(2a) solution
        Omfd = (-beta + sqrt(delta))/(2.d0*alpha)
-    else
-       ifd = 10.d0**(cih(1)/(a - cih(2)) + cih(3))
-       beta = -((coh(1) + coh(3))*a + coh(2) + coh(4))
-       gamma = (coh(1)*a + coh(2))*(coh(3)*a + coh(4)) - coh(5)
+    else if (a .lt. 47.74d0) then
+       ifd = 10.d0**(ci3(1)/(a - ci3(2)) + ci3(3))
+       beta = -((co3(1) + co3(3))*a + co3(2) + co3(4))
+       gamma = (co3(1)*a + co3(2))*(co3(3)*a + co3(4)) - co3(5)
        delta = max(0., beta**2 - 4.d0*alpha*gamma)
+! Here we use the (-b - sqrt(\Delta))/(2a) solution
        Omfd = (-beta - sqrt(delta))/(2.d0*alpha)
+    else
+       ifd = 5713.86d0/3600.d0
+       Omfd = 387390.8d0/3600.d0
     end if
     ifd = min(ifd, 40.d0)
  

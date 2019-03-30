@@ -169,7 +169,7 @@ contains
           mag_max = sur_mmag(i_sur) - color(points(i_sur)%c%f)
           if (mag_max .gt. mag_faint) mag_faint = mag_max
           if (debug) then
-             write (verbose, *), i_sur, mag_max, mag_faint
+             write (verbose, *) i_sur, mag_max, mag_faint
           end if
        end do
        if (debug) then
@@ -214,8 +214,11 @@ contains
 
              newpos = .false.
              if (abs(obspos(1)%jday-jday_o) .gt. 0.1d0) then
-                o_ml%m = o_m%m &
-                     + (twopi/(o_m%a**1.5d0*365.25d0))*(obspos(1)%jday-jday)
+! $\Delta M = \sqrt(k^2 M_tot/a^3) \Delta t$
+! where $M_tot$ is the total mass of the system, and
+! $k^2 = (2 \Pi / 365.25)^2$
+                o_ml%m = o_m%m + sqrt(gmb) &
+                     *(twopi/(o_m%a**1.5d0*365.25d0))*(obspos(1)%jday-jday)
                 o_ml%m = o_ml%m - int(o_ml%m/twopi)*twopi
                 call pos_cart (o_ml, pos)
                 jday_o = obspos(1)%jday
@@ -287,16 +290,16 @@ contains
 
 ! Check for chip gaps, ..., the filling factor.
                    random = ran3(seed)
+                   if (debug) then
+                      write (verbose, *) &
+                           'In FOV of survey. Check filling factor.'
+                      write (verbose, *) random, ff
+                   end if
                    if (random .le. ff) then
 
-                      if (debug) then
-                         write (verbose, *) &
-                              'In FOV of survey. Check filling factor.'
-                         write (verbose, *) random, ff
-                      end if
 ! Well, how is its rate of motion ? Within the rate cut or not ?
                       o_ml%m = o_m%m + (twopi/(o_m%a**1.5d0*365.25d0))*(jday_o &
-                           + obspos(2)%jday - obspos(1)%jday - jday)
+                           + obspos(2)%jday - obspos(1)%jday - jday)*sqrt(gmb)
                       o_ml%m = o_ml%m - int(o_ml%m/twopi)*twopi
                       call pos_cart (o_ml, pos2)
                       call DistSunEcl (obspos(2)%jday, pos2, r2)
@@ -305,7 +308,7 @@ contains
                          write (verbose, *) 'Check for second position.'
                          write (verbose, *) o_ml%m
                          write (verbose, *) pos2%x, pos2%y, pos2%z
-                         write (verbose, *) delta2, ra2, dec2
+                         write (verbose, *) delta2, ra2/drad, dec2/drad
                       end if
                       d_ra_l = ra_l - ra2
                       if (d_ra_l .gt. Pi) d_ra_l = d_ra_l - TwoPi
@@ -373,6 +376,11 @@ contains
                                flag_l = 2
                             end if
 ! Decide if characterized or not
+                            if (debug) then
+                               write (verbose, *) &
+                                    'Checking for characterization. ', &
+                                    m_rand_l, maglim, eff_l, eff_lim
+                            end if
                             if (maglim .gt. 0.d0) then
                                if (m_rand_l .le. maglim) flag_l = flag_l + 2
                             else

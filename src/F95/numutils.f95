@@ -205,7 +205,13 @@ contains
        magerr = max(mag_er(1)*10.d0**(mag_er(2)*(mag_er(3)-21.d0)) &
             - (mag_th - mag_er(3))*mag_er(4), 0.d0)
     end if
-    call dgauss(seed, tmp)
+!    call dgauss(seed, tmp)
+    tmp = ran3(seed)
+    if (tmp .le. 0.5) then
+       tmp = sqrt(6.d0)*(sqrt(2.d0*tmp) - 1.d0)
+    else
+       mag = sqrt(6.d0)*(1.d0 - sqrt(2.d0*(1.d0-tmp)))
+    end if
     mag = mag_th + magerr*tmp
 !      write (19, *) (mag_er(i), i=1,6)
 !      write (19, *) mag_th, magerr, tmp, mag
@@ -521,7 +527,10 @@ contains
     o_m%inc = o_p%inc
     o_m%node = o_p%node
     o_m%peri = o_p%peri
-    o_m%m = (twopi/(o_p%a**1.5d0*365.25d0))*(jday-o_p%tperi)
+! $\Delta M = \sqrt(k^2 M_tot/a^3) \Delta t$
+! where $M_tot$ is the total mass of the system, and
+! $k^2 = (2 \Pi / 365.25)^2$
+    o_m%m = (twopi/(o_p%a**1.5d0*365.25d0))*(jday-o_p%tperi)*sqrt(gmb)
     o_m%m = o_m%m - int(o_m%m/twopi)*twopi
     call pos_cart (o_m, pos)
     call DistSunEcl (jday, pos, r)

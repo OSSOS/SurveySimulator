@@ -397,7 +397,7 @@ Cf2py intent(out) ierr
 
       parameter
      $  (Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
-     $  jday_min = 2415020.0, jday_max = 2488070.0, n_planets = 8)
+     $  jday_min = 2415020.0d0, jday_max = 2488070.0d0, n_planets = 8)
 
       real*8
      $  a_p(n_planets), e_p(n_planets), i_p(n_planets),
@@ -518,7 +518,7 @@ Cf2py intent(out) ierr
 
       parameter
      $  (Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
-     $  jday_min = 2415020.0, jday_max = 2488070.0, n_planets = 8,
+     $  jday_min = 2415020.0d0, jday_max = 2488070.0d0, n_planets = 8,
      $  mu = TwoPi**2)
 
       real*8
@@ -567,11 +567,12 @@ c Ok, do the math.
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c This routine gives the osculating elements in heliocentric reference
 c frame of a planet at a given time. From given elements and rates.
-c Valid roughly from 1900 to 2100.
+c Valid roughly from 1800 to 2050.
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c
 c J-M. Petit  Observatoire de Besancon
 c Version 1 : February 2004
+c Version 2 : January 2019
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
@@ -584,6 +585,7 @@ c                5 : Jupiter
 c                6 : Saturn
 c                7 : Uranus
 c                8 : Neptune
+c                9 : Pluto
 c     jday  : Time of elements (Julian day) (R8)
 c
 c OUTPUT
@@ -714,6 +716,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c
 c J-M. Petit  Observatoire de Besancon
 c Version 1 : February 2004
+c Version 2 : January 2019
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
@@ -726,6 +729,7 @@ c                5 : Jupiter
 c                6 : Saturn
 c                7 : Uranus
 c                8 : Neptune
+c                9 : Pluto
 c     jday  : Time of elements (Julian day) (R8)
 c
 c OUTPUT
@@ -753,7 +757,7 @@ Cf2py intent(out) ierr
 
       parameter
      $  (Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, drad = Pi/180.d0,
-     $  jday_min = 2415020.0, jday_max = 2488070.0, n_planets = 9,
+     $  jday_min = 2415020.0d0, jday_max = 2488070.0d0, n_planets = 9,
      $  mu = TwoPi**2)
 
       real*8

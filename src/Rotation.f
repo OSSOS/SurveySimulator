@@ -694,8 +694,8 @@ c INPUT
 c     a     : semimajor-axis [au] (R8)
 c
 c OUTPUT
-c     ifd   : Inclination of forced plane (R8)
-c     Omfd  : Node of forced plane (R8)
+c     ifd   : Inclination of forced plane [deg] (R8)
+c     Omfd  : Node of forced plane [deg] (R8)
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 c
