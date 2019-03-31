@@ -449,7 +449,7 @@ c Jday out of range.
 
 c Ok, do the math.
 c Rates are given in arcsecond per century, and angles in degree. Also we
-C have all longitudes, when we need arguments. So tranformin arguments
+C have all longitudes, when we need arguments. So tranform in arguments
 C and radians.
       dt = (jday - jday_p)/365.25d0/100.d0
       a = a_p(ind) + dt*da_p(ind)
@@ -686,7 +686,7 @@ c Jday out of range.
 
 c Ok, do the math.
 c Rates are given in arcsecond per century, and angles in degree. Also we
-C have all longitudes, when we need arguments. So tranformin arguments
+C have all longitudes, when we need arguments. So tranform in arguments
 C and radians.
       dt = (jday - jday_p)/365.25d0/100.d0
       a = a_p(ind) + dt*da_p(ind)
