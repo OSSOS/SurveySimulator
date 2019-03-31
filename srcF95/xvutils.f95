@@ -412,7 +412,7 @@ contains
 
 ! Ok, do the math.
 ! Rates are given in arcsecond per century, and angles in degree. Also we
-! have all longitudes, when we need arguments. So tranformin arguments
+! have all longitudes, when we need arguments. So tranform in arguments
 ! and radians.
     dt = (jday - jday_p)/365.25d0/100.d0
     o_m%a = a_p(ind) + dt*da_p(ind)
@@ -564,37 +564,12 @@ contains
     real (kind=8) :: jday
     integer :: ind, ierr
     real (kind=8) :: a_p(n_planets), e_p(n_planets), i_p(n_planets), &
-         node_p(n_planets), peri_p(n_planets), capm_p(n_planets), &
+         node_p(n_planets), peri_p(n_planets), capl_p(n_planets), &
          da_p(n_planets), de_p(n_planets), di_p(n_planets), &
-         dnode_p(n_planets), dperi_p(n_planets), dcapm_p(n_planets), &
+         dnode_p(n_planets), dperi_p(n_planets), dcapl_p(n_planets), &
          jday_p, dt
 
 ! Elements are given in heliocentric reference frame.
-    data &
-         jday_p /2451545.0/, &
-         a_p / 0.38709893, 0.72333199, 1.00000011, 1.52366231, &
-         5.20336301, 9.53707032, 19.19126393, 30.06896348/, &
-         e_p /0.20563069, 0.00677323, 0.01671022, 0.09341233, &
-         0.04839266, 0.05415060, 0.04716771, 0.00858587/, &
-         i_p /7.00487, 3.39471, 0.00005, 1.85061, 1.30530, 2.48446, &
-         0.76986, 1.76917/, &
-         node_p /48.33167, 76.68069, -11.26064, 49.57854, 100.55615, &
-         113.71504, 74.22988, 131.72169/, &
-         peri_p /77.45645, 131.53298, 102.94719, 336.04084, 14.75385, &
-         92.43194, 170.96424, 44.97135/, &
-         capm_p /252.25084000, 181.97973000, 100.46435000, 355.45332000, &
-         34.40438000, 49.94432000, 313.23218000, 304.88003000/, &
-         da_p/0.00000066, 0.00000092, -0.00000005, -0.00007221, &
-         0.00060737, -0.00301530, 0.00152025, -0.00125196/, &
-         de_p/0.00002527, -0.00004938, -0.00003804, 0.00011902, &
-         -0.00012880, -0.00036762, -0.00019150, 0.00002510/, &
-         di_p/-23.51, -2.86, -46.94, -25.47, -4.15, 6.11, -2.09, -3.64/, &
-         dnode_p /-446.30, -996.89, -18228.25, -1020.19, 1217.17, &
-         -1591.05, -1681.40, -151.25/, &
-         dperi_p /573.57, -108.80, 1198.28, 1560.78, 839.93, -1948.89, &
-         1312.56, -844.43/, &
-         dcapm_p /538101628.29, 210664136.06, 129597740.63, 68905103.78, &
-         10925078.35, 4401052.95, 1542547.79, 786449.21/
     data &
          jday_p /2451545.0d0/, &
          a_p / 0.38709927d0, 0.72333566d0, 1.00000261d0, 1.52371034d0, &
@@ -650,7 +625,7 @@ contains
 
 ! Ok, do the math.
 ! Rates are given in arcsecond per century, and angles in degree. Also we
-! have all longitudes, when we need arguments. So tranformin arguments
+! have all longitudes, when we need arguments. So tranform in arguments
 ! and radians.
     dt = (jday - jday_p)/365.25d0/100.d0
     o_m%a = a_p(ind) + dt*da_p(ind)
@@ -662,7 +637,7 @@ contains
     o_m%peri = (peri_p(ind) + dt*dperi_p(ind))*drad
 
 ! Mean longitude. Change to mean anomaly
-    o_m%m = (capm_p(ind) + dt*dcapm_p(ind))*drad - o_m%peri
+    o_m%m = (capl_p(ind) + dt*dcapl_p(ind))*drad - o_m%peri
 
 ! Now get argument of pericenter
     o_m%peri = o_m%peri - o_m%node
