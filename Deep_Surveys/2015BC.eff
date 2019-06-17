@@ -1,0 +1,74 @@
+# This is an efficiency file with analytic function
+#
+# All lines starting with '#' are ignored, so they are used for comments.
+#
+# The parameters are given using a "<key> = <value(s)> pair, one per line.
+# Some <keys> can only appear after a previous <key> had a specific value.
+#
+# See README.format and/or Template.eff for a description of the format of this
+# file.
+#
+rate_cut= 0.3    15.0   -23.0    22.0
+#
+mag_error= 0.02  0.27  25.0  0.001  24.0  -0.22
+#
+phot_frac= 0.129 0.279 0.592
+#
+#track_frac= 0.9865 25.35 -5.00
+track_frac= 1. 25.5 -5.00
+#
+filter= r
+#
+rates=  0.50  2.00                                                            
+function= square
+square_param=   0.933323383       1.22420564E-02   24.8778725      0.129970565    
+# Goodness of fit (reduced chi^2):   2.789
+#
+# Limiting magnitude of the block
+# OK
+mag_lim= 24.86
+#
+rates=  2.00  6.00                                                            
+function= double
+double_param=   0.878271341       24.9278564      0.235119641      0.791498780    
+# Goodness of fit (reduced chi^2):   8.641
+#
+# Limiting magnitude of the block
+# OK
+mag_lim= 24.78
+#
+rates=  6.00  8.00                                                            
+function= square
+square_param=   0.863195181       1.08388867E-02   24.7044296      0.136396363    
+# Goodness of fit (reduced chi^2):   1.871
+#
+# Limiting magnitude of the block
+mag_lim= 24.67
+#
+rates=  8.00 10.00                                                            
+function= square
+square_param=   0.843950450       1.24595305E-02   24.6312561      0.145581514    
+# Goodness of fit (reduced chi^2):   1.763
+#
+# Limiting magnitude of the block
+#mag_lim= 24.58
+mag_lim= 24.48
+#
+rates= 10.00 12.00                                                            
+function= square
+square_param=   0.812560320       1.14012510E-02   24.5263748      0.131260082    
+# Goodness of fit (reduced chi^2):   2.618
+#
+# Limiting magnitude of the block
+#mag_lim= 24.47
+mag_lim= 24.37
+#
+rates= 12.00 15.00                                                            
+function= square
+square_param=   0.784676313       1.28535815E-02   24.3943558      0.145704076    
+# Goodness of fit (reduced chi^2):   1.097
+#
+# Limiting magnitude of the block
+#mag_lim= 24.32
+mag_lim= 24.22
+#

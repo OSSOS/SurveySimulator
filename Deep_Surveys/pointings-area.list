@@ -1,0 +1,253 @@
+# This is the OSSOS survey description file.
+#
+# All lines starting with '#' are ignored, so they are used for comments
+#
+# Each data line has the format:
+# <width> <height> <RA> <DEC> <epoch> <filling_factor> <tracked_fraction> \
+#   <obs_code> <efficiency_file_name>
+#
+# <width>: width of FOV, in degree
+# <height>: height of FOV, in degree
+# <RA>: Right Ascension of pointing, decimal degree or HH:MM:SS[.ss...]
+# <DEC>: Declination of pointing, decimal degree or DD:MM:SS[.ss...]
+# <epoch>: epoch of pointing, in Julian day (decimal)
+# <filling_factor>: filling factor of that FOV
+# <obs_code>: observatory code
+# <efficiency_file_name>: name of efficiency file for that pointing
+#
+# For Megaprime, the 36 CCDs are 2048x4612 with pixels 0.18689x0.18689", so
+# assuming a total footprint of 1 sq.deg, the filling factor is 0.9164
+#
+# 2015A-P block
+#
+# This is the first block for which the mosaic includes the ears, making the
+# total surface larger than 1 sq.deg. 
+# From reading the plate solution of a several images, JMP defined the
+# footprint of the camera. It's given in create_ears() in SurveySubs.f.
+# From this footprint, we compute the total area covered 0.99443x0.97918 +
+# 0.47773x0.21921 = 0.97373 + 0.10473 = 1.0785 sq.deg.
+#
+# From the plate solutions, the pixel size is 0.186"x0.1849". So the area
+# covered by CCD for each chip is 0.025065 sq.deg., or 1.0026 sq.deg. for the
+# full camera. Hence the filling factor is 0.9297
+#
+# According to the vtags, number of files and notes on the block blinking wiki,
+# 2 out of 800 chips failed, so effective area is 
+# 798/800 = 0.9975 = 99.75% of the total area, so filling factor becomes
+# 0.99875*0.9297 = 0.9274.
+#
+# Now, there is a chance there is some overlap between the different frames.
+# Actually, it's a known fact as some object(s) got observed twice in the
+# discovery run. The overlap is measured using SurfArea.f.
+# From counting how many objects are found in multiple pointings, we get the
+# effective area as:
+# Effective area / Assumed area = 1./(1. + float(n_track-hist(1))/float(n_track)).
+# Here, n_track = 1000000 and hist(1) = 994446 so the factor is 1./1.005554
+# So the filling factor is 0.9975*0.9297/1.005554 = 0.9223.
+#
+# This final filling factor is all good if we use the footprint of the 40 CCDs
+# with ears. If we use some other polygon, we must first compute the area of
+# the said polygon, S_p, and then compare it to the actual effective area of
+# all pixels, Sccd x num_ccd x overlap_factor = 0.025065*798/1.005554 = 19.89139
+# sq.deg.
+#
+# In the following, the total surface area is 2*2.721979*(2.983277+0.994426)
+# = 21.6544 sq.deg. So the final filling factor is effective area / total
+# surface area = 19.89139/21.6544 = 0.9186
+#
+21.65 13:30:22.11 -07:47:23.0 2457125.86971 0.9186 500 2015AP.eff
+#
+# 2015A-M block
+#
+# This is a block for which the mosaic includes the ears, making the
+# total surface larger than 1 sq.deg. 
+# From reading the plate solution of a several images, JMP defined the
+# footprint of the camera. It's given in create_ears() in SurveySubs.f.
+# From this footprint, we compute the total area covered 0.99443x0.97918 +
+# 0.47773x0.21921 = 0.97373 + 0.10473 = 1.0785 sq.deg.
+#
+# From the plate solutions, the pixel size is 0.186"x0.1849". So the area
+# covered by CCD for each chip is 0.025065 sq.deg., or 1.0026 sq.deg. for the
+# full camera. Hence the filling factor is 0.9297
+#
+# According to the vtags, 0 out of 800 chips failed, so effective area is
+# 800/800 = 1.0 = 100.0% of the total area, so filling factor becomes
+# 1.0*0.9297 = 0.9297.
+#
+# Now, there is a chance there is some overlap between the different frames.
+# Actually, it's a known fact as some object(s) got observed twice in the
+# discovery run. The overlap is measured using SurfArea.f.
+# From counting how many objects are found in multiple pointings, we get the
+# effective area as:
+# Effective area / Assumed area = 1./(1. + float(n_track-hist(1))/float(n_track)).
+# Here, n_track = 1000000 and hist(1) = 994672 so the factor is 1./1.005328
+# So the filling factor is 1.0*0.9297/1.005328 = 0.9248.
+#
+# This final filling factor is all good if we use the footprint of the 40 CCDs
+# with ears. If we use some other polygon, we must first compute the area of
+# the said polygon, S_p, and then compare it to the actual effective area of
+# all pixels, Sccd x num_ccd x overlap_factor = 0.025065*800/1.005328 = 19.94573
+# sq.deg.
+#
+# In the following, the total surface area is 2*2.721979*(2.983277+0.994426)
+# = 21.6544 sq.deg. So the final filling factor is effective area / total
+# surface area = 19.94573/21.6544 = 0.9211
+#
+21.65 15:34:41.30 -12:08:36.0 2457163.81831 0.9211 500 2015AM.eff
+#
+# 2015B-S block
+#
+# This is the first block for which the mosaic includes the ears, making the
+# total surface larger than 1 sq.deg. 
+# From reading the plate solution of a several images, JMP defined the
+# footprint of the camera. It's given in create_ears() in SurveySubs.f.
+# From this footprint, we compute the total area covered 0.99443x0.97918 +
+# 0.47773x0.21921 = 0.97373 + 0.10473 = 1.0785 sq.deg.
+#
+# From the plate solutions, the pixel size is 0.186"x0.1849". So the area
+# covered by CCD for each chip is 0.025065 sq.deg., or 1.0026 sq.deg. for the
+# full camera. Hence the filling factor is 0.9297
+#
+# According to the vtags, number of files and notes on the block blinking wiki,
+# 0 out of 400 chips failed, so effective area is 
+# 400/400 = 1.0 = 100.0% of the total area, so filling factor becomes
+# 1.0*0.9297 = 0.9297.
+#
+# Now, there is a chance there is some overlap between the different frames.
+# Actually, it's a known fact as some object(s) got observed twice in the
+# discovery run. The overlap is measured using SurfArea.f.
+# From counting how many objects are found in multiple pointings, we get the
+# effective area as:
+# Effective area / Assumed area = 1./(1. + float(n_track-hist(1))/float(n_track)).
+# Here, n_track = 1000000 and hist(1) = 995995 so the factor is 1./1.004005
+# So the filling factor is 1.0*0.9297/1.004005 = 0.92599.
+#
+# This final filling factor is all good if we use the footprint of the 40 CCDs
+# with ears. If we use some other polygon, we must first compute the area of
+# the said polygon, S_p, and then compare it to the actual effective area of
+# all pixels, Sccd x num_ccd x overlap_factor = 0.025065*400/1.004005 = 9.98601
+# sq.deg.
+#
+# In the following, the total surface area is 2*2.721979*(1.98885125+0.)
+# = 10.8272 sq.deg. So the final filling factor is effective area / total
+# surface area = 9.98601/10.8272 = 0.9223
+#
+10.83 00:30:08.35 +06:00:09.5 2457274.92965 0.9223 500 2015BS.eff
+#
+# 2015B-T block
+#
+# This is the first block for which the mosaic includes the ears, making the
+# total surface larger than 1 sq.deg. 
+# From reading the plate solution of a several images, JMP defined the
+# footprint of the camera. It's given in create_ears() in SurveySubs.f.
+# From this footprint, we compute the total area covered 0.99443x0.97918 +
+# 0.47773x0.21921 = 0.97373 + 0.10473 = 1.0785 sq.deg.
+#
+# From the plate solutions, the pixel size is 0.186"x0.1849". So the area
+# covered by CCD for each chip is 0.025065 sq.deg., or 1.0026 sq.deg. for the
+# full camera. Hence the filling factor is 0.9297
+#
+# According to the vtags, number of files and notes on the block blinking wiki,
+# 0 out of 400 chips failed, so effective area is 
+# 400/400 = 1.0 = 100.0% of the total area, so filling factor becomes
+# 1.0*0.9297 = 0.9297.
+#
+# Now, there is a chance there is some overlap between the different frames.
+# Actually, it's a known fact as some object(s) got observed twice in the
+# discovery run. The overlap is measured using SurfArea.f.
+# From counting how many objects are found in multiple pointings, we get the
+# effective area as:
+# Effective area / Assumed area = 1./(1. + float(n_track-hist(1))/float(n_track)).
+# Here, n_track = 1000000 and hist(1) = 995991 so the factor is 1./1.004009
+# So the filling factor is 1.0*0.9297/1.004009 = 0.9260.
+#
+# This final filling factor is all good if we use the footprint of the 40 CCDs
+# with ears. If we use some other polygon, we must first compute the area of
+# the said polygon, S_p, and then compare it to the actual effective area of
+# all pixels, Sccd x num_ccd x overlap_factor = 0.025065*400/1.004009 = 9.98597
+# sq.deg.
+#
+# In the following, the total surface area is 2*2.721979*(1.98885125+0.)
+# = 10.8272 sq.deg. So the final filling factor is effective area / total
+# surface area = 9.98597/10.8272 = 0.9223
+#
+10.83 00:30:08.35 +04:02:04.5 2457273.92965 0.9223 500 2015BT.eff
+#
+# 2015B-D block
+#
+# For this block the mosaic includes the ears, making the total surface larger
+# than 1 sq.deg.
+# From reading the plate solution of a several images, JMP defined the
+# footprint of the camera. It's given in create_ears() in SurveySubs.f.
+# From this footprint, we compute the total area covered 0.99443x0.97918 +
+# 0.47773x0.21921 = 0.97373 + 0.10473 = 1.0785 sq.deg.
+#
+# From the plate solutions, the pixel size is 0.186"x0.1849". So the area
+# covered by CCD for each chip is 0.025065 sq.deg., or 1.0026 sq.deg. for the
+# full camera. Hence the filling factor is 0.9297
+#
+# According to the vtags, number of files and notes on the block blinking wiki,
+# 0 out of 320 chips failed, so effective area is 
+# 320/320 = 1.0 = 100.0% of the total area, so filling factor becomes
+# 1.0*0.9297 = 0.9297.
+#
+# Now, there is a chance there is some overlap between the different frames.
+# Actually, it's a known fact as some object(s) got observed twice in the
+# discovery run. The overlap is measured using SurfArea.f.
+# From counting how many objects are found in multiple pointings, we get the
+# effective area as:
+# Effective area / Assumed area = 1./(1. + float(n_track-hist(1))/float(n_track)).
+# Here, n_track = 1000000 and hist(1) = 994686 so the factor is 1./1.005314
+# So the filling factor is 1.0*0.9297/1.005314 = 0.92479.
+#
+# This final filling factor is all good if we use the footprint of the 40 CCDs
+# with ears. If we use some other polygon, we must first compute the area of
+# the said polygon, S_p, and then compare it to the actual effective area of
+# all pixels, Sccd x num_ccd x overlap_factor = 0.025065*320/1.005314 = 7.97840
+# sq.deg.
+#
+# In the following, the total surface area is 2*1.0887916*(2.3866217+1.5910813)
+# = 8.66178 sq.deg. So the final filling factor is effective area / total
+# surface area = 7.97840/8.66178 = 0.9211
+#
+#poly 4 03:08:30.88 +15:46:36.6 2457333.85377 0.9211 500 2015BD.eff
+8.66 03:12:58.36 +16:16:06.4 2457333.85377 0.9211 500 2015BD.eff
+#
+# 2015B-C block
+#
+# For this block the mosaic includes the ears, making the total surface larger
+# than 1 sq.deg.
+# From reading the plate solution of a several images, JMP defined the
+# footprint of the camera. It's given in create_ears() in SurveySubs.f.
+# From this footprint, we compute the total area covered 0.99443x0.97918 +
+# 0.47773x0.21921 = 0.97373 + 0.10473 = 1.0785 sq.deg.
+#
+# From the plate solutions, the pixel size is 0.186"x0.1849". So the area
+# covered by CCD for each chip is 0.025065 sq.deg., or 1.0026 sq.deg. for the
+# full camera. Hence the filling factor is 0.9297
+#
+# According to the vtags, number of files and notes on the block blinking wiki,
+# 0 out of 480 chips failed, so effective area is 
+# 480/480 = 1.0 = 100.0% of the total area, so filling factor becomes
+# 1.0*0.9297 = 0.9297.
+#
+# Now, there is a chance there is some overlap between the different frames.
+# Actually, it's a known fact as some object(s) got observed twice in the
+# discovery run. The overlap is measured using SurfArea.f.
+# From counting how many objects are found in multiple pointings, we get the
+# effective area as:
+# Effective area / Assumed area = 1./(1. + float(n_track-hist(1))/float(n_track)).
+# Here, n_track = 1000000 and hist(1) = 995172 so the factor is 1./1.004828
+# So the filling factor is 1.0*0.9297/1.004828 = 0.92523.
+#
+# This final filling factor is all good if we use the footprint of the 40 CCDs
+# with ears. If we use some other polygon, we must first compute the area of
+# the said polygon, S_p, and then compare it to the actual effective area of
+# all pixels, Sccd x num_ccd x overlap_factor = 0.025065*480/1.004828 = 11.97339
+# sq.deg.
+#
+# In the following, the total surface area is 2*1.6331874*(2.5855068+1.3921962)
+# = 12.99267 sq.deg. So the final filling factor is effective area / total
+# surface area = 11.97339/12.99267 = 0.9215
+#
+12.99 03:19:52.10 +17:00:44.9 2457332.83884 0.9215 500 2015BC.eff

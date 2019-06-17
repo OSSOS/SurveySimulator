@@ -39,12 +39,12 @@ $df release to $intended_audience
 EOF
 tail --line=+3 README.first >> $d/README.first
 cp -a eupl* README.contact lookup lookupF95 parametric Python $d/
-for s in CFEPS OSSOS All_r_Surveys All_Surveys; do
+for s in CFEPS OSSOS All_r_Surveys All_Surveys Deep_Surveys; do
     mkdir $d/$s
     cp ../$s/* $d/$s/
     \rm $d/$s/*pointings
 done
-for s in CFEPS OSSOS All_r_Surveys; do
+for s in CFEPS OSSOS All_r_Surveys Deep_Surveys; do
     \rm -f $d/$s/README.formats
     ln -s ../All_Surveys/README.formats $d/$s/README.formats
 done

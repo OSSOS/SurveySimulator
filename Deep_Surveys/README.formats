@@ -1,0 +1,119 @@
+
+README.formats
+
+This file explains the format of the survey characterization that
+is critical to the operation of the survey simulator.
+
+The Survey Simulator divides the sky coverage of all observations
+into 'blocks' of contiguous rectangular area.  The 
+pointings.list
+file lists each such rectangular block, one per line.
+Each such line should contain the name of an 'efficiency file'
+that is in the same directory.  Although rare, different blocks in 
+the pointing file could share a single efficiency definition.
+
+--------------------------------------------------------------------------------
+
+pointings.list:
+
+Each line in pointings.list file has the format:
+
+<width> <height> <RA> <DEC> <epoch> <filling_factor> \
+  <obs_code> <efficiency_file_name>
+
+where:
+
+<width>: width of FOV, in degree
+<height>: height of FOV, in degree
+<RA>: Right Ascension of pointing, decimal degree or HH:MM:SS[.ss...]
+<DEC>: Declination of pointing, decimal degree or DD:MM:SS[.ss...]
+<epoch>: epoch of pointing, in Julian day (decimal)
+<filling_factor>: filling factor of that FOV (fraction of FOV occupied by
+                  active pixels)
+<obs_code>: observatory code
+<efficiency_file_name>: name of efficiency file for that pointing
+
+Lines starting with '#' are ignored and can be used for comments.
+
+--------------------------------------------------------------------------------
+
+Efficiency file:
+
+The parameters are given using a "<key> = <value(s)> pair, one per line.
+Some <keys> can only appear after a previous <key> had a specific value
+(see below). The list of keys and associated values is as follows
+
+- rate cut used for detection (the pipeline restrict detection to certain rates
+  and directions of motion on the sky)
+rate_cut= <r_min> <r_max> <angle> <half_width>
+  <r_min>:      Lower rate cut (" arc/hour)
+  <r_max>:      Upper rate cut (" arc/hour)
+  <angle>:      Mean direction of motion (degrees from due West)
+  <half_width>: Half-width of direction cone (degrees)
+
+- magnitude error (the "real" magnitude determined from the absolute magnitude,
+  phase angle [Bowel formalism] and distance from Sun is further modified by a
+  "noise" that represents the uncertainty in magnitude determination)
+mag_error= <mag_er>*6
+  The first 4 parameters define the growth of the uncertainty:
+  - alpha = log10(mag_er(2)/mag_er(1))/(mag_er(3)-21)
+  - for mag < mag_er(3), mag_er(1)*10.**(alpha*(mag - 21))
+  - for mag > mag_er(3), mag_er(1)*10.**(alpha*(mag_er(3) - 21))
+                         - (mag - mag_er(3))*mag_er(4)
+  The last 2 parameters determine the asymmetry of the error
+  - for mag < mag_er(5), center = 0.
+  - for mag > mag_er(5), center = (mag - mag_er(5))*mag_er(6)
+
+- fraction of objects with 1, 2 or 3 photometric measurements to define the
+  official magnitude
+phot_frac= <f1> <f2> <f3>
+  <f1>:         fraction of objects with only 1 measurement
+  <f2>:         fraction of objects with 2 measurements
+  <f3>:         fraction of objects with 3 measurements
+
+- Tracked fraction (for some survey, not all objects are tracked; some are
+  missed due to being very faint, others are missed due to leaking out of
+  recovery coverage, thus the following formula)
+track_frac= <track_max> <track_mag> <track_slope>
+  Tracked fraction = min(track_max, 1 + (mag - track_mag)*track_slope)
+
+- Filter used for this survey
+filter= <filter>
+  <filter>:     one of g, r, i, z, u, B, V, R, I
+
+- Efficiency functions are given for ranges of rates of motion given by the
+  following keyword (detection efficiency varies with rate of motion, so
+  efficiency is determined for ranges of rates)
+rates= <r_min> <r_max>
+  <r_min>:      minimum rate for range of rates for this efficiency function
+  <r_max>:      maximum rate for range of rates for this efficiency function
+
+- Functional form used to define the efficiency
+function= <func_type>
+  <func_type> is one of:
+  <single>: single hyperbolic tangent
+  <double>: double hyperbolic tangent
+  <linear>: piecewise linear function
+  <square>:  (eff_max-c*(m-21)**2)/(1+exp((m-M_0)/sig))
+  <lookup>: a look-up table
+
+- Parameters for the efficiency function, depending on the functional form
+linear_param= <eff_max> <start_drop> <end_drop>
+single_param= <eff_max> <M_0> <sig>
+double_param= <eff_max> <M_0> <sig1> <sig2>
+square_param= <eff_max> <c> <M_0> <sig>
+
+- For the look-up table, there will be as many lines as entries in the look-up
+  table
+lookup_param= <bin_center> <efficiency>
+lookup_param= <bin_center> <efficiency>
+
+- The sequence <rates= ...> <function=...> <xxxxxx_param= ...> can be repeated
+  as many times as needed if the efficiency has been determined for several
+  different rate ranges.
+
+- Limiting magnitude of the block
+mag_lim= <limiting_magnitude>
+  <limiting_magnitude>: largest magnitude for a characterized object
+
+Lines starting with '#' are ignored and can be used for comments.

@@ -1,0 +1,36 @@
+
+README.deepsurveys
+
+COMBINED SURVEY ANALYSIS
+
+This subdir contains the 2015 OSSOS survey.
+
+This subdir provides a sample that avoids the problem of multiple bands at
+detections mentioned in All_Surveys. This is done at the expense of dropping
+most of CFEPS objects, only keeping L3h objects, and cnosequantly decreasing
+the surveyed area. But the avoids the complication of having to deal with
+magnitudes in different bands and the effect of unknown colors.
+
+--------------------------------------------------------------------------------
+
+This directory contains the pointing history, efficiency functions for each
+block, and the list of detected objects, in two files for all surveys
+(All_r_Surveys.detections and All_r_Surveys.CDS).
+
+The content of this directory is:
+
+Deep_Surveys
+  \---- README.deepsurveys (this file)  Describes content of the directory
+   \--------- README.format            Describes format of a survey "block"
+    \-------- pointings.list           List of pointings and times of the
+    |                                  survey, often grouped into chunks.
+     \--- 2015Sn.eff                   Efficiency functions for 2015 OSSOS
+     |                                 blocks, where S (a single letter) gives
+     |                                 the semester, and n the block name
+     |                                 (eg, P, M, S, T, D, C)
+      \- Deep_Surveys_v11.detections   List of objects really detected in
+                                       2015 OSSOS, with their dynamical class
+				       if known, magnitude at detection, rate
+				       of motion, H mag, and more.
+	    
+--------------------------------------------------------------------------------
