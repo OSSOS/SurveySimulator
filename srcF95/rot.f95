@@ -629,7 +629,7 @@ contains
 
 ! Internal variables
     real (kind=8) :: ci0(4), ci1(3), ci2(3), ci3(3), co0(3), co1(3), co2(5), &
-         co3(5), alpha, beta, gamma, delta
+         co3(5), alpha, beta, gamma, delta, om_lim_low, om_lim_high
 
     data &
          ci0 /-0.115657583d0,34.8097343d0,7.79198557d-02,-1.06252408d0/, &
@@ -644,7 +644,11 @@ contains
               -1049.41772d0, 15.2022839d0/, &
          co3 /30.4611244d0, -1203.70593d0, 2.47961617d0, &
               -16.6130295d0, 302.805359d0/, &
-         alpha /1.d0/
+         alpha /1.d0/, &
+         om_lim_low /200.d0/, &
+         om_lim_high /20.d0/
+
+    common /om_lim_com/ om_lim_low, om_lim_high
 
     if (a .lt. 35.d0) then
        ifd = 0.d0
@@ -652,16 +656,26 @@ contains
     else if (a .lt. 37.d0) then
        ifd = (ci0(1)/(a - ci0(2)) + ci0(3)*a + ci0(4))
        Omfd = co0(1) + co0(2)*a + co0(3)*a*a
-    else if (a .lt. 39.41d0) then
+!    else if (a .lt. 39.41d0) then
+    else if (a .lt. 39.0d0) then
        ifd = 10.d0**(ci1(1)/(a - ci1(2)) + ci1(3))
        Omfd = co1(1) + co1(2)*a + co1(3)*a*a
     else if (a .lt. 40.47d0) then
-       ifd = 10.d0**(ci2(1)/(a - ci2(2)) + ci2(3))
-       beta = -((co2(1) + co2(3))*a + co2(2) + co2(4))
-       gamma = (co2(1)*a + co2(2))*(co2(3)*a + co2(4)) - co2(5)
-       delta = max(0., beta**2 - 4.d0*alpha*gamma)
-! Here we use the (-b + sqrt(\Delta))/(2a) solution
-       Omfd = (-beta + sqrt(delta))/(2.d0*alpha)
+!       ifd = 10.d0**(ci2(1)/(a - ci2(2)) + ci2(3))
+!       beta = -((co2(1) + co2(3))*a + co2(2) + co2(4))
+!       gamma = (co2(1)*a + co2(2))*(co2(3)*a + co2(4)) - co2(5)
+!       delta = max(0., beta**2 - 4.d0*alpha*gamma)
+!! Here we use the (-b + sqrt(\Delta))/(2a) solution
+!       Omfd = (-beta + sqrt(delta))/(2.d0*alpha)
+       ifd = 2.477d0
+!       Omfd = (200.d0-163.187d0)/(40.47d0-39.d0)*(a-40.47d0)+200.d0
+       Omfd = (om_lim_low-163.187d0)/(40.47d0-39.d0)*(a-40.47d0) &
+            + om_lim_low
+    else if (a .lt. 41.9d0) then
+       ifd = 2.477d0
+!       Omfd = (61.791d0-20.d0)/(41.9d0-40.47d0)*(a-40.47d0) + 20.d0
+       Omfd = (61.791d0-om_lim_high)/(41.9d0-40.47d0)*(a-40.47d0) &
+            + om_lim_high
     else if (a .lt. 47.74d0) then
        ifd = 10.d0**(ci3(1)/(a - ci3(2)) + ci3(3))
        beta = -((co3(1) + co3(3))*a + co3(2) + co3(4))

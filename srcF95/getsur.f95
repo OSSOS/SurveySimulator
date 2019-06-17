@@ -322,6 +322,10 @@ contains
 !                7 : V
 !                8 : R
 !                9 : I
+!     c%r_cut : global rate cuts of search (t_ratecut)
+!     c%mag_er : parameters for magnitude uncertainty and skew (6*R8)
+!     c%photf : fractions of cases with 1, 2 and 3 photometric measures (3*R8)
+!     c%track : tracking fraction parameters (3*R8)
 !     ierr  : Error code
 !                0 : nominal run
 !               10 : unable to open filen

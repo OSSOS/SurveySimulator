@@ -13,6 +13,10 @@ module datadec
        +1.d0/328900.56d0+1.d0/3098708.0d0+1.d0/1047.3486d0+1.d0/3497.898d0 &
        +1.d0/22902.98d0+1.d0/19412.24d0+1.d0/1.35d8
 
+  ! Internal variables
+  real (kind=8) :: om_lim_low, om_lim_high
+  common /om_lim_com/ om_lim_low, om_lim_high
+
   ! define data type to represent survey efficiency and pointings, and objects
   type t_ratecut
      real (kind=8) :: min, max, angle, hwidth

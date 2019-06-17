@@ -1,3 +1,11 @@
+      block data modelparam
+c Internal variables
+      real*8 om_lim_low, om_lim_high
+
+      common /om_lim_com/ om_lim_low, om_lim_high
+
+      end
+
       subroutine Detos1 (a, e, inc, node, peri, mt0, jday, hx, color,
      $  gb, ph, period, amp, surnam, seed, flag, ra, dec, d_ra, d_dec,
      $  r, delta, m_int, m_rand, eff, isur, mt, jdayp, ic, surna,

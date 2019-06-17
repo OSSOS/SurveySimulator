@@ -129,7 +129,7 @@ contains
          track_slope, angle, rate, delta2, mag_peri, dmag, &
          p(2), ra_l, dec_l, d_ra_l, d_dec_l, r_l, delta_l, &
          m_int_l, m_rand_l, eff_l, mt_l
-    integer, save :: i, filt_i, flag_l, n_sur, ierr, &
+    integer (kind=4), save :: i, filt_i, flag_l, n_sur, ierr, &
          incode, outcod, i_sur, nph
     character, save :: stra*13, stdec*13
     logical, save :: debug, newpos, rate_ok, first

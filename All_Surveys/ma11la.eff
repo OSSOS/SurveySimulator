@@ -39,14 +39,14 @@ square_param=   0.901384294       1.02973068E-02   24.5602989      0.146653786
 # Limiting magnitude of the block
 mag_lim= 24.57
 #
-rates:  5.38  6.40                                                            
+rates=  5.38  6.40                                                            
 function= square
 square_param=   0.993546128       4.81119640E-02   24.5993443     6.69738501E-02
 # Goodness of fit (reduced chi^2):   1.300
 # Limiting magnitude of the block
 mag_lim= 24.42
 #
-rates:  6.40 10.00                                                            
+rates=  6.40 10.00                                                            
 function= square
 square_param=   0.786008000       1.34810088E-02   24.3750610      0.137408525
 # Goodness of fit (reduced chi^2):   0.796
