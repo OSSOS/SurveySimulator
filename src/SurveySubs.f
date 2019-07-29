@@ -836,7 +836,7 @@ c      call dgauss(seed, tmp)
       if (tmp .le. 0.5) then
          tmp = sqrt(6.d0)*(sqrt(2.d0*tmp) - 1.d0)
       else
-         mag = sqrt(6.d0)*(1.d0 - sqrt(2.d0*(1.d0-tmp)))
+         tmp = sqrt(6.d0)*(1.d0 - sqrt(2.d0*(1.d0-tmp)))
       end if
       mag = mag_th + magerr*tmp
 c      write (19, *) (mag_er(i), i=1,6)
