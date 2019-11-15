@@ -25,7 +25,8 @@
  
    open(unit = iout, file = 'Results/res_test_JMP.txt', status = 'unknown')
 
-   do iplan = 0,8  ! explore sun and planets  (1,8 for heliocentric)
+!   do iplan = 0,8  ! explore sun and planets  (1,8 for heliocentric)
+   do iplan = 1,8  ! explore planets  (0,8 - sun and planets - for barycentric)
       write(iout, *)
       write(iout, *)  ssname(iplan)
       write(iout, *) '  day-J2010           xx                 yy                   zz                 vx                   vy                  vz   '        
@@ -33,11 +34,11 @@
 !
          datjd = tbeg + i*step 
 ! Barycentric
-         call ephem_planet_simon(datjd, iplan, iframe, rr, vv)
-         write(iout,'(f12.4,  6e20.10)')  (datjd-tbeg),  rr, vv
+!         call ephem_planet_simon(datjd, iplan, iframe, rr, vv)
+!         write(iout,'(f12.4,  6e20.10)')  (datjd-tbeg),  rr, vv
 ! Heliocentric 
-!         call planet_helio_simon(0, iplan, datjd, xlong, xlat, dist, rr, vv)
-!         write(iout,'(f12.4,  6e20.10)')  (datjd-tbeg),  rr*xau, vv*audtokms 
+         call planet_helio_simon(0, iplan, datjd, xlong, xlat, dist, rr, vv)
+         write(iout,'(f12.4,  6e20.10)')  (datjd-tbeg),  rr*xau, vv*audtokms 
  
       enddo
    enddo

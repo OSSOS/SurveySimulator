@@ -77,13 +77,13 @@ Cf2py intent(out) ierr
 
       real*8
      $  param(*), inc, proba(0:np), inctab(0:np), random, func,
-     $  incmin, incmax, ran3
+     $  incmin, incmax, ran_3
 
       logical
      $  first
 
       external
-     $  func, ran3
+     $  func, ran_3
 
       save proba, inctab, first
 
@@ -103,7 +103,7 @@ Cf2py intent(out) ierr
          first = .false.
       end if
 
-      random = ran3(seed)
+      random = ran_3(seed)
       ilo = 0
       ihi = np
  1000 continue
@@ -174,13 +174,13 @@ Cf2py intent(out) ierr
 
       real*8
      $  param(*), inc, proba(0:np,nd), inctab(0:np,nd), random, func,
-     $  incmin, incmax, ran3
+     $  incmin, incmax, ran_3
 
       logical
      $  first(nd)
 
       external
-     $  func, ran3
+     $  func, ran_3
 
       save proba, inctab, first
 
@@ -203,7 +203,7 @@ Cf2py intent(out) ierr
          first(di) = .false.
       end if
 
-      random = ran3(seed)
+      random = ran_3(seed)
       ilo = 0
       ihi = np
  1000 continue
@@ -590,10 +590,10 @@ c
       implicit none
 
       integer*4 seed
-      real*8 h_params(*), h0s10, h1s10, random, slope, ran3
+      real*8 h_params(*), h0s10, h1s10, random, slope, ran_3
 
       external
-     $  ran3
+     $  ran_3
 c
 c H-mag distribution 
 c
@@ -601,7 +601,7 @@ c Functions have been triple-checked as of 2018-05-04. OK.
       slope = h_params(3)
       h0s10 = 10.d0**(slope*h_params(1))
       h1s10 = 10.d0**(slope*h_params(2))
-      random=ran3(seed)
+      random=ran_3(seed)
       size_dist_one = log10( random*(h1s10 - h0s10) + h0s10 ) / slope
 
       return
@@ -649,10 +649,10 @@ c
 
       real*8
      $  h_params(5), h0s1, h1s1, h1s2, h2s2, h1s12, random, sl1, sl2,
-     $  xi1, ran3
+     $  xi1, ran_3
 
       external
-     $  ran3
+     $  ran_3
 c
 c H-mag distribution
 c
@@ -665,7 +665,7 @@ c Functions have been triple-checked as of 2018-05-04. OK.
       h1s12 = h1s1/h1s2
       h2s2 = 10.d0**(sl2*h_params(3))
       xi1 = sl2*(h1s1-h0s1)/(sl1*h1s12*(h2s2-h1s2)+sl2*(h1s1-h0s1))
-      random=ran3(seed)
+      random=ran_3(seed)
       if (random .le. xi1) then
          size_dist_two = log10(random/xi1*(h1s1 - h0s1) + h0s1)/sl1
       else
@@ -720,14 +720,33 @@ c
 
       real*8
      $  h_params(5), h0s1, h1s1, h1s2, h2s2, h12s2, random, sl1, sl2,
-     $  ran3
+     $  ran_3
 
       external
-     $  ran3
+     $  ran_3
 c
 c H-mag distribution
 c
 c Functions have been triple-checked as of 2018-05-04. OK.
+c
+c In order to not have the ramp-up found in {\it size_dist_two}, I use
+c an exponential with no lower limit on H. What sets the lower limit of
+c the faint end is the selection of the correct slope at H_break (see
+c test below). The test is based on the number of objects in each
+c portion of the distribution.
+c
+c Since we want N(<H) = A 10^{\alpha_1 H} for H < H_b
+c and           N(<H) = B 10^{\alpha_2 H} for H >= H_b
+c and N(<H) continuous at H_b, we have N(<H_b) = A 10^{\alpha_1 H_b} =
+c B 10^{\alpha_2 H_b}.
+c
+c The total number of objects is N(<H_max) = B 10^{\alpha_2 H_max}, and
+c the number of objects bigger than H_b is N(<H_b) = B 10^{\alpha_2 H_b}. 
+c So the fraction of objects bigger than H_b is 10^{\alpha_2 H_b} /
+c 10^{\alpha_2 H_max} = h1s2 / h2s2 = h12s2.
+c
+c Therefore, if 'random' < h12s2, then we have a big object, and
+c otherwise a small on. 'random' needs to be rescaled to go to 1.
       sl1 = h_params(4)
       sl2 = h_params(5)
       h0s1 = 10.d0**(sl1*h_params(1))
@@ -735,7 +754,7 @@ c Functions have been triple-checked as of 2018-05-04. OK.
       h1s2 = 10.d0**(sl2*h_params(2))
       h2s2 = 10.d0**(sl2*h_params(3))
       h12s2 = h1s2/h2s2
-      random=ran3(seed)
+      random=ran_3(seed)
       if (random .le. h12s2) then
          size_dist_two_straight = log10(random*h1s1/h12s2)/sl1
       else
@@ -743,6 +762,137 @@ c Functions have been triple-checked as of 2018-05-04. OK.
       end if
 
       return
+
+      end
+
+      real*8 function size_dist_n_straight (seed, h_params, nn)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This function draws a number according to an n-slope exponential
+c cumulative distribution specified by "h_params" (n straight lines in
+c semilog for cumulative):
+c
+c   P(<=h) = A_k 10^{(h*\alpha_k)}
+c
+c with H_{k-1} < h <= H_k,
+c
+c with
+c
+c \alpha_k = h_params(k+n)
+c H_k = h_params(k)
+c
+c for k in [1; n]. h_params(0) is not present and implicit at -\infty.
+c This corresponds to dropping the lower limit as we want straight lines.
+c
+c The function is continuous at H_k = h_params(k) ofr all k's:
+c   A_k 10^{H_k*\alpha_k} = A_{k+1} 10^{H_k*\alpha_{k+1}}
+c
+c for k in [1; n-1].
+c
+c To avoid using allocatale arrays and dynamical allocation, I restrict
+c the number of slopes to be <= 10.
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : September 2019
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     seed  : seed for the random number generator (I4)
+c     h_params: parameters for the distribution (3*R8)
+c     nn    : number of different slopes (I4)
+c
+c OUTPUT
+c     size_dist_n_straight: Random value of H (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c Set of F2PY directives to create a Python module
+c
+Cf2py intent(in,out) seed
+Cf2py intent(in) h_param
+Cf2py intent(in) nn
+c
+      implicit none
+
+      integer*4
+     $  seed, n, nn, k
+
+      real*8
+     $  h_params(*), random, x(10), f(10), ran_3
+
+      logical first
+
+      save first
+
+      external
+     $  ran_3
+
+      data first /.true./
+
+      if (nn .gt. 10) then
+         if (first) then
+            first = .false.
+            print *,
+     $        'WARNING: number of breaks greater than allowed maximum'//
+     $        ' 10, using only the 10 first values.'
+         end if
+         n = 10
+      else
+         n = nn
+      end if
+c
+c H-mag distribution
+c
+c In order to not have the ramp-up found in {\it size_dist_two}, I use
+c an exponential with no lower limit on H. What sets the lower limit of
+c the faint end is the selection of the correct slope at H_k (see
+c test below). The test is based on the number of objects in each
+c portion of the distribution.
+c
+c The total number of objects is N(<H_max) = N(<H_n) = A_n 10^{H_n \alpha_n},
+c and the number of objects bigger than the next break H_{n-1} is N(
+c <H_{n-1}) = A_n 10^{H_{n-1} \alpha_n}. More generaly, the number of
+c objects bigger than H_k is
+c
+c N_k = A_k 10^{H_k \alpha_k} = A_{k+1} 10^{H_k \alpha_{k+1}}
+c
+c Let's define the fraction of objects bigger than H_k in the objects
+c bigger than H_{k+1} as:
+c
+c x_k = N_{k-1} / N_k = 10^{(H_{k-1}-H_k) \alpha_k}
+c
+c for k in [2; n], and x_1 = 0.
+c
+c The fraction of object bigger than B_k compared to the total
+c number of objects is
+c
+c f_k = N_k / N_n = (N_k / N_{k+1}) (N_{k+1} / N_{k+2}) ... (N_{n-1} / N_n)
+c                 = x_{k+1} x_{k+2} ... x_n
+c
+c We define x_k as described above, then we set
+c
+c f_n = 1.
+c f_{k-1} = x_k f_k, for k in [2; n]
+c
+c Therefore, if (f_{k-1} < random <= f_k), then we have an object in
+c range ]H_{k-1}; H_k]. 'random' needs to be rescaled to go to 1.
+      x(1) = 0.d0
+      do k = 2, n
+         x(k) = 10.d0**((h_params(k-1)-h_params(k))*h_params(k+n))
+      end do
+      f(n) = 1.d0
+      do k = n, 2, -1
+         f(k-1) = f(k)*x(k)
+      end do
+      random=ran_3(seed)
+      do k = 1, n
+         if (random .le. f(k)) then
+            size_dist_n_straight =
+     $        log10(random/f(k)*10.d0**(h_params(k)*h_params(k+n)))
+     $        /h_params(k+n)
+            return
+         end if
+      end do
 
       end
 
@@ -781,3 +931,50 @@ c Calling arguments
 
       return
       end
+
+      real*8 FUNCTION ran_3(idum)
+Cf2py intent(in,out) idum
+      INTEGER idum
+      INTEGER MBIG,MSEED,MZ
+C     REAL MBIG,MSEED,MZ
+      REAL*8 FAC
+      PARAMETER (MBIG=1000000000,MSEED=161803398,MZ=0,FAC=1.d0/MBIG)
+C     PARAMETER (MBIG=4000000.,MSEED=1618033.,MZ=0.,FAC=1./MBIG)
+      INTEGER i,iff,ii,inext,inextp,k
+      INTEGER mj,mk,ma(55)
+C     REAL mj,mk,ma(55)
+      SAVE iff,inext,inextp,ma
+      DATA iff /0/
+      if(idum.lt.0.or.iff.eq.0)then
+        iff=1
+        mj=abs(MSEED-abs(idum))
+        mj=mod(mj,MBIG)
+        ma(55)=mj
+        mk=1
+        do 11 i=1,54
+          ii=mod(21*i,55)
+          ma(ii)=mk
+          mk=mj-mk
+          if(mk.lt.MZ)mk=mk+MBIG
+          mj=ma(ii)
+11      continue
+        do 13 k=1,4
+          do 12 i=1,55
+            ma(i)=ma(i)-ma(1+mod(i+30,55))
+            if(ma(i).lt.MZ)ma(i)=ma(i)+MBIG
+12        continue
+13      continue
+        inext=0
+        inextp=31
+        idum=1
+      endif
+      inext=inext+1
+      if(inext.eq.56)inext=1
+      inextp=inextp+1
+      if(inextp.eq.56)inextp=1
+      mj=ma(inext)-ma(inextp)
+      if(mj.lt.MZ)mj=mj+MBIG
+      ma(inext)=mj
+      ran_3=mj*FAC
+      return
+      END

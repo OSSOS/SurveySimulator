@@ -68,7 +68,7 @@ contains
     vel%z = 0.d0
     msys = mu
     do ind = 1, n_planets
-       call PlanetXV1 (ind, jday, pos_p, vel_p, istat)
+       call PlanetXV (ind, jday, pos_p, vel_p, istat)
        if (istat .ne. 0) then
           ierr = istat
           return
@@ -274,7 +274,7 @@ contains
       implicit none
 
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
-         drad = Pi/180.d0, jday_min = 2378496.5d0, jday_max = 2470171.5.0d0
+         drad = Pi/180.d0, jday_min = 2378496.5d0, jday_max = 2470171.5d0
     integer, parameter :: n_planets = 9
     type(t_orb_m) :: o_m
     real (kind=8) :: jday
@@ -376,7 +376,7 @@ contains
 
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine gives the position and velocity in ecliptic heliocentric
-! reference frame of a planet at a given time. Uses PlanetElem1.
+! reference frame of a planet at a given time. Uses PlanetElem.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !
 ! J-M. Petit  Observatoire de Besancon
