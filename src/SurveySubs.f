@@ -567,6 +567,15 @@ c     ierr  : Error code
 c                0 : nominal run
 c               10 : wrong input data
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) r
+Cf2py intent(in) delta
+Cf2py intent(in) robs
+Cf2py intent(in) h
+Cf2py intent(in) g
+Cf2py intent(out) alpha
+Cf2py intent(out) mag
+Cf2py intent(out) ierr
+
       implicit none
 
       integer
@@ -619,6 +628,15 @@ c     ierr  : Error code
 c                0 : nominal run
 c               10 : wrong input data
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) r
+Cf2py intent(in) delta
+Cf2py intent(in) robs
+Cf2py intent(in) mag
+Cf2py intent(in) g
+Cf2py intent(out) alpha
+Cf2py intent(out) h
+Cf2py intent(out) ierr
+
       implicit none
 
       integer

@@ -258,7 +258,11 @@ c         write (18, *) n_sur, sur_mm(n_sur)
       end
 
       subroutine read_file_name (base_name, i1, i2, finished, len)
-
+Cf2py intent(in) base_name
+Cf2py intent(in) len
+Cf2py intent(out) i1
+Cf2py intent(out) i2
+Cf2py intent(out) finished
       implicit none
 
       integer*4
@@ -866,7 +870,10 @@ c            in_rates = .false.
       end
 
       subroutine create_ears(ra, dec, poly, n_e)
-
+Cf2py intent(in) ra
+Cf2py intent(in) dec
+Cf2py intent(out) poly
+Cf2py intent(out) n_e
       implicit none
 
       integer*4
@@ -986,6 +993,12 @@ c positions below, I also determined the pixel size: 0.186" x 0.1849"
       end
 
       subroutine create_rectangle(w, h, ra, dec, poly, n_e)
+Cf2py intent(in) w
+Cf2py intent(in) h
+Cf2py intent(in) ra
+Cf2py intent(in) dec
+Cf2py intent(out) poly
+Cf2py intent(out) n_e
 
       implicit none
 
@@ -1013,6 +1026,10 @@ c positions below, I also determined the pixel size: 0.186" x 0.1849"
       end
 
       subroutine create_poly(ra, dec, poly, n_e)
+Cf2py intent(in) ra
+Cf2py intent(in) dec
+Cf2py intent(in,out) poly
+Cf2py intent(in) n_e
 
       implicit none
 
@@ -1037,6 +1054,11 @@ c \subroutine{parse}
 c Parses a line returns a list of words by getting rid of space characters
 
       subroutine parse (command, nwmax, nw, word, lw)
+Cf2py intent(in) command
+Cf2py intent(in) nwmax
+Cf2py intent(out) nw
+Cf2py intent(out) word
+Cf2py intent(out) lw
 
 c \subsection{Arguments}
 c \subsubsection{Definitions}
@@ -1129,6 +1151,8 @@ c Finds a word
       end
 
       subroutine  hms(str,val)
+Cf2py intent(in) str
+Cf2py intent(out) val
 c
 c...Crack String And Create Value
 c

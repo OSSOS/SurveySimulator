@@ -238,7 +238,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
 c     nparam: Number of parameters (I4)
 c     param : Parameters (n*R8)
-c     inc   : Inclination (R8)
+c     inc   : Inclination [Radian] (R8)
 c
 c OUPUT
 c     offgau: Value of the probability (R8)
@@ -274,6 +274,164 @@ Cf2py intent(in) inc
       fe = exp(t3/t1)
       offgau = dsin(inc)*fe
 
+      return
+      end
+
+      real*8 function cold_low_a_inc (nparam, param, inc)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine returns the unnormalized inclination "probability"
+c density for cold objects with a < 44.4
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : December 2019
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     nparam: Number of parameters (I4)
+c     param : Parameters (n*R8)
+c     inc   : Inclination [Radian] (R8)
+c
+c OUPUT
+c     onecomp: Value of the probability (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) nparam
+Cf2py intent(in), depend(nparam) :: param
+Cf2py intent(in) inc
+
+      implicit none
+
+      integer
+     $  nparam
+
+      real*8
+     $  param(*), inc
+
+      real*8
+     $  Pi, TwoPi, drad
+
+      parameter
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, drad = Pi/180.)
+
+      real*8
+     $  fe, angle
+
+      angle = mod(inc, TwoPi)
+      if (angle .gt. Pi) angle = angle - TwoPi
+      if (angle .lt. 1.2d0*drad) then
+         cold_low_a_inc = angle/(1.2*drad)
+      else if (angle .lt. 2.6d0*drad) then
+         cold_low_a_inc = 1.d0
+      else if (angle .le. 5.d0*drad) then
+         cold_low_a_inc = (5.d0*drad - angle)/(2.4d0*drad)
+      else
+         cold_low_a_inc = 0.d0
+      end if
+      
+      return
+      end
+
+      real*8 function cold_high_a_inc (nparam, param, inc)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine returns the unnormalized inclination "probability"
+c density for cold objects with a < 44.4
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : December 2019
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     nparam: Number of parameters (I4)
+c     param : Parameters (n*R8)
+c     inc   : Inclination [Radian] (R8)
+c
+c OUPUT
+c     onecomp: Value of the probability (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) nparam
+Cf2py intent(in), depend(nparam) :: param
+Cf2py intent(in) inc
+
+      implicit none
+
+      integer
+     $  nparam
+
+      real*8
+     $  param(*), inc
+
+      real*8
+     $  Pi, TwoPi, drad
+
+      parameter
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, drad = Pi/180.)
+
+      real*8
+     $  fe, angle
+
+      angle = mod(inc, TwoPi)
+      if (angle .gt. Pi) angle = angle - TwoPi
+      if (angle .lt. 2.5d0*drad) then
+         cold_high_a_inc = angle/(2.5*drad)
+      else if (angle .le. 9.d0*drad) then
+         cold_high_a_inc = (9.d0*drad - angle)/(6.5d0*drad)
+      else
+         cold_high_a_inc = 0.d0
+      end if
+      
+      return
+      end
+
+      real*8 function hot_inc (nparam, param, inc)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine returns the unnormalized inclination "probability"
+c density for cold objects with a < 44.4
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : December 2019
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     nparam: Number of parameters (I4)
+c     param : Parameters (n*R8)
+c     inc   : Inclination [Radian] (R8)
+c
+c OUPUT
+c     onecomp: Value of the probability (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) nparam
+Cf2py intent(in), depend(nparam) :: param
+Cf2py intent(in) inc
+
+      implicit none
+
+      integer
+     $  nparam
+
+      real*8
+     $  param(*), inc
+
+      real*8
+     $  Pi, TwoPi, drad
+
+      parameter
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, drad = Pi/180.)
+
+      real*8
+     $  fe, angle
+
+      angle = mod(inc, TwoPi)
+      if (angle .gt. Pi) angle = angle - TwoPi
+      if (angle .lt. 30.d0*drad) then
+         hot_inc = sin(angle)
+      else if (angle .le. 50.d0*drad) then
+         hot_inc = 0.5d0*(50.d0*drad - angle)/(20.d0*drad)
+      else
+         hot_inc = 0.d0
+      end if
+      
       return
       end
 
