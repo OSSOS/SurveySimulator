@@ -125,7 +125,7 @@ def draw_h(alpha, hmax, alpha_faint=None, contrast=1, hbreak=None, hmin=1):
 
         # Generate the bright side of the size distribution
         xpb = np.arange(hmin-(hmax-hmin)*0.01, hbreak, 0.001)
-        yb = 10**(alpha*xpb)*alpha*np.log10(10)
+        yb = 10**(alpha*xpb)*alpha*np.log(10)
 
         # Generate the faint side of the size distribution
         xpf = np.arange(hbreak, hmax, 0.001)
@@ -138,7 +138,7 @@ def draw_h(alpha, hmax, alpha_faint=None, contrast=1, hbreak=None, hmin=1):
         Vars.xp[1:] = xp
 
         # Coefficient to merge the faint and bright y arrays
-        yf = yf*(alpha/alpha_faint * 10**(alpha*hbreak)/(10**(alpha_faint*hbreak))/contrast)*alpha_faint*np.log10(10)
+        yf = yf*(alpha/alpha_faint * 10**(alpha*hbreak)/(10**(alpha_faint*hbreak))/contrast)*alpha_faint*np.log(10)
 
         # Merge them and then cumulate and normalzie
         y = np.concatenate([yb, yf]).cumsum()
@@ -155,6 +155,7 @@ def draw_h(alpha, hmax, alpha_faint=None, contrast=1, hbreak=None, hmin=1):
     rv2 = np.random.rand(size)
     # Flip x and y and interpolate it for input y's, thus given an array of x's (H values)
     Vars.H = np.interp(rv2, Vars.y, Vars.xp)
+
     # Store the initial length of the H array
     Vars.Hl = len(Vars.H)
     # The counter is set to 1 as the first element will already be returned
@@ -178,8 +179,11 @@ def detfile(fname, seed):
     f_detect.write(f'#{"a [AU]":>7s} {"e":>6s} {"i [°]":>8s} {"Ω [°]":>8s} {"ω [°]":>8s} {"M [°]":>8s} '
                    f'{"ResAmp [°]":>10s} {"q [°]":>8s} {"Dist_* [AU]":>12s} {"M(t) [°]":>8s} {"MagR":>8s} '
                    f'{"H MagR":>6s} {"Color":>5s} {"flag":>5s} {"Dist_E [AU]":>12s} {"Mag_Intr":>8s} '
-                   f'{"H_Intr":>6s} {"eff":>4s} {"RA [H]":>8s} {"Dec [°]":>8s} {"𝛿RA [?]":>8s} '
-                   f'{"𝛿DEC [?]":>8s} {"Survey":>10s} {"Comments":>10s}\n#\n')
+                   f'{"H_Intr":>6s} {"eff":>4s} {"RA [H]":>8s} {"Dec [°]":>8s} \u202F{"𝛿RA [″/hr]":>11s} '
+                   f'\u200A{"𝛿DEC [″/hr]":>11s} {"Survey":>10s} {"Comments":>10s}\n#\n')
+    # Special Unicode spaces (U+202F Narrow No-Break Space, and U+2009 Thin Space) are needed to ensure proper
+    # spacing in the text file. This is because the double prime symbol used to denote arcseconds is thinner than
+    # standard fixed width unicode characters.
 
 
 def trackfile(fname):
@@ -197,8 +201,8 @@ def detwrite(fname, a, e, inc, node, peri, m, resamp, r, mt, m_rand, h_rand, col
     f_detect.write(f'{a:8.3f} {e:6.3f} {inc / drad:8.3f} {node / drad:8.1f} {peri / drad:8.1f} {m / drad:8.1f} '
                    f'{resamp:10.5f} {a * (1 - e):8.3f} {r:12.5f} {mt / drad:8.3f} {m_rand:8.3f} '
                    f'{h_rand:6.2f} {color[ic - 1]:5.2f} {flag:>5d} {delta:12.5f} {m_int:8.3f} '
-                   f'{h:6.2f} {eff:4.2f} {ra / drad / 15:8.5f} {dec / drad:8.4f} {d_ra / drad * 3600 / 24:8.5f} '
-                   f'{d_dec / drad * 3600 / 24:8.5f} {surna.decode("utf-8"):>10s} {comments:>10s}\n')
+                   f'{h:6.2f} {eff:4.2f} {ra / drad / 15:8.5f} {dec / drad:8.4f} {d_ra / drad * 3600 / 24:11.6f} '
+                   f'{d_dec / drad * 3600 / 24:11.6f} {surna.decode("utf-8"):>10s} {comments:>10s}\n')
     f_detect.close()
 
 

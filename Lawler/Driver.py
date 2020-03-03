@@ -33,7 +33,10 @@ track_file = 'tracked.dat'  # Output file for tracked objects
 # Import the arbitrarily named GiMeObj module given in input.file. Name must be given without a file extension.
 go = importlib.import_module(obj_file)
 
-go.setrand(seed)
+go.set_seed(seed)
+go.initialize()
+
+# go.setrand(seed)
 Tools.setrand(seed)
 
 f_detect = Tools.detfile(detect_file, seed)  # set-up the detection file comments in OSSOS format
@@ -48,13 +51,12 @@ n_iter, n_hits, n_track = 0, 0, 0
 
 # n_track_max=2
 
-# I believe this is envisioned as a comment for the kind of object returned by GiMeObj
-comments = 'res'
+# comments = "test"
 
 while keep_going:
 
     # Draw an object 
-    a, e, inc, node, peri, M, epoch, h, color, gb, ph, period, amp, resamp = go.gimeobj(distri_file)
+    a, e, inc, node, peri, M, epoch, h, color, gb, ph, period, amp, resamp, comments = go.gimeobj()  #, comments
 
     # Write out the first 5000 objects to a file to give a small representative sample
     if n_iter < 5000:
@@ -67,7 +69,7 @@ while keep_going:
     # There is no limit at 2**31-1.
     n_iter += 1
 
-    # Call the survery simulator
+    # Call the survey simulator
     # The output seed2 is never used, but is returned by Fortran so it is stored
     seed2, flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, epochp, ic, surna, h_rand = \
         SurveySubs.detos1(a, e, inc, node, peri, M, epoch, h, color, gb, ph, period, amp, survey_dir, seed)
