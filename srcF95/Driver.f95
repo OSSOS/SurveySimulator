@@ -96,15 +96,16 @@ program Driver
   write (lun_h, '(''# delt_dec: distance from center of pointing'', &
        '' [arcsec]'')')
   write (lun_h, '(''#'')')
-  write (lun_h, '(a,a,a)') &
-       '#   a      e        i        q        r        M      m_rand', &
+  write (lun_h, '(a,a,a,a)') &
+       '#   a      e        i        q        r        M       node ', &
+       '    peri  m_rand', &
        ' H_rand color flag delta    m_int    H_int eff   RA(H)  ', &
-       '   DEC    delta_ra delt_dec Surv. Comments'
+       '   DEC    Surv. Comments'
 
   open (unit=lun_t, file=trk_outfile, status='new', err=9501)
   write (lun_t, '(a,a)') &
-       '#   a      e        i        q        r        M      m_rand', &
-       ' H_rand color Comments'
+       '#   a      e        i        q        r        M       node ', &
+       '    peri  m_rand H_rand color Comments'
 
 ! Initialize counters
   n_hits = 0
@@ -154,13 +155,14 @@ program Driver
 !        m_rand and h_rand are in discovery filter
         n_hits = n_hits + 1
         write (lun_h, 9000) o_m%a, o_m%e, o_m%inc/drad, o_m%a*(1.d0-o_m%e), r, &
-             mt/drad, m_rand, h_rand, color(ic), flag, delta, m_int, h, eff, &
-             ra/drad/15., dec/drad, d_ra/drad*3600./24., d_dec/drad*3600./24., &
+             mt/drad, o_m%node/drad, o_m%peri/drad, m_rand, h_rand, color(ic), &
+             flag, delta, m_int, h, eff, ra/drad/15., dec/drad, &
              surna, comments(1:nchar)
         if ((flag .gt. 2) .and. (mod(flag,2) .eq. 0)) then
            n_track = n_track + 1
            write (lun_t, 9010) o_m%a, o_m%e, o_m%inc/drad, o_m%a*(1.d0-o_m%e), &
-                r, mt/drad, m_rand, h_rand, color(ic), comments(1:nchar)
+                r, mt/drad, o_m%node/drad, o_m%peri/drad, m_rand, h_rand, &
+                color(ic), comments(1:nchar)
         end if
      end if
 
@@ -184,9 +186,9 @@ program Driver
 
   stop
 
-9000 format (f8.3,1x,f6.3,1x,5(f8.3,1x),f6.2,1x,f5.2,1x,i2,2(1x,f8.3), &
-          1x,f6.2,1x,f4.2,1x,f8.5,1x,f8.4,2(1x,f8.5),1x,a6,1x,a)
-9010 format (f8.3,1x,f6.3,1x,5(f8.3,1x),f6.2,1x,f5.2,1x,a)
+9000 format (f8.3,1x,f6.3,1x,6(f8.3,1x),2(f6.2,1x),f5.2,1x,i2,2(1x,f8.3), &
+          1x,f6.2,1x,f4.2,1x,f8.5,1x,f8.4,1x,a6,1x,a)
+9010 format (f8.3,1x,f6.3,1x,6(f8.3,1x),2(f6.2,1x),f5.2,1x,a)
 
 9500 continue
   write (screen, *) 'File "', det_outfile, '" already exists. '
