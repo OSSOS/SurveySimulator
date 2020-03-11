@@ -91,15 +91,6 @@ for i in np.arange(0, len(ta)):
     tx = np.append(tx, tx1)
     ty = np.append(ty, ty1)
 
-# count which detected guys are in each island, can just divide up and do it dumbly for this purpose
-countlead = len(tx[(tx > 0) * (ty > 0)])
-counttrail = len(tx[ty < 0])
-countsym = len(tx[(ty > 0) * (tx < 0)])
-total = len(tx)
-print(f"Symmetric fraction: {countsym / total}")
-print(f"leading fraction: {countlead / total}")
-print(f"trailing fraction: {counttrail / total}")
-
 # Neptune's postion
 lambdaN = 333.5078 * np.pi / 180.
 xN = 30.1 * np.cos(lambdaN)
@@ -122,5 +113,5 @@ plt.text(0, 41, "40 AU", horizontalalignment='center', color='b')
 plt.text(0, 51, "50 AU", horizontalalignment='center', color='b')
 plt.axis('off')
 
-plt.savefig('toy21.png')
+plt.savefig('example.png')
 plt.show()

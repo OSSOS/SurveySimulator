@@ -1,0 +1,11 @@
+GiMeObj_File
+444444
+100
+100
+../All_Surveys
+
+# Object distribution module name. (no file extension)
+# Seed.
+# Number of objects to detect.
+# Number of objects to track.
+# Path to directory containing the survey characterizations.
