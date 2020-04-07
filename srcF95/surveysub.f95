@@ -238,7 +238,7 @@ contains
              p(2) = dec_l
 ! Get mag in actual survey filter.
              h = hx + color(filt_i)
-             if ((amp .ge. 0.d0) .and. (period .ge. 0.d0)) then
+             if ((amp .gt. 0.d0) .and. (period .gt. 0.d0)) then
                 h = h + amp*0.5d0*sin((obspos(1)%jday-jday)/period*twopi+ph)
              end if
 ! mag in survey's filter
