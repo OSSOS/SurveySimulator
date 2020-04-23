@@ -5,7 +5,6 @@ module xvutils
 
 contains
   subroutine BaryXV (jday, pos, vel, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine gives the position and velocity in ecliptic heliocentric
 ! reference frame of the Solar System barycenter at a given time. Uses
@@ -30,15 +29,17 @@ contains
 !f2py intent(out) pos
 !f2py intent(out) vel
 !f2py intent(out) ierr
-      implicit none
+    implicit none
 
+    type(t_v3d), intent(out) :: pos, vel
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: jday
     integer, parameter :: n_planets = 9
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, jday_min = 2415020.0, jday_max = 2488070.0, &
          mu = TwoPi**2
-    type(t_v3d) :: pos, vel, pos_p, vel_p
-    real (kind=8) :: jday
-    integer :: ind, ierr, istat
+    type(t_v3d) :: pos_p, vel_p
+    integer :: ind, istat
     real (kind=8) :: masses(n_planets), msys, mp
 
     data masses /6023600.0d0,   &  ! Mercury
@@ -94,7 +95,6 @@ contains
   end subroutine BaryXV
 
   subroutine DistSunEcl (jday, pos, r)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine computes distance from object defined by barycentric
 ! ecliptic coordinates to Sun at given jday.
@@ -116,10 +116,12 @@ contains
 !f2py intent(out) r
     implicit none
 
-    type(t_v3d) :: pos, pos_b, vel_b
-    real (kind=8) :: jday, r
-    real (kind=8), save :: jday_b
+    type(t_v3d), intent(in) :: pos
+    real (kind=8), intent(in) :: jday
+    real (kind=8), intent(out) :: r
+    type(t_v3d) :: pos_b, vel_b
     integer :: ierr
+    real (kind=8), save :: jday_b
     logical, save :: done
 
     data done /.false./
@@ -140,7 +142,6 @@ contains
   end subroutine DistSunEcl
 
   subroutine ObsPos (code, t, pos, vel, r, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine returns the cartesian coordinates of the observatory.
 ! Reference frame : ICRF
@@ -174,13 +175,17 @@ contains
 !f2py intent(out) vel
 !f2py intent(out) r
 !f2py intent(out) ierr
-
     implicit none
 
-    integer :: code, ierr, istat
-    type(t_v3d) :: pos, vel, pos_b, vel_b
+    type(t_v3d), intent(out) :: pos, vel
+    integer, intent(in) :: code
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: t
+    real (kind=8), intent(out) :: r
+    type(t_v3d) :: pos_b, vel_b
+    integer :: istat
     real (kind=8), parameter :: km2AU = 149597870.691d0
-    real (kind=8) :: t, r, v_pos(3)
+    real (kind=8) :: v_pos(3)
 
     ierr = 0
     if (code .eq. 1) then
@@ -233,7 +238,6 @@ contains
   end subroutine ObsPos
 
   subroutine PlanetElem (ind, jday, o_m, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine gives the osculating elements in heliocentric reference
 ! frame of a planet at a given time. From given elements and rates.
@@ -271,14 +275,15 @@ contains
 !f2py intent(in) jday
 !f2py intent(out) o_m
 !f2py intent(out) ierr
-      implicit none
+    implicit none
 
+    type(t_orb_m), intent(out) :: o_m
+    integer, intent(in) :: ind
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: jday
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, jday_min = 2378496.5d0, jday_max = 2470171.5d0
     integer, parameter :: n_planets = 9
-    type(t_orb_m) :: o_m
-    real (kind=8) :: jday
-    integer :: ind, ierr
     real (kind=8) :: a_p(n_planets), e_p(n_planets), i_p(n_planets), &
          node_p(n_planets), peri_p(n_planets), capl_p(n_planets), &
          da_p(n_planets), de_p(n_planets), di_p(n_planets), &
@@ -373,7 +378,6 @@ contains
   end subroutine PlanetElem
 
   subroutine PlanetXV (ind, jday, pos, vel, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine gives the position and velocity in ecliptic heliocentric
 ! reference frame of a planet at a given time. Uses PlanetElem.
@@ -410,16 +414,17 @@ contains
 !f2py intent(out) pos
 !f2py intent(out) vel
 !f2py intent(out) ierr
-
     implicit none
 
+    type(t_v3d), intent(out) :: pos, vel
+    integer, intent(in) :: ind
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: jday
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, jday_min = 2415020.0d0, jday_max = 2488070.0d0, &
          mu = TwoPi**2
     integer, parameter :: n_planets = 9
-    type(t_v3d) :: pos, vel
-    real (kind=8) :: jday
-    integer :: ind, ierr, istat
+    integer :: istat
     type(t_orb_m) :: o_m
     real (kind=8) :: masses(n_planets), gm
 
@@ -472,14 +477,16 @@ contains
   subroutine newcomb (DJ,ROUT)
 !f2py intent(in) dj
 !f2py intent(out) rout
-
     implicit none
+
+    real (kind=8), intent(in) :: dj
+    real (kind=8), intent(out) :: rout(3)
     real (kind=8) :: Z(8,121),Z0(80),Z1(80),Z2(80),Z3(80),Z4(80),Z5(80),Z6(80), &
          Z7(80),Z8(80),Z9(80),ZA(80),ZB(80),ZC(8),ROU(3),CC(3,3), &
-         EL(21),C(5),RIN(3),X(3),Y(3),W(3),ROUT(3), TWOPI, STR, RTD, OBL0, &
+         EL(21),C(5),RIN(3),X(3),Y(3),W(3), TWOPI, STR, RTD, OBL0, &
          C1, C2, C3, TFIN, T, TP, T18, V, V2, V3, T50, D, ARG, DL, DR, DBLARG, &
          DB, GME, GV, GMA, GJ, GS, RO, CS, SS, BS, BC, BR, RS, RC, OBL, T2, T3, &
-         RDPSC, DPTTY, SDL, DJ, DT, DT2, DY, DY2, DY3, AK, AW, BN, SINK, COSK, &
+         RDPSC, DPTTY, SDL, DT, DT2, DY, DY2, DY3, AK, AW, BN, SINK, COSK, &
          SINN, COSN, RIH, RIG, DIG, SINW, COSW, DG
     integer :: i, k
 

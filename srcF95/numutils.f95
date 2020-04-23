@@ -39,9 +39,11 @@ contains
 !f2py intent(out) ierr
     implicit none
 
-    integer :: ierr
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: r, delta, robs, h, g
+    real (kind=8), intent(out) :: alpha, mag
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, raddeg = 180.0d0/Pi
-    real (kind=8) :: r, delta, robs, h, g, alpha, mag, denom, phi1, phi2
+    real (kind=8) :: denom, phi1, phi2
 
     ierr = 0
     denom = 2.d0*r*delta
@@ -93,8 +95,10 @@ contains
 !f2py intent(out) ierr
     implicit none
 
-    integer ierr
-    real (kind=8) :: r, delta, robs, h, g, alpha, mag, mag0
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: r, delta, robs, g, mag
+    real (kind=8), intent(out) :: h, alpha
+    real (kind=8) :: mag0
 
     h = 0.d0
     call AppMag (r, delta, robs, h, g, alpha, mag0, ierr)
@@ -131,10 +135,11 @@ contains
 !f2py intent(out) y
     implicit none
 
-    integer :: i
+    integer, intent(inout) :: i
+    real (kind=8), intent(out) :: y
     integer, save :: compte
     real (kind=8), save :: pi, x1, x2
-    real (kind=8) :: y, y1, y2
+    real (kind=8) :: y1, y2
 
     data &
          compte /0/, &
@@ -187,11 +192,13 @@ contains
 !f2py intent(in,out) seed
 !f2py intent(out) mag
 !f2py intent(out) magerr
-
     implicit none
 
-    real (kind=8) :: mag_t, mag_er(*), magerr, mag, tmp, mag_th
-    integer :: seed, i
+    integer, intent(out) :: seed
+    real (kind=8), intent(in) :: mag_t, mag_er(:)
+    real (kind=8), intent(out) :: magerr, mag
+    real (kind=8) :: tmp, mag_th
+    integer :: i
 
     mag_th = mag_t
 !      tmp = log10(mag_er(2)/mag_er(1))/(mag_er(3)-21.d0)
@@ -250,9 +257,9 @@ contains
 !f2py intent(out) r
     implicit none
 
-    type(t_v3d) :: pos
+    type(t_v3d), intent(in) :: pos
+    real (kind=8), intent(out) :: lat, long, r
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi
-    real (kind=8) :: lat, long, r
 
     r = dsqrt (pos%x**2 + pos%y**2 + pos%z**2)
     long = datan2(pos%y, pos%x)
@@ -289,9 +296,10 @@ contains
 !f2py intent(out) dec
     implicit none
 
-    type(t_v3d) :: pos, opos, obspos
-    real (kind=8) :: ra, dec, delta
+    type(t_v3d), intent(in) :: pos, obspos
+    real (kind=8), intent(out) :: ra, dec, delta
     integer :: ierr
+    type(t_v3d) :: opos
 
 ! Compute ICRF cartesian coordinates
     call equat_ecl (-1, pos, opos, ierr)
@@ -308,16 +316,15 @@ contains
     return
   end subroutine RADECeclXV
 
-  FUNCTION ran3(idum)
+  real (kind=8) FUNCTION ran3(idum)
 !f2py intent(in,out) idum
     implicit none
 
-    integer :: idum
+    integer, intent(inout) :: idum
     integer, parameter :: MBIG=1000000000, MSEED=161803398, MZ=0
     real (kind=8), parameter :: FAC=1.d0/MBIG
     integer, save :: iff, inext, inextp, ma(55)
     integer :: i, ii, mj, mk, k
-    real (kind=8) :: ran3
 
     data iff /0/
 
@@ -375,7 +382,7 @@ contains
     implicit none
 
 ! Calling arguments
-    real (kind=8) :: var
+    real (kind=8), intent(inout) :: var
 
 !Some values better set up as parameters
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi
@@ -418,8 +425,11 @@ contains
 !f2py intent(out) jul
     implicit none
 
-    integer :: mm, iyyy, id, juld
-    real (kind=8) :: dd, idfrac, jul
+    integer, intent(in) :: mm, iyyy
+    real (kind=8), intent(in) :: dd
+    real (kind=8), intent(out) :: jul
+    real (kind=8) :: idfrac
+    integer :: id, juld
 
     id = INT(dd)
     idfrac = dd - id
@@ -435,13 +445,15 @@ contains
     return
   end subroutine cal2jul
 
-  function julday(MM,ID,IYYY)
+  integer function julday(MM,ID,IYYd)
 
     implicit none
 
+    integer, intent(in) :: mm, id, iyyd
     integer, parameter :: igreg=15+31*(10+12*1582)
-    integer :: mm, id, iyyy, jy, jm, ja, julday
+    integer :: jy, jm, ja, iyyy
 
+    iyyy = iyyd
     IF (IYYY.EQ.0) stop 'There is no Year Zero.'
     IF (IYYY.LT.0) IYYY=IYYY+1
     IF (MM.GT.2) THEN
@@ -460,7 +472,6 @@ contains
   END function julday
 
   subroutine ObjAbs (o_p, jday, mag, code, gb, alpha, h, ra, dec, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine determines the absolute magnitude of an object and its
 ! sky position (RA, DEC) given its orbital elements (Berstein &
@@ -506,15 +517,17 @@ contains
 !f2py intent(out) ierr
     implicit none
 
-    type(t_orb_p) :: o_p
+    type(t_orb_p), intent(in) :: o_p
+    real (kind=8), intent(in) :: jday, gb, mag
+    real (kind=8), intent(out) :: h, alpha, ra, dec
+    integer, intent(out) :: ierr
     type(t_orb_m) :: o_m
     type(t_v3d) :: pos, obpos, tmp
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, &
          drad = Pi/180.0d0
     integer, parameter :: screen = 6
-    real (kind=8) :: h, jday, alpha, ra, dec, gb, mag
     real (kind=8), save :: r, delta, ros
-    integer :: ierr, code
+    integer :: code
 
     call ObsPos (code, jday, obpos, tmp, ros, ierr)
     if (ierr .ne. 0) then

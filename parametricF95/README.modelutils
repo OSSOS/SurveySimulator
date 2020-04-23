@@ -1,0 +1,122 @@
+--------------------------------------------------------------------------------
+
+      subroutine psalun (i, x)
+
+This subroutine computes a "random" number using the recurrence formala:
+
+    i(k+1) = i(k) * 367379597 + 1 mod(2**31).
+
+x is a double precision real "random" number between 0 (inclusive)
+and 1 (exclusive). x = i/2.**31
+
+Upon first call to psalun, one must give an initial value to i
+(a seed) and then never change i (updated by the subroutine). This is a very
+efficient random number generator, but with a periodicity of 2**31 only.
+
+INPUT
+    i     : Seed (I4)
+
+OUTPUT
+    i     : Seed (I4)
+    x     : Random number (R8)
+
+
+--------------------------------------------------------------------------------
+
+      subroutine incdis (seed, nparam, param, incmin, incmax, inc,
+     $  ierr, func)
+
+This routine draws randomly a variable according to probability
+density \verb|func| with parameters \verb|param|.
+
+INPUT
+    seed  : Random number generator seed (I4)
+    nparam: Number of parameters (I4)
+    param : Parameters (n*R8)
+    incmin: Minimum value of variable (R8)
+    incmax: Maximum value of variable (R8)
+    func  : probability density function
+
+OUTPUT
+    inc   : Random variable (R8)
+    ierr  : Error code
+               0 : nominal run
+              10 : wrong input data
+
+
+--------------------------------------------------------------------------------
+
+      subroutine incdism (seed, nparam, param, incmin, incmax, inc,
+     $  dist, ierr, func)
+
+This routine draws randomly a variable according to probability
+density \verb|func| with parameters \verb|param|. Same as previous
+routine, but can remember up to 10 different distributions at a time.
+
+INPUT
+    seed  : Random number generator seed (I4)
+    nparam: Number of parameters (I4)
+    param : Parameters (n*R8)
+    incmin: Minimum value of variable (R8)
+    incmax: Maximum value of variable (R8)
+    dist  : index of the selected distribution (I4)
+    func  : probability density function
+
+OUTPUT
+    inc   : Inclination (R8)
+    ierr  : Error code
+               0 : nominal run
+              10 : wrong input data
+
+
+--------------------------------------------------------------------------------
+
+      real*8 function onecomp (nparam, param, inc)
+
+This routine returns the unnormalized inclination "probability"
+density of Brown (one component only).
+
+INPUT
+    nparam: Number of parameters (I4)
+    param : Parameters (n*R8)
+    inc   : Inclination (R8)
+
+OUPUT
+    onecomp: Value of the inclination (R8)
+
+
+--------------------------------------------------------------------------------
+
+      real*8 function onecompjmp (nparam, param, inc)
+
+This routine returns the unnormalized inclination "probability"
+density of Brown (one component only), modified to include sin(i)**2 instead of
+sin(i).
+
+INPUT
+    nparam: Number of parameters (I4)
+    param : Parameters (n*R8)
+    inc   : Inclination (R8)
+
+OUPUT
+    onecompjmp: Value of the inclination (R8)
+
+
+--------------------------------------------------------------------------------
+
+      real*8 function size_dist_one (seed, h_params)
+
+This function draws a number according to an exponential differential
+distribution specified by "h_params":
+
+    P(h) d_h = A \exp{(h*h_params(3))} d_h
+
+with h_params(1) <= h <= h_params(2)
+
+INPUT
+    inc   : inclination requested (radian) (R8)
+
+OUTPUT
+    fe    : ecliptic inclination distribution (R8)
+
+

@@ -38,7 +38,7 @@ cat >> $d/README.first <<EOF
 $df release to $intended_audience
 EOF
 tail --line=+3 README.first >> $d/README.first
-cp -a eupl* README.contact lookup lookupF95 parametric Python $d/
+cp -a eupl* README.contact lookup* parametric* Python* $d/
 for s in CFEPS OSSOS All_r_Surveys All_Surveys Deep_Surveys; do
     mkdir $d/$s
     cp ../$s/* $d/$s/
@@ -48,8 +48,8 @@ for s in CFEPS OSSOS All_r_Surveys Deep_Surveys; do
     \rm -f $d/$s/README.formats
     ln -s ../All_Surveys/README.formats $d/$s/README.formats
 done
-cp src/Driver.{f,py} src/README.* src/ModelUtils.f $d/src/
-cp srcF95/*.f95 srcF95/Makefile $d/srcF95/
+cp src/Driver.f src/Driver.py src/README.* src/ModelUtils.f $d/src/
+cp srcF95/*.f95 srcF95/DriverF95.py srcF95/Makefile srcF95/kind_map $d/srcF95/
 cp src/README.* $d/srcF95/
 \rm -f $d/CFEPS/*.py
 \rm -f $d/srcF95/test*f95

@@ -5,7 +5,6 @@ module ioutils
 contains
 
   subroutine trim (base_name, i1, i2, finished, len)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine trims the input character string 'base_name' and returns
 ! the 
@@ -30,9 +29,10 @@ contains
 !f2py intent(in) len
     implicit none
 
-    integer :: i1, i2, len
-    character :: base_name*(*)
-    logical :: finished
+    integer, intent(in) :: len
+    integer, intent(out) :: i1, i2
+    character(*), intent(in) :: base_name
+    logical, intent(out) :: finished
 
     finished = .false.
     i1 = 1
@@ -64,7 +64,6 @@ contains
   end subroutine trim
 
   subroutine read_file_name (base_name, i1, i2, finished, len)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine trims the input character string 'base_name' and returns
 ! the 
@@ -89,9 +88,10 @@ contains
 !f2py intent(in) len
     implicit none
 
-    integer :: i1, i2, len
-    character :: base_name*(*)
-    logical :: finished
+    integer, intent(in) :: len
+    integer, intent(out) :: i1, i2
+    character(*), intent(in) :: base_name
+    logical,intent(out) :: finished
 
     finished = .false.
     i1 = 1
@@ -127,19 +127,18 @@ contains
 
 ! Parses a line returns a list of words by getting rid of space characters
 
-  subroutine parse (command, nwmax, nw, word, lw)
-
+  subroutine parse (comd, nwmax, nw, word, lw)
 ! \subsection{Arguments}
 ! \subsubsection{Definitions}
 ! \begin{verse}
-! \verb|command| = command line to parse \\
+! \verb|comd| = command line to parse \\
 ! \verb|lw()| = word lengthes \\
 ! \verb|nw| = number of words in command line \\
 ! \verb|nwmax| = maximum allowed number of words \\
 ! \verb|word()| = words in command line
 ! \end{verse}
 !
-!f2py intent(in) command
+!f2py intent(in) comd
 !f2py intent(in) nwmax
 !f2py intent(out) nw
 !f2py intent(out) word
@@ -148,8 +147,10 @@ contains
 ! \subsubsection{Declarations}
     implicit none
 
-    integer :: lw(*), nw, nwmax
-    character :: command*(*), word(1)*(*)
+    integer, intent(in) :: nwmax
+    integer, intent(out) :: lw(:), nw
+    character(*), intent(in) :: comd
+    character(*), intent(out) :: word(:)
 
 ! \subsection{Variables}
 ! \subsubsection{Internal variables}
@@ -166,15 +167,19 @@ contains
 ! \subsubsection{Declarations}
 
     integer :: k, lc, lw0
+    character(1024) :: command
 
 ! \subsection{Parsing}
 
     do nw = 1, nwmax
        lw(nw) = 0
     end do
-    lc = len(command)
+    lc = len(comd)
+    command(1:lc) = comd(1:lc)
 1000 continue
-    if ((command(lc:lc) .eq. char(0)) .or. (command(lc:lc) .eq. ' ')) then
+    if ((command(lc:lc) .eq. char(0)) &
+         .or. (command(lc:lc) .eq. char(9)) &
+         .or. (command(lc:lc) .eq. ' ')) then
        lc = lc - 1
        if (lc .eq. 0) goto 1001
        goto 1000
@@ -190,7 +195,7 @@ contains
 
 ! Gets rid of leading space characters
        if (nw .ge. nwmax) then
-          write (6, *) command
+          write (6, *) command(1:lc)
           write (6, *) 'parse: too many words in command line.'
           stop
        end if
@@ -204,15 +209,15 @@ contains
 ! Finds a word
 
        nw = nw + 1
-       lw0 = index(command, ' ') - 1
+       lw0 = index(command(1:lc), ' ') - 1
        if (lw0 .le. 0) then
           lw(nw) = lc
           word(nw) = command(1:lc)
           lc = -1
        else
-          word (nw) = command (1:lw0)
+          word (nw) = command(1:lw0)
           lw(nw) = lw0
-          command = command (lw0+2:lc)
+          command = command(lw0+2:lc)
           lc = lc - lw0 - 1
        end if
        goto 1100
@@ -254,10 +259,13 @@ contains
 !f2py intent(out) ierr
     implicit none
 
+    integer, intent(in) :: incode, outcod
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: angle
+    character(13), intent(out) :: string
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, raddeg = 180.0d0/Pi
-    integer :: deg, mn, ierr, incode, outcod, si
-    real (kind=8) :: angle, sec, rm, w
-    character :: string*13
+    integer :: deg, mn, si
+    real (kind=8) :: sec, rm, w
 
     ierr = 0
     if (incode .eq. 1) then

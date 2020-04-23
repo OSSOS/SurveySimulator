@@ -27,10 +27,12 @@ contains
 !f2py intent(out) posecl
     implicit none
 
+    real (kind=8), intent(in) :: poseq(3), epsilon
+    real (kind=8), intent(out) :: posecl(3)
 ! Chapront et al. 2002 gamma to O_icrs in arcsec
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, phi = 0.05542d0, &
          degrad = Pi/180.d0
-    real (kind=8) :: poseq(3), posecl(3), epsilon, phir
+    real (kind=8) :: phir
 
     phir    = phi/3600d0*degrad
  
@@ -64,10 +66,12 @@ contains
 !f2py intent(out) poseq
       implicit none
 
+    real (kind=8), intent(in) :: posecl(3), epsilon
+    real (kind=8), intent(out) :: poseq(3)
 ! Chapront et al. 2002 gamma to O_icrs in arcsec
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, phi = 0.05542d0, &
          degrad = Pi/180.d0
-    real (kind=8) :: poseq(3), posecl(3), epsilon, phir
+    real (kind=8) :: phir
 
     phir    = phi/3600d0*degrad
 
@@ -79,7 +83,6 @@ contains
   end subroutine ecl_equ
 
   subroutine RotX (alpha, posin, posout)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine computes position in a frame rotated by angle alpha (rd)
 ! about the X axis.
@@ -103,7 +106,9 @@ contains
 !f2py intent(out) posout
     implicit none
 
-    real (kind=8) :: alpha, posin(3), posout(3), pos(3), ca, sa
+    real (kind=8), intent(in) :: alpha, posin(3)
+    real (kind=8), intent(out) :: posout(3)
+    real (kind=8) :: pos(3), ca, sa
 
     pos = posin
 
@@ -117,7 +122,6 @@ contains
   end subroutine RotX
 
   subroutine RotY (alpha, posin, posout)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine computes position in a frame rotated by angle alpha (rd)
 ! about the Y axis.
@@ -141,7 +145,9 @@ contains
 !f2py intent(out) posout
     implicit none
 
-    real (kind=8) :: alpha, posin(3), posout(3), pos(3), ca, sa
+    real (kind=8), intent(in) :: alpha, posin(3)
+    real (kind=8), intent(out) :: posout(3)
+    real (kind=8) :: pos(3), ca, sa
 
     pos = posin
     posout(2) = pos(2)
@@ -154,7 +160,6 @@ contains
   end subroutine RotY
 
   subroutine RotZ (alpha, posin, posout)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine computes position in a frame rotated by angle alpha (rd)
 ! about the Z axis.
@@ -178,7 +183,9 @@ contains
 !f2py intent(out) posout
     implicit none
 
-    real (kind=8) :: alpha, posin(3), posout(3), pos(3), ca, sa
+    real (kind=8), intent(in) :: alpha, posin(3)
+    real (kind=8), intent(out) :: posout(3)
+    real (kind=8) :: pos(3), ca, sa
 
     pos = posin
     posout(3) = pos(3)
@@ -224,13 +231,14 @@ contains
 !f2py intent(out) ierr
     implicit none
 
+    type(t_v3d), intent(in) :: v_in
+    type(t_v3d), intent(out) :: v_out
+    integer, intent(in) :: ieqec
+    integer, intent(out) :: ierr
 ! obliquity at J20000 in arcsec
     real (kind=8), parameter :: epsilon = 84381.41d0, &
          Pi = 3.141592653589793238d0, secrad = Pi/180.d0/3600.d0
-    type(t_v3d) :: v_in, v_out
     real (kind=8) :: ww(3), coseps, sineps
-
-    integer :: ieqec, ierr
 
     coseps = dcos(epsilon*secrad)
     sineps = dsin(epsilon*secrad)
@@ -301,12 +309,14 @@ contains
 !f2py intent(out) ierr
     implicit none
 
+    type(t_v3d), intent(in) :: v_in
+    type(t_v3d), intent(out) :: v_out
+    integer, intent(in) :: ieqec
+    integer, intent(out) :: ierr
 ! obliquity at J20000 in arcsec
     real (kind=8), parameter :: epsilon = 5713.86d0, omega = 387390.8d0, &
          Pi = 3.141592653589793238d0, secrad = Pi/180.d0/3600.d0
-    type(t_v3d) :: v_in, v_out
     real (kind=8) :: ww(3), coseps, sineps, cosom, sinom
-    integer :: ieqec, ierr
 
     coseps = dcos(epsilon*secrad)
     sineps = dsin(epsilon*secrad)
@@ -338,7 +348,6 @@ contains
   end subroutine invar_ecl
 
   subroutine invar_ecl_osc(ieqec, o_mi, o_mo, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine convert osculating elements back and forth between
 ! invariable plane and ecliptic plane.
@@ -351,12 +360,15 @@ contains
  
     implicit none
 
+    type(t_orb_m), intent(in) :: o_mi
+    type(t_orb_m), intent(out) :: o_mo
+    integer, intent(in) :: ieqec
+    integer, intent(out) :: ierr
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, mu = TwoPi**2
-    type(t_orb_m) :: o_mi, o_mo, o_md
+    type(t_orb_m) :: o_md
     type(t_v3d) :: posi, poso, veli, velo
     real (kind=8) ::  aid, eid, iid, noid, peid, mid
-    integer :: ieqec, ierr
 
     o_md%a = o_mi%a
     o_md%e = o_mi%e
@@ -378,7 +390,6 @@ contains
   end subroutine invar_ecl_osc
 
   subroutine invar_ecl_inc_node(ieqec, ii, noi, io, noo, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine convert inclination and longitude of node elements back
 ! and forth between invariable plane and ecliptic plane.
@@ -392,9 +403,11 @@ contains
 !f2py intent(out) ierr
      implicit none
 
+    integer, intent(in) :: ieqec
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: ii, noi
+    real (kind=8), intent(out) :: io, noo
     type(t_orb_m) :: o_mi, o_mo
-    real (kind=8) :: ii, noi, io, noo
-    integer :: ieqec, ierr
 
     o_mi%a = 10.d0
     o_mi%e  =0.2d0
@@ -462,14 +475,15 @@ contains
 !f2py intent(out) ierr
     implicit none
 
+    type(t_v3d), intent(in) :: v_in
+    type(t_v3d), intent(out) :: v_out
+    integer, intent(in) :: ieqec
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: eps, om
 ! obliquity at J20000 in arcsec
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, &
          secrad = Pi/180.d0/3600.d0
-    type(t_v3d) :: v_in, v_out
-    real (kind=8) :: eps, ww(3), coseps, sineps, &
-         om, cosom, sinom
-
-    integer :: ieqec, ierr
+    real (kind=8) :: ww(3), coseps, sineps, cosom, sinom
 
     coseps = dcos(eps)
     sineps = dsin(eps)
@@ -501,7 +515,6 @@ contains
   end subroutine ref_ecl
 
   subroutine ref_ecl_osc(ieqec, o_mi, o_mo, eps, om, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine converts osculating elements back and forth between
 ! given reference frame and ecliptic plane.
@@ -511,29 +524,22 @@ contains
 ! reference frame (rotation around node axis of ecliptic).
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) ieqec
-!f2py intent(in) ai
-!f2py intent(in) ei
-!f2py intent(in) ii
-!f2py intent(in) noi
-!f2py intent(in) pei
-!f2py intent(in) mi
+!f2py intent(in) o_mi
 !f2py intent(in) eps
 !f2py intent(in) om
-!f2py intent(out) ao
-!f2py intent(out) eo
-!f2py intent(out) io
-!f2py intent(out) noo
-!f2py intent(out) peo
-!f2py intent(out) mo
+!f2py intent(out) o_mo
 !f2py intent(out) ierr
     implicit none
 
+    type(t_orb_m), intent(in) :: o_mi
+    type(t_orb_m), intent(out) :: o_mo
+    integer, intent(in) :: ieqec
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: eps, om
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
          drad = Pi/180.d0, mu = TwoPi**2
-    type(t_orb_m) :: o_mi, o_mo, o_md
+    type(t_orb_m) :: o_md
     type(t_v3d) :: posi, poso, veli, velo
-    real (kind=8) :: eps, om
-    integer :: ieqec, ierr
 
     o_md%a = o_mi%a
     o_md%e = o_mi%e
@@ -555,7 +561,6 @@ contains
   end subroutine ref_ecl_osc
 
   subroutine ref_ecl_inc_node(ieqec, ii, noi, io, noo, eps, om, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine converts inclination and longitude of node elements back
 ! and forth between given reference frame and ecliptic plane.
@@ -574,9 +579,11 @@ contains
 !f2py intent(out) ierr
     implicit none
 
+    integer, intent(in) :: ieqec
+    integer, intent(out) :: ierr
+    real (kind=8), intent(in) :: ii, noi, eps, om
+    real (kind=8), intent(out) :: io, noo
     type(t_orb_m) :: o_mi, o_mo
-    real (kind=8) :: ii, noi, io, noo, eps, om
-    integer :: ieqec, ierr
 
     o_mi%a = 10.d0
     o_mi%e  =0.2d0
@@ -625,7 +632,8 @@ contains
     implicit none
 
 ! Calling arguments
-    real (kind=8) ::  a, ifd, Omfd
+    real (kind=8), intent(in) ::  a
+    real (kind=8), intent(out) ::  ifd, Omfd
 
 ! Internal variables
     real (kind=8) :: ci0(4), ci1(3), ci2(3), ci3(3), co0(3), co1(3), co2(5), &
@@ -694,15 +702,14 @@ contains
   end subroutine forced_plane
 
   subroutine ztopi (var)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This subroutine resets var to be between 0 and 2Pi.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in,out) var
     implicit none
 
+    real (kind=8), intent(inout) :: var
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi
-    real (kind=8) :: var
 
 1000 continue
     if (var .gt. TwoPi) then

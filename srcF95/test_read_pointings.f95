@@ -5,7 +5,7 @@ program test_read_pointings
 
   implicit none
   integer, parameter :: lun_s = 13
-  character :: survey*(80)
+  character(80) :: survey
   integer :: n_sur, ierr
   real (kind=8) :: sur_mm(n_sur_max)
   type(t_pointing) :: points(n_sur_max)

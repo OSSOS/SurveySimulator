@@ -12,7 +12,6 @@ contains
   subroutine Detos1 (o_m, jday, hx, color, gb, ph, period, amp, surnam, seed, &
        flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, &
        jdayp, ic, surna, h_rand)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine determines if a given object is seen by the survey
 ! described in the directory \verb|surnam|.
@@ -108,14 +107,17 @@ contains
 !f2py intent(out) h_rand
     implicit none
 
+    type(t_orb_m), intent(in) :: o_m
+    integer, intent(inout) :: seed
+    integer, intent(out) :: flag, isur, ic
+    real (kind=8), intent(in) :: jday, hx, color(:), gb, ph, period, amp
+    real (kind=8), intent(out) :: ra, dec, d_ra, d_dec, r, delta, m_int, &
+         m_rand, eff, mt, jdayp, h_rand
+    character(*), intent(in) :: surnam
+    character(10), intent(out) :: surna
+
     integer, parameter :: screen = 6, keybd = 5, verbose = 9, &
          lun_s = 13, lun_h = 6
-    type(t_orb_m) :: o_m
-    real (kind=8) :: jday, hx, color(*), gb, ph, period, amp, ra, dec, &
-         d_ra, d_dec, r, delta, m_int, m_rand, eff, mt, jdayp, h_rand
-    integer :: seed, flag, isur, ic
-    character :: surnam*(*), surna*10
-
     type(t_orb_m), save :: o_ml
     type(t_obspos), save :: obspos(2)
     type(t_v3d), save :: pos, pos2
@@ -129,9 +131,9 @@ contains
          track_slope, angle, rate, delta2, mag_peri, dmag, &
          p(2), ra_l, dec_l, d_ra_l, d_dec_l, r_l, delta_l, &
          m_int_l, m_rand_l, eff_l, mt_l
-    integer (kind=4), save :: i, filt_i, flag_l, n_sur, ierr, &
+    integer, save :: i, filt_i, flag_l, n_sur, ierr, &
          incode, outcod, i_sur, nph
-    character, save :: stra*13, stdec*13
+    character(13), save :: stra, stdec
     logical, save :: debug, newpos, rate_ok, first
 
     data &
