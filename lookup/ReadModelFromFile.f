@@ -198,9 +198,13 @@ c Internal storage
      $  ran3,                   ! Random number generator
      $  color0(10)              ! Color parameters of model
       character
+     $  date*8,                 ! Date of execution
+     $  time*10,                ! Time of execution
+     $  zone*5,                 ! Time zone
      $  comp(n_obj_max)*10      ! Array of strings telling the component
                                 ! the object belongs too
       integer*4
+     $  values(8),              ! Values of date and time
      $  i_obj,                  ! Index of current object in array
      $  n_obj,                  ! Number of objects in arrays
      $  ierr_d,                 ! Return code for GetDistrib
@@ -239,6 +243,10 @@ c Writes a file describing the model that was used.
          write (lun_ll, '(a,a,a)')
      $     '# Model from file ', filena(i1:i2),
      $     ', version 1.0, 2013-05-14'
+         call date_and_time(date, time, zone, values)
+         write (lun_ll, '(a17,a23,2x,a5)') '# Creation time: ',
+     $     date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T' 
+     $     //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
          close (lun_ll)
 c Change "first" so this is not called anymore
          first = .false.

@@ -185,10 +185,14 @@ contains
          obj_jday(n_obj_max),   &! Array of times of elements [JD]
          random,                &! Random number
          color0(10)              ! Color parameters of model
+    character(5) :: zone         ! Time zone
+    character(8) :: date         ! Date of execution
     character(10), save :: &
+         time,                  &! Time of execution
          comp(n_obj_max)         ! Array of strings telling the component
                                  ! the object belongs too
     integer, save :: &
+         values(8),             &! Date and time of execution
          i_obj,                 &! Index of current object in array
          n_obj,                 &! Number of objects in arrays
          ierr_d,                &! Return code for GetDistrib
@@ -219,6 +223,10 @@ contains
             status='unknown')
        write (lun_ll, '(a,a,a)') &
             '# Model from file ', filena(i1:i2), ', version 1.0, 2013-05-14'
+       call date_and_time(date, time, zone, values)
+       write (lun_ll, '(a17,a23,2x,a5)') '# Creation time: ', &
+            date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T' &
+            //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
        close (lun_ll)
 ! Change "first" so this is not called anymore
        first = .false.

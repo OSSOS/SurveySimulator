@@ -197,7 +197,12 @@ c Set the values
      $  drad = Pi/180.0d0, lun_m = 20, lun_ll = 21)
 
 c Internal storage
+      character
+     $  date*8,                 ! Date of execution
+     $  time*10,                ! Time of execution
+     $  zone*5                  ! Time zone
       integer*4
+     $  values(8),              ! Values of date and time
      $  flag,                   ! Tell invar_ecl_osc which direction to go
      $  i,                      ! Dummy index
      $  nparam                  ! Number of parameters for the function called
@@ -276,6 +281,10 @@ c        Record model used, so a record of what was done is in output area
      $     status='unknown')
          write (lun_ll, '(a)')
      $        '# Inner belt toy, hot only, 2013-06-30'
+         call date_and_time(date, time, zone, values)
+         write (lun_ll, '(a17,a23,2x,a5)') '# Creation time: ',
+     $     date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T' 
+     $     //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
          write (lun_ll, '(''#'')')
          write (lun_ll, '(a,3(1x,f6.2))')
      $        '# H limits and slope for hot:', (h_params(i),i=1,3)

@@ -236,7 +236,12 @@ c Set the values
      $  drad = Pi/180.0d0, lun_m = 20, lun_ll = 21)
 
 c Internal storage
+      character
+     $  date*8,                 ! Date of execution
+     $  time*10,                ! Time of execution
+     $  zone*5                  ! Time zone
       integer*4
+     $  values(8),              ! Values of date and time
      $  i,                      ! Dummy index
      $  j,                      ! Dummy index
      $  kozflag,                ! Flag for kozai resonance
@@ -388,6 +393,10 @@ c Writes a file describing the model that was used.
      $     status='unknown')
          write (lun_ll, '(a)')
      $     '# 3:2 resonance model, version 1.0, 2013-06-12'
+         call date_and_time(date, time, zone, values)
+         write (lun_ll, '(a17,a23,2x,a5)') '# Creation time: ',
+     $     date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T' 
+     $     //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
          write (lun_ll, '(''#'')')
          write (lun_ll, '(a,5(1x,f6.2))')
      $        '# H limits and slopes:', (h_params(i),i=1,5)

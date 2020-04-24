@@ -1,9 +1,9 @@
 # Seed:  123456789
 #
+# Creation time: 2020-04-24T09:17:31.870  +0200
+#
 # flag: >0: detected; >2: characterized; 0 mod(2): tracked
 # Survey: name of the block
-# delta_ra: distance from center of pointing [arcsec]
-# delt_dec: distance from center of pointing [arcsec]
 #
 #   a      e        i        q        r        M       node     peri  m_rand H_rand color flag delta    m_int    H_int eff   RA(H)     DEC    Surv. Comments
   34.976  0.112    4.377   31.059   38.753  162.785  261.891    6.291  23.72   7.81  0.00  4   37.783   23.643   7.73 0.70  4.84460  23.0789 L3w-sm resonant  

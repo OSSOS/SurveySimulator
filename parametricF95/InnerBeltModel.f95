@@ -196,7 +196,11 @@ contains
          drad = Pi/180.0d0       ! Degree to radian convertion: Pi/180
 
 ! Internal storage
+    character(5) :: zone         ! Time zone
+    character(8) :: date         ! Date of execution
+    character(10) :: time        ! Time of execution
     integer (kind=4), save :: &
+         values(8),             &! Date and time of execution
          flag,                  &! Tell invar_ecl_osc which direction to go
          i,                     &! Dummy index
          nparam                  ! Number of parameters for the function called
@@ -264,6 +268,10 @@ contains
             status='unknown')
        write (lun_ll, '(a)') &
             'Inner belt model, version 1.0, 2013-05-14'
+       call date_and_time(date, time, zone, values)
+       write (lun_ll, '(a17,a23,2x,a5)') '# Creation time: ', &
+            date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T' &
+            //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
        write (lun_ll, '(''#'')')
        write (lun_ll, '(a,3(1x,f6.2))') &
             '# H limits and slope for cold:', (h_params(i),i=1,3)

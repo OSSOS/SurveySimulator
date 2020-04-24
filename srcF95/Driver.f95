@@ -59,9 +59,12 @@ program Driver
        mt, color(10), gb, ph, period, amp, jday_p, m_rand, eff, rn_iter, &
        eff_lim, h_rand
   integer :: n_hits, n_track, ierr, seed, flag, isur, ic, n_iter, &
-       n_track_max, nchar
-  character :: distri_file*80, survey_dir*100, trk_outfile*80, det_outfile*80, &
-       comments*100, surna*10
+       n_track_max, nchar, values(8)
+  character(80) :: distri_file, trk_outfile, det_outfile
+  character(100) :: survey_dir, comments
+  character(10) :: surna, time
+  character(8) :: date
+  character(5) :: zone
   logical :: keep_going
 
   lun_h = 10
@@ -88,13 +91,14 @@ program Driver
   open (unit=lun_h, file=det_outfile, status='new', err=9500)
   write (lun_h, '(''# Seed: '', i10)') seed
   write (lun_h, '(''#'')')
+  call date_and_time(date, time, zone, values)
+  write (lun_h, '(a17,a23,2x,a5)') '# Creation time: ', &
+       date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T'  &
+       //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
+  write (lun_h, '(''#'')')
   write (lun_h, ' &
        (''# flag: >0: detected; >2: characterized; 0 mod(2): tracked'')')
   write (lun_h, '(''# Survey: name of the block'')')
-  write (lun_h, '(''# delta_ra: distance from center of pointing'', &
-       '' [arcsec]'')')
-  write (lun_h, '(''# delt_dec: distance from center of pointing'', &
-       '' [arcsec]'')')
   write (lun_h, '(''#'')')
   write (lun_h, '(a,a,a,a)') &
        '#   a      e        i        q        r        M       node ', &
@@ -103,6 +107,9 @@ program Driver
        '   DEC    Surv. Comments'
 
   open (unit=lun_t, file=trk_outfile, status='new', err=9501)
+  write (lun_t, '(a17,a23,2x,a5)') '# Creation time: ', &
+       date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T'  &
+       //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
   write (lun_t, '(a,a)') &
        '#   a      e        i        q        r        M       node ', &
        '    peri  m_rand H_rand color Comments'

@@ -1,9 +1,9 @@
 # Seed:  123456789
 #
+# Creation time: 2020-04-24T09:46:13.000  +0200
+#
 # flag: >0: detected; >2: characterized; 0 mod(2): tracked
 # Survey: name of the block
-# delta_ra: distance from center of pointing [arcsec]
-# delt_dec: distance from center of pointing [arcsec]
 #
 #   a      e        i        q        r        M       node     peri  m_rand H_rand color flag delta    m_int    H_int eff   RA(H)     DEC    Surv. Comments
   38.786  0.102   12.338   34.815   38.258  283.454  193.776   93.064  23.24   7.35 -0.70  4   37.298   23.806   7.91 0.74 13.13630  -6.0966 L3h-smooth h inner

@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import sys
+import sys, time
 sys.path.append('.')
 
 def conv(st):
@@ -35,14 +35,15 @@ track_file = input()
 # Open detection file and write header
 f_detect = open(detect_file, 'w')
 f_detect.write ('# Seed: %10d\n#\n' % (seed))
+dati = time.strftime("%Y-%m-%dT%H:%M:%S.000  %z")
+f_detect.write ('# Creation time: {:30s}\n#\n'.format(dati))
 f_detect.write ('# flag: >0: detected; >2: characterized; 0 mod(2): tracked\n')
-f_detect.write ('# Survey: name of the block\n')
-f_detect.write ('# delta_ra: distance from center of pointing [arcsec]\n')
-f_detect.write ('# delt_dec: distance from center of pointing [arcsec]\n#\n')
+f_detect.write ('# Survey: name of the block\n#\n')
 f_detect.write ('#   a      e        i        q        r        M       node     peri  m_rand H_rand color flag delta    m_int    H_int eff   RA(H)     DEC    Surv. Comments\n')
 
 # Open tracked detection file (no header)
 f_track = open(track_file, 'w')
+f_track.write ('# Creation time: {:30s}\n#\n'.format(dati))
 f_track.write ('#   a      e        i        q        r        M       node     peri  m_rand H_rand color Comments\n')
 
 keep_going = True
