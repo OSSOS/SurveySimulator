@@ -13,13 +13,12 @@ contains
 ! The purpose of this library is to provide polygon-oriented routines.
 ! The first and most important one is:
 !     point_in_polygon (p, poly, n)
-! which tels if the point "p" is inside, outside or touching the
+! which tells if the point "p" is inside, outside or touching the
 ! polygon "poly".
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
-  function point_in_polygon(p, poly)
-
+  integer function point_in_polygon(p, poly)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This function checks if point "p" is inside the polygon "poly" using
 ! the quadrant method.
@@ -54,13 +53,13 @@ contains
 !
 !f2py intent(in) p
 !f2py intent(in) poly
-
     implicit none
 
-    integer :: point_in_polygon, i, walk_sum, walk
+    type(t_polygon), intent(in) :: poly
+    real (kind=8), intent(in) :: p(2)
+    integer :: i, walk_sum, walk
     integer, parameter :: n_max=100
-    type(t_polygon) :: poly
-    real (kind=8) :: p(2), moved(2,n_max+1)
+    real (kind=8) :: moved(2,n_max+1)
 
 ! Move point to origin
     do i = 1, poly%n+1
@@ -91,8 +90,7 @@ contains
 
   end function point_in_polygon
 
-  function calc_walk_summand(p1, p2)
-
+  integer function calc_walk_summand(p1, p2)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This function calculates the summand along one edge depending on axis
 ! crossings.
@@ -126,13 +124,13 @@ contains
 !
 !f2py intent(in) p1
 !f2py intent(in) p2
-
     implicit none
 
+    real (kind=8), intent(in) :: p1(2), p2(2)
 ! Indices for better readability
     integer, parameter :: x=1, y=2
-    integer :: summand, calc_walk_summand
-    real (kind=8) :: p1(2), p2(2), tx, ty, x_y0, y_x0
+    integer :: summand
+    real (kind=8) :: tx, ty, x_y0, y_x0
 
     summand = 0
 ! Here, we assume the 2 points are different!
@@ -200,7 +198,7 @@ contains
 !f2py intent(in,out) poly
     implicit none
 
-    type(t_polygon) :: poly
+    type(t_polygon), intent(inout) :: poly
     integer :: i, j
  
     if ((poly%x(poly%n) .eq. poly%x(1)) .and. (poly%y(poly%n) .eq. poly%y(1))) &

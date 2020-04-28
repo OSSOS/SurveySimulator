@@ -59,9 +59,12 @@ program Driver
        mt, color(10), gb, ph, period, amp, jday_p, m_rand, eff, rn_iter, &
        eff_lim, h_rand
   integer :: n_hits, n_track, ierr, seed, flag, isur, ic, n_iter, &
-       n_track_max, nchar
-  character :: distri_file*80, survey_dir*100, trk_outfile*80, det_outfile*80, &
-       comments*100, surna*10
+       n_track_max, nchar, values(8)
+  character(80) :: distri_file, trk_outfile, det_outfile
+  character(100) :: survey_dir, comments
+  character(10) :: surna, time
+  character(8) :: date
+  character(5) :: zone
   logical :: keep_going
 
   lun_h = 10
@@ -88,23 +91,28 @@ program Driver
   open (unit=lun_h, file=det_outfile, status='new', err=9500)
   write (lun_h, '(''# Seed: '', i10)') seed
   write (lun_h, '(''#'')')
+  call date_and_time(date, time, zone, values)
+  write (lun_h, '(a17,a23,2x,a5)') '# Creation time: ', &
+       date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T'  &
+       //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
+  write (lun_h, '(''#'')')
   write (lun_h, ' &
        (''# flag: >0: detected; >2: characterized; 0 mod(2): tracked'')')
   write (lun_h, '(''# Survey: name of the block'')')
-  write (lun_h, '(''# delta_ra: distance from center of pointing'', &
-       '' [arcsec]'')')
-  write (lun_h, '(''# delt_dec: distance from center of pointing'', &
-       '' [arcsec]'')')
   write (lun_h, '(''#'')')
-  write (lun_h, '(a,a,a)') &
-       '#   a      e        i        q        r        M      m_rand', &
+  write (lun_h, '(a,a,a,a)') &
+       '#   a      e        i        q        r        M       node ', &
+       '    peri  m_rand', &
        ' H_rand color flag delta    m_int    H_int eff   RA(H)  ', &
-       '   DEC    delta_ra delt_dec Surv. Comments'
+       '   DEC    Surv. Comments'
 
   open (unit=lun_t, file=trk_outfile, status='new', err=9501)
+  write (lun_t, '(a17,a23,2x,a5)') '# Creation time: ', &
+       date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T'  &
+       //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
   write (lun_t, '(a,a)') &
-       '#   a      e        i        q        r        M      m_rand', &
-       ' H_rand color Comments'
+       '#   a      e        i        q        r        M       node ', &
+       '    peri  m_rand H_rand color Comments'
 
 ! Initialize counters
   n_hits = 0
@@ -154,13 +162,14 @@ program Driver
 !        m_rand and h_rand are in discovery filter
         n_hits = n_hits + 1
         write (lun_h, 9000) o_m%a, o_m%e, o_m%inc/drad, o_m%a*(1.d0-o_m%e), r, &
-             mt/drad, m_rand, h_rand, color(ic), flag, delta, m_int, h, eff, &
-             ra/drad/15., dec/drad, d_ra/drad*3600./24., d_dec/drad*3600./24., &
+             mt/drad, o_m%node/drad, o_m%peri/drad, m_rand, h_rand, color(ic), &
+             flag, delta, m_int, h, eff, ra/drad/15., dec/drad, &
              surna, comments(1:nchar)
         if ((flag .gt. 2) .and. (mod(flag,2) .eq. 0)) then
            n_track = n_track + 1
            write (lun_t, 9010) o_m%a, o_m%e, o_m%inc/drad, o_m%a*(1.d0-o_m%e), &
-                r, mt/drad, m_rand, h_rand, color(ic), comments(1:nchar)
+                r, mt/drad, o_m%node/drad, o_m%peri/drad, m_rand, h_rand, &
+                color(ic), comments(1:nchar)
         end if
      end if
 
@@ -184,9 +193,9 @@ program Driver
 
   stop
 
-9000 format (f8.3,1x,f6.3,1x,5(f8.3,1x),f6.2,1x,f5.2,1x,i2,2(1x,f8.3), &
-          1x,f6.2,1x,f4.2,1x,f8.5,1x,f8.4,2(1x,f8.5),1x,a6,1x,a)
-9010 format (f8.3,1x,f6.3,1x,5(f8.3,1x),f6.2,1x,f5.2,1x,a)
+9000 format (f8.3,1x,f6.3,1x,6(f8.3,1x),2(f6.2,1x),f5.2,1x,i2,2(1x,f8.3), &
+          1x,f6.2,1x,f4.2,1x,f8.5,1x,f8.4,1x,a6,1x,a)
+9010 format (f8.3,1x,f6.3,1x,6(f8.3,1x),2(f6.2,1x),f5.2,1x,a)
 
 9500 continue
   write (screen, *) 'File "', det_outfile, '" already exists. '

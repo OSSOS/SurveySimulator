@@ -29,9 +29,9 @@ contains
 !f2py intent(out) v
     implicit none
 
-    type(t_orb_m) :: o_m
-    type(t_v3d) :: p, v
-    real (kind=8) :: mu
+    type(t_orb_m), intent(in) :: o_m
+    type(t_v3d), intent(out) :: p, v
+    real (kind=8), intent(in) :: mu
 
 ! \subsection{Variables}
 ! \subsubsection{Definitions}
@@ -172,8 +172,8 @@ contains
 !f2py intent(out) p
     implicit none
 
-    type(t_orb_m) :: o_m
-    type(t_v3d) :: p
+    type(t_orb_m), intent(in) :: o_m
+    type(t_v3d), intent(out) :: p
 
 ! \subsection{Variables}
 ! \subsubsection{Definitions}
@@ -311,7 +311,8 @@ contains
 !f2py intent(out) R
     implicit none
 
-    real (kind=8) :: inc, node, peri, P(3), Q(3), R(3)
+    real (kind=8), intent(in) :: inc, node, peri
+    real (kind=8), intent(out) :: P(3), Q(3), R(3)
 
 ! \subsection{Variables}
 ! \subsubsection{Definitions}
@@ -384,9 +385,9 @@ contains
 !f2py intent(out) o_m
     implicit none
 
-    type(t_v3d) :: p, v
-    type(t_orb_m) :: o_m
-    real (kind=8) :: mu
+    type(t_v3d), intent(in) :: p, v
+    type(t_orb_m), intent(out) :: o_m
+    real (kind=8), intent(in) :: mu
 
 ! \subsection{Variables}
 ! \subsubsection{Definitions}

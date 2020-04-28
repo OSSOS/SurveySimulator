@@ -3,7 +3,7 @@ module effut
   use datadec
 
 contains
-  function eta_raw (eff_p, nr, mdum, rdum, maglim)
+  real (kind=8) function eta_raw (eff_p, nr, mdum, rdum, maglim)
 
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine computes the efficiency at a given magnitude.
@@ -42,9 +42,12 @@ contains
 !f2py intent(out) maglim
 
     implicit none
-    integer :: ilo, ihi, i, nr, ir
-    type(t_eff_r) :: eff_p(*)
-    real (kind=8) :: m, x, mytanh, mdum, rdum, r, maglim, eta_raw
+    integer, intent(in) :: nr
+    type(t_eff_r), dimension(:), intent(in) :: eff_p
+    real (kind=8), intent(in) :: mdum, rdum
+    real (kind=8), intent(out) :: maglim
+    integer :: ilo, ihi, i, ir
+    real (kind=8) :: m, x, mytanh, r
 
     mytanh(x) = (exp(x) - exp(-x))/(exp(x) + exp(-x))
 
@@ -160,7 +163,7 @@ contains
     return
   end function eta_raw
 
-  function eta (eff_p, nr, mdum, rdum, maglim)
+  real (kind=8) function eta (eff_p, nr, mdum, rdum, maglim)
 
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine computes the efficiency at a given magnitude, keeping
@@ -195,9 +198,10 @@ contains
 !f2py intent(out) maglim
 
     implicit none
-    integer :: eff_n(n_r_max), nr
-    type(t_eff_r) :: eff_p(*)
-    real (kind=8) :: mdum, rdum, maglim, eta
+    integer, intent(in) :: nr
+    type(t_eff_r), dimension(:), intent(in) :: eff_p
+    real (kind=8), intent(in) :: mdum, rdum
+    real (kind=8), intent(out) :: maglim
     real (kind=8), save :: lim
 
     data lim /0.01d0/

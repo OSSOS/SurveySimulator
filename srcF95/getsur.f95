@@ -29,8 +29,9 @@ contains
 !f2py intent(out) poly
     implicit none
 
-    type(t_polygon) :: poly
-    real (kind=8) :: ra, dec, dra, h, w, e_w, e_h
+    type(t_polygon), intent(out) :: poly
+    real (kind=8), intent(in) :: ra, dec
+    real (kind=8) :: dra, h, w, e_w, e_h
 
 ! Below values are from assuming a size of 1°x1° for the "central"
 ! square and add 1/2° height and 1/9° width ears. However, looking at
@@ -168,8 +169,9 @@ contains
 
     implicit none
 
-    type(t_polygon) :: poly
-    real (kind=8) :: w, h, ra, dec, dra
+    type(t_polygon), intent(out) :: poly
+    real (kind=8), intent(in) :: w, h, ra, dec
+    real (kind=8) :: dra
 
     poly%n = 4
     poly%y(1) = dec - h
@@ -210,8 +212,9 @@ contains
 
     implicit none
 
-    type(t_polygon) :: poly
-    real (kind=8) :: ra, dec, dra
+    type(t_polygon), intent(out) :: poly
+    real (kind=8), intent(in) :: ra, dec
+    real (kind=8) :: dra
     integer :: j
 
     do j = 1, poly%n
@@ -231,8 +234,10 @@ contains
 !f2py intent(in) str
 !f2py intent(out) val
     implicit none
-    character :: str*(*), c*(1)
-    real (kind=8) :: val, piece(3), dp, sgn, z
+    character(*), intent(in) :: str
+    real (kind=8), intent(out) :: val
+    character(1) :: c
+    real (kind=8) :: piece(3), dp, sgn, z
     integer :: nstr, i, j, dpfind
 !
 !...Initialization
@@ -284,9 +289,6 @@ contains
   END subroutine hms
 
   subroutine read_eff (filen, lun_in, c, ierr)
-!     $  rates, nrates, rate_c, mag_er, photf, track, maglim, filt_i,
-!     $  ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in efficiency file.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -334,12 +336,15 @@ contains
 !f2py inten(in) lun_in
 !f2py intent(out) c
 !f2py intent(out) ierr
-
     implicit none
 
-    type(t_charact) :: c
-    integer :: lun_in, ierr, eq_ind, nw, lw(nw_max), i, j
-    character :: line*100, filen*(*), word(nw_max)*80
+    type(t_charact), intent(out) :: c
+    integer, intent(in) :: lun_in
+    integer, intent(out) :: ierr
+    character(*), intent(in) :: filen
+    integer :: eq_ind, nw, lw(nw_max), i, j
+    character(256) :: line
+    character(80) :: word(nw_max)
     logical rcut, tr, fi, mag, in_rates, in_func, rate(0:n_r_max), ph
 
     rcut = .false.
@@ -392,7 +397,7 @@ contains
        in_rates = .false.
        in_func = .false.
     else if (word(1)(1:lw(1)) .eq. 'filter') then
-       call parse (line(eq_ind+1:), nw_max-1, nw, word(2), lw(2))
+       call parse (line(eq_ind+1:), nw_max-1, nw, word(2:), lw(2:))
        if (word(2)(1:1) .eq. 'g') then
           c%f = 1
        else if (word(2)(1:1) .eq. 'r') then
@@ -435,7 +440,7 @@ contains
        in_func = .false.
     else if (word(1)(1:lw(1)) .eq. 'function') then
        if (in_rates) then
-          call parse (line(eq_ind+1:), nw_max-1, nw, word(2), lw(2))
+          call parse (line(eq_ind+1:), nw_max-1, nw, word(2:), lw(2:))
           if (word(2) .eq. 'single') c%eff_p(c%nr)%n = -1
           if (word(2) .eq. 'double') c%eff_p(c%nr)%n = -2
           if (word(2) .eq. 'linear') c%eff_p(c%nr)%n = -3
@@ -565,10 +570,6 @@ contains
   end subroutine read_eff
 
   subroutine read_sur (dirn, lun_in, point, ierr)
-!poly, n_e, jday,
-!     $  ff, code, pos, r, jday2, pos2, r2, efnam, nr, rates, eff_n,
-!     $  eff_b, eff_m, rate_c, track, d_mag, photf, maglim, filt_i, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in the survey description file.
 ! Angles are returned in radian.
@@ -598,14 +599,17 @@ contains
 !f2py intent(in) lun_in
 !f2py intent(out) point
 !f2py intent(out) ierr
-
     implicit none
 
-    type(t_pointing) :: point
+    type(t_pointing), intent(out) :: point
+    integer, intent(in) :: lun_in
+    integer, intent(out) :: ierr
+    character(*), intent(in) :: dirn
     type(t_v3d) :: vel
     real (kind=8) :: w, h, ra, dec, r
-    integer :: lun_in, ierr, j, nw, lw(nw_max), lun_e, ierr_e, i1, i2, i3, i4
-    character :: line*100, dirn*(*), word(nw_max)*80, fname*100
+    integer :: j, nw, lw(nw_max), lun_e, ierr_e, i1, i2, i3, i4
+    character(100) :: line, fname
+    character(80) :: word(nw_max)
     logical, save :: opened, finished
 
     data opened /.false./
@@ -769,7 +773,6 @@ contains
   end subroutine read_sur
 
   subroutine GetSurvey (survey, lun_s, n_sur, points, sur_mm, ierr)
-
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine reads in a survey description.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -801,13 +804,16 @@ contains
 !f2py intent(out) points
 !f2py intent(out) sur_mm
 !f2py intent(out) ierr
-
     implicit none
 
-    type(t_pointing) :: points(n_sur_max), point
-    real (kind=8) :: sur_mm(n_sur_max), rate, tmp, mag, eff
-    integer :: nr, n, j, i, lun_s, n_sur, ierr, i1, i2
-    character :: survey*(*)
+    type(t_pointing), intent(out) :: points(n_sur_max)
+    integer, intent(in) :: lun_s
+    integer, intent(out) :: n_sur, ierr
+    real (kind=8), intent(out) :: sur_mm(n_sur_max)
+    character(*), intent(in) :: survey
+    type(t_pointing) :: point
+    real (kind=8) :: rate, tmp, mag, eff
+    integer :: nr, n, j, i, i1, i2
     logical :: finished
 
 ! Open and read in survey definitions

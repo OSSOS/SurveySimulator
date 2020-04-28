@@ -55,7 +55,7 @@ module datadec
   type t_pointing
      real (kind=8) :: ff
      integer :: code
-     character :: efnam*80
+     character(80) :: efnam
      type(t_obspos) :: o_pos(2)
      type(t_polygon) :: poly
      type(t_charact) :: c

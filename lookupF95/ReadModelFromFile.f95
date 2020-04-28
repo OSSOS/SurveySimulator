@@ -1,7 +1,7 @@
 module gimeobjut
 
   use datadec
-  use numutils
+  use modelutils
   use ioutils
 
 contains
@@ -158,10 +158,12 @@ contains
     implicit none
 
 ! Calling arguments
-    integer :: ierr, seed, nchar
-    type(t_orb_m) :: o_m
-    real (kind=8) :: epoch, h, color(10), gb, ph, period, amp
-    character :: filena*(*), commen*100
+    integer, intent(inout) :: seed
+    integer, intent(out) :: ierr, nchar
+    type(t_orb_m), intent(out) :: o_m
+    real (kind=8), intent(out) :: epoch, h, color(10), gb, ph, period, amp
+    character(*), intent(in) :: filena
+    character(100), intent(out) :: commen
 
 ! Some values better set up as parameters
     integer, parameter :: &
@@ -183,10 +185,14 @@ contains
          obj_jday(n_obj_max),   &! Array of times of elements [JD]
          random,                &! Random number
          color0(10)              ! Color parameters of model
-    character, save :: &
-         comp(n_obj_max)*10      ! Array of strings telling the component
+    character(5) :: zone         ! Time zone
+    character(8) :: date         ! Date of execution
+    character(10), save :: &
+         time,                  &! Time of execution
+         comp(n_obj_max)         ! Array of strings telling the component
                                  ! the object belongs too
     integer, save :: &
+         values(8),             &! Date and time of execution
          i_obj,                 &! Index of current object in array
          n_obj,                 &! Number of objects in arrays
          ierr_d,                &! Return code for GetDistrib
@@ -217,6 +223,10 @@ contains
             status='unknown')
        write (lun_ll, '(a,a,a)') &
             '# Model from file ', filena(i1:i2), ', version 1.0, 2013-05-14'
+       call date_and_time(date, time, zone, values)
+       write (lun_ll, '(a17,a23,2x,a5)') '# Creation time: ', &
+            date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T' &
+            //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
        close (lun_ll)
 ! Change "first" so this is not called anymore
        first = .false.
@@ -261,16 +271,16 @@ contains
 ! random. If jday is "not defined" (i.e. < 0.), mean anomaly is drawn
 ! at random.
     if (o_m%node .lt. -twopi) then
-       random = ran3(seed)
+       random = ran_3(seed)
        o_m%node = random*twopi
     end if
     if (o_m%peri .lt. -twopi) then
-       random = ran3(seed)
+       random = ran_3(seed)
        o_m%peri = random*twopi
     end if
     epoch = obj_jday(i_obj)
     if ((o_m%m .lt. -twopi) .or. (epoch .lt. 0.d0)) then
-       random = ran3(seed)
+       random = ran_3(seed)
        o_m%m = random*twopi
        epoch = 2453157.5d0
     end if
@@ -342,7 +352,8 @@ contains
     type(t_orb_m) :: obj_o(:), o_m
     real (kind=8) :: obj_h(:), obj_t(:), color(:), h, g, mag, r, alpha
     integer :: lun_d, n_obj, ierr
-    character :: distri*(*), comp(*)*10, co*10
+    character(*) :: distri
+    character(10) :: comp(*), co
     real (kind=8), save :: jday
 
     ierr = 0
@@ -421,7 +432,10 @@ contains
     real (kind=8), parameter :: Pi = 3.141592653589793238d0, drad = Pi/180.0D0
     integer, parameter :: nw_max = 20
     integer :: lun_in, ierr, j, nw, lw(nw_max)
-    character :: line*100, filen*(*), word(nw_max)*80, co*10
+    character(*) :: filen
+    character(100) :: line
+    character(80) :: word(nw_max)
+    character(10) :: co
     logical, save :: opened
 
     data opened /.false./
