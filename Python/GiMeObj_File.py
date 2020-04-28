@@ -109,6 +109,25 @@ class Obj:
         # Variable that distinguishes between model source populations. See text file for more details.
         class_num = self.read_file(model_file, 6)
 
+        # Re-order all arrays read in from the file into a randomly generated order.
+
+        # Create a random index used to order all other arrays. Uses size of the a array, assuming all othe rarrays are
+        # the same shape.
+        rand_index = rnd_gen.permutation(len(self.a))
+
+        # Re-order the arrays
+
+        self.a = self.a[rand_index]
+        self.e = self.e[rand_index]
+        self.i = self.i[rand_index]
+        self.node = self.node[rand_index]
+        self.peri = self.peri[rand_index]
+        self.m = self.m[rand_index]
+        class_num = class_num[rand_index]
+
+        # "Blur" all read in arrays in order to create "extra" values from a limited dataset to avoid statistical
+        # effects from looping over repeated identical values.
+
         self.blur("a", 0.01)
         self.blur("i", 0.01)
         self.blur("node", 0.01)
