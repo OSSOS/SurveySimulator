@@ -7,8 +7,7 @@ This software is released under the terms of the European Union Public
 Licence v1.1 (EUPL v.1.1). See files eupl1.1.-en_0_0.pdf (Preamble) and
 eupl1.1.-licence-en_0.pdf (detailed description of the licence).
 
-This source code is provided as is, with no warranty of any kind.  By using any
-of these codes the user takes full responsiblity for any damage to system, and
+This source code is provided as is, with no warranty of any kind.  The user takes full responsiblity for any damage to system, and
 for any scientific conclusion drawn.
 ---
 ### Contact
@@ -95,30 +94,21 @@ mismatch between the orbital and H-mag distribution of the _tracked_
 detection, given the model and the real detections from the Survey.
 
 ---
-### SurveySimulator-2.0 
+### Package Contents  
 
 The SurveySimulator-2.0 release consists of a driver program, subroutines that
 define trans-neptunian or other outer Solar System objects (either from a 
-parametric model or a lookup table), data that describe the CFEPS+OSSOS survey 
+parametric model or a lookup table), data that describe the CFEPS, OSSOS, MA and some other survey 
 characterizations, and a list of the real classified objects discovered during 
 the CFEPS project (to be compared to the output of the Survey Simulator).
 
 A pictorial guide of this release and the main README files available is:
 
 ```
-release --- README.first (this file)  
- \      \-- README.contact 
+release --- README.md (this file)   
   \
    \---- src ------------ README.src
    |         \----------- README.surveysubs
-   |
-   |---- CFEPS ---------- README.cfeps
-   |
-   |---- OSSOS ---------- README.OSSOS
-   |
-   |---- All_r_Surveys -- README.allrsurveys
-   |
-   |---- All_Surveys ---- README.allsurveys
    |
    |---- lookup --------- README.lookup
    |      \
@@ -128,60 +118,64 @@ release --- README.first (this file)
    |       \
    |        \------ example
    |
-   \---- Python --------- README.python
+   |---- Python --------- README.python   
+   |
+   |---- CFEPS ---------- README.cfeps
+   |
+   |---- OSSOS ---------- README.OSSOS
+   |
+   |---- All_r_Surveys -- README.allrsurveys
+   |
+   \---- All_Surveys ---- README.allsurveys
+
 ```
 ---
 #### DESCRIPTION OF THE EIGHT MAIN SUB-DIRECTORIES
 
 ##### src
-
-  This directory contains the common source codes for the survey simulator
-  along with a compilation script and README files.  This portion of the
-  source code will generally need little (if any) modification; instead
-  a user will modify the important "GiMeObj" routine which provides 
-  fictional objects to the Survey Simulator (see below).
-
+The common source codes for the survey simulator
+along with a compilation script and README files.  This portion of the
+source code will generally need little (if any) modification; instead
+a user will modify the important "GiMeObj" routine which provides 
+fictional objects to the Survey Simulator (see below).
+---
+##### lookup
+This directory contains the source code for a "GiMeObj" routine that reads 
+an (orbital+size+colour+lightcurve) model from a file (lookup table), along 
+with a Makefile to generate the executable.
+There is an example subdirectory, which uses the L7model-3.0-9.0 file (the 
+CFEPS L7 model of the debiased Kuiper Belt) as an example input file for 
+the survey simulator.
+---
+##### parametric
+This directory contains the source code for a GiMeObj routine that generates
+objects according to some parametric presciption, along with a Makefile to
+generate the executable and an example subdirectory.
+---
+##### Python
+This directory contains the source code for a GiMeObj routine that generates
+objects according to some parametric presciption, along with a Makefile to
+generate the executable. This example uses the Driver.py Python program as
+driver instead of the usual Fortran program Driver.f.
 ---
 ##### cfeps
-
-  This directory contains the pointing history and efficiency functions for 
-  each cfeps block, including the cfeps presurvey 'block'; it also contains 
-  the list of real detected objects (cfeps.detections).  Other calibrated 
-  surveys could be substituted (or added) once their characterization is 
-  specified in the correct format.
+Pointing history and efficiency functions for 
+each cfeps block, including the cfeps presurvey 'block'; it also contains 
+the list of real detected objects (cfeps.detections).  Other calibrated 
+surveys could be substituted (or added) once their characterization is 
+specified in the correct format.
 ---
 ##### OSSOS
-
-  This directory contains the pointing history and efficiency functions for
-  each OSSOS block; it also contains the list of real detected objects
-  including their dynamical class. 
+Pointing history and efficiency functions for
+each OSSOS block; it also contains the list of real detected objects
+including their dynamical class. 
 ---
 ##### All_Surveys
-   This is essentially the union of all surveys: CFEPS, HiLat, Alexandersen and
-   OSSOS, but SEE IMPORTANT INFORMATION in that subdir's README.allsurveys file
+Union of all surveys: CFEPS, HiLat, Alexandersen and
+OSSOS, but SEE IMPORTANT INFORMATION in that subdir's README.allsurveys file
    about how care must be taking when combining the surveys.
 ---
 ##### All_r_Surveys
-   This is similar to the above, restricted to objects detected with the
-   MegaPrime r filter (OSSOS, Alexandersen, HiLat and L3h block from CFEPS).
-----
-##### lookup
-  This directory contains the source code for a "GiMeObj" routine that reads 
-  an (orbital+size+colour+lightcurve) model from a file (lookup table), along 
-  with a Makefile to generate the executable.
-  There is an example subdirectory, which uses the L7model-3.0-9.0 file (the 
-  CFEPS L7 model of the debiased Kuiper Belt) as an example input file for 
-  the survey simulator.
-----
-##### parametric
-  This directory contains the source code for a GiMeObj routine that generates
-  objects according to some parametric presciption, along with a Makefile to
-  generate the executable and an example subdirectory.
------
-##### Python
-  This directory contains the source code for a GiMeObj routine that generates
-  objects according to some parametric presciption, along with a Makefile to
-  generate the executable. This example uses the Driver.py Python program as
-  driver instead of the usual Fortran program Driver.f.
-------
-
+Similar to _All_Surveys_ but restricted to objects detected with the
+MegaPrime r filter (OSSOS, Alexandersen, HiLat and L3h block from CFEPS).
+---
