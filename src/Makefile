@@ -2,10 +2,11 @@
 #
 ### also works with ifort and f77
 FC = gfortran
+BASEDIR = $(CURDIR)
 
 TOPTARGETS := all clean
 
-SUBDIRS := test
+SUBDIRS := F95 F77
 
 $(TOPTARGETS): $(SUBDIRS)
 
@@ -14,14 +15,7 @@ $(SUBDIRS):
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
-all: Parametric ReadModelFromFile
+all: $(SUBDIRS)
 
-Parametric: Driver.f SurveySubs.f InnerHotModel.f Makefile
-	$(FC) -O3 InnerHotModel.f SurveySubs.f Driver.f -o Parametric
-
-ReadModelFromFile: Driver.f SurveySubs.f ReadModelFromFile.f Makefile
-	$(FC) -O3 ReadModelFromFile.f SurveySubs.f Driver.f -o ReadModelFromFile
-
-clean:
-	\rm -f *.o core Parametric ReadModelFromFile
+clean: $(SUBDIRS)
 
