@@ -15,7 +15,7 @@ module gimeobjut
 
 ! Values for Inner
 !
-  data inamax /39.d0/, inamin /37.d0/, inimin /7.d0/, inimax /20.d0/, &
+  data inamax /39.d0/, inamin /37.d0/, inimin /0.122173047639d0/, inimax /0.349065850398d0/, &
 !
 ! Values of time and planet positions for all models
 !
@@ -313,7 +313,7 @@ contains
     nchar = 7
 !
 ! Rejects if inclination in the secular instability zone
-    if ((o_m%inc .gt. inimin*drad) .and. (o_m%inc .lt. inimax*drad)) goto 1200
+    if ((o_m%inc .gt. inimin) .and. (o_m%inc .lt. inimax)) goto 1200
 !
 ! Angles: uniform distribution on allowable values
     random=ran_3(seed)
