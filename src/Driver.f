@@ -1,6 +1,6 @@
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 c
-c File Driver.f
+c File Parametrci.f
 c
 c J.-M. Petit  Observatoire de Besançon
 c Version 1 :  May 2013
@@ -32,21 +32,14 @@ c SurveySubs.f and should not be used by GiMeObj or any other routine
 c that you may add to the driver. Please use logical unit numbers
 c starting from 20.
 c
-c As currently written, the driver includes a file 'GiMeObj.f'
-c containing the definition of the model. The correct way to use this
-c feature is to have one's GiMeObj routine in a file <whatever.f> and
-c create a symobolic link: 
-c
-c     ln -s <whatever.f> GiMeObj.f
-c
 c For more information, please refer to ../README.first, ./README.src
 c and ./README.surveysubs.
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
-      include 'GiMeObj.f'
-      include 'SurveySubs.f'
-
+C     include 'GiMeObj.f'
+C     include 'SurveySubs.f'
+      program PM
       implicit none
 
       integer*4 n_obj_max, screen, keybd, verbose, lun_h, lun_t
@@ -249,4 +242,4 @@ c     end of the if( keep_going ) loop
 
       stop
 
-      end
+      end  program pm

@@ -1,26 +1,25 @@
 #! /bin/bash
-
-cd example
-
+test_dir=$(pwd)
 if [ -f SimulDetect.dat ]; then
     \rm SimulDetect.dat
 fi
 if [ -f SimulTrack.dat ]; then
     \rm SimulTrack.dat
 fi
-time ../SurveySimulator < Driver.in > LOG
+cd ../ && make Parametric || exit
+cd ${test_dir}
+time ../Parametric < Parametric_test.in > LOG
+
 a=`head -10 SimulDetect.dat | tail -1 | awk '{print $1}'`
 s=`head -10 SimulDetect.dat | tail -1 | awk '{print $15}'`
 no=`tail -3 SimulDetect.dat | head -1 | awk '{printf "%10d", $6}'`
 nd=`tail -2 SimulDetect.dat | head -1 | awk '{print $5}'`
 nt=`tail -1 SimulDetect.dat | awk '{print $6}'`
-ac=`head -10 SimulDetect-check.dat | tail -1 | awk '{print $1}'`
-sc=`head -10 SimulDetect-check.dat | tail -1 | awk '{print $15}'`
-ndo=`tail -3 SimulDetect-check.dat | head -1 | awk '{printf "%10d", $6}'`
-ndc=`tail -2 SimulDetect-check.dat | head -1 | awk '{print $5}'`
-ntc=`tail -1 SimulDetect-check.dat | awk '{print $6}'`
-
-cd ../
+ac=`head -10 Parametric-check.dat | tail -1 | awk '{print $1}'`
+sc=`head -10 Parametric-check.dat | tail -1 | awk '{print $15}'`
+ndo=`tail -3 Parametric-check.dat | head -1 | awk '{printf "%10d", $6}'`
+ndc=`tail -2 Parametric-check.dat | head -1 | awk '{print $5}'`
+ntc=`tail -1 Parametric-check.dat | awk '{print $6}'`
 
 if [ $a != $ac -o $s != $sc ]; then
     echo "Error: first detection doesn't match!"
