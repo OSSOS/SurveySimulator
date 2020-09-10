@@ -3,8 +3,8 @@
 ### also works with ifort and f77
 FC = gfortran
 
-SUBDIRS := test
-TOPTARGETS := all clean
+SUBDIRS := example
+TOPTARGETS := all clean test
 
 $(TOPTARGETS): $(SUBDIRS)
 

@@ -28,21 +28,20 @@ FFLAGS	= -O3 -fPIC -x f95-cpp-input
 FFLAGP	= -O3
 CFLAGS  = 
 
-SUBDIRS := test
-TOPTARGETS := all clean
+SUBDIRS := example
+TOPTARGETS := all clean 
 
 $(TOPTARGETS): $(SUBDIRS)
+
+.PHONY: $(SUBDIRS) 
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-.PHONY: $(TOPTARGETS) $(SUBDIRS) 
-
 all:	Driver test_read_pointings
 
-test_read_pointings:   test_read_pointings
+test:   test_read_pointings $(SUBDIRS)
 	@./test_read_pointings && echo "FORMAT TEST PASSED" || echo "FORMAT TEST FAILED"
-	$(MAKE) -C $@ $(MAKECMDGOALS)
 
 %.fpp :	%.f95
 	$(FPP) $< -o $@
