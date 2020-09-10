@@ -156,6 +156,8 @@ contains
 !
 ! J-M. Petit  Observatoire de Besancon
 ! Version 1 : December 2019
+! Version 2 : December 2019, 20th
+! Version 3 : December 2019, 28th
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
@@ -179,12 +181,16 @@ contains
 
     angle = mod(inc, TwoPi)
     if (angle .gt. Pi) angle = angle - TwoPi
-    if (angle .lt. 1.2d0*drad) then
-       cold_low_a_inc = angle/(1.2*drad)
+    if (angle .lt. 0.8d0*drad) then
+       cold_low_a_inc = angle/(0.8*drad)
     else if (angle .lt. 2.6d0*drad) then
        cold_low_a_inc = 1.d0
-    else if (angle .le. 5.d0*drad) then
-       cold_low_a_inc = (5.d0*drad - angle)/(2.4d0*drad)
+    else if (angle .le. 4.3d0*drad) then
+       cold_low_a_inc = 0.7d0*(4.3d0*drad-angle)/(1.7d0*drad) + 0.3d0
+!    else if (angle .le. 5.d0*drad) then
+!       cold_low_a_inc = 0.3d0*(5.d0*drad - angle)/(0.7d0*drad)
+    else if (angle .le. 4.7d0*drad) then
+       cold_low_a_inc = 0.3d0*(4.7d0*drad - angle)/(0.4d0*drad)
     else
        cold_low_a_inc = 0.d0
     end if
@@ -200,6 +206,8 @@ contains
 !
 ! J-M. Petit  Observatoire de Besancon
 ! Version 1 : December 2019
+! Version 2 : December 2019, 20th
+! Version 3 : December 2019, 28th
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
@@ -223,10 +231,19 @@ contains
 
     angle = mod(inc, TwoPi)
     if (angle .gt. Pi) angle = angle - TwoPi
-    if (angle .lt. 2.5d0*drad) then
-       cold_high_a_inc = angle/(2.5*drad)
-    else if (angle .le. 9.d0*drad) then
-       cold_high_a_inc = (9.d0*drad - angle)/(6.5d0*drad)
+    if (angle .lt. 0.9d0*drad) then
+       cold_high_a_inc = angle/(0.9d0*drad)
+!    if (angle .lt. 0.8d0*drad) then
+!       cold_high_a_inc = angle/(0.8d0*drad)
+    else if (angle .le. 2.7d0*drad) then
+!    else if (angle .le. 2.6d0*drad) then
+       cold_high_a_inc = 1.d0
+    else if (angle .le. 4.3d0*drad) then
+       cold_high_a_inc = 0.3d0*(4.3d0*drad-angle)/(1.6d0*drad) + 0.7d0
+!    else if (angle .le. 9.d0*drad) then
+!       cold_high_a_inc = (9.d0*drad - angle)/(6.3d0*drad)
+    else if (angle .le. 12.d0*drad) then
+       cold_high_a_inc = 0.7d0*(12.d0*drad - angle)/(7.7d0*drad)
     else
        cold_high_a_inc = 0.d0
     end if
@@ -242,6 +259,8 @@ contains
 !
 ! J-M. Petit  Observatoire de Besancon
 ! Version 1 : December 2019
+! Version 2 : December 2019, 20th
+! Version 3 : December 2019, 28th
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
@@ -265,10 +284,14 @@ contains
 
     angle = mod(inc, TwoPi)
     if (angle .gt. Pi) angle = angle - TwoPi
-    if (angle .lt. 30.d0*drad) then
-       hot_inc = sin(angle)
+    if (angle .lt. 10.d0*drad) then
+!       hot_inc = sin(angle)
+       hot_inc = 0.5d0*angle/(10.d0*drad)
+    else if (angle .le. 20.d0*drad) then
+       hot_inc = 0.5d0
     else if (angle .le. 50.d0*drad) then
-       hot_inc = 0.5d0*(50.d0*drad - angle)/(20.d0*drad)
+!       hot_inc = 0.5d0*(50.d0*drad - angle)/(20.d0*drad)
+       hot_inc = 1.d0 - cos((50.d0*drad-angle)/30.d0*60.d0)
     else
        hot_inc = 0.d0
     end if

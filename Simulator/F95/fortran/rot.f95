@@ -352,6 +352,9 @@ contains
 ! This routine convert osculating elements back and forth between
 ! invariable plane and ecliptic plane.
 ! Uses invar_ecl to do the work.
+!
+! ANGLES ARE GIVEN IN RADIAN !!!!
+!
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) ieqec
 !f2py intent(in) o_mi
@@ -394,6 +397,9 @@ contains
 ! This routine convert inclination and longitude of node elements back
 ! and forth between invariable plane and ecliptic plane.
 ! Uses invar_ecl_osc to do the work.
+!
+! ANGLES ARE GIVEN IN RADIAN !!!!
+!
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) ieqec
 !f2py intent(in) ii
@@ -522,6 +528,9 @@ contains
 ! Reference frame is given by Omega (om), the node longitude (rotation
 ! around Z axis of ecliptic) and Epsilon (eps), the inclination of the
 ! reference frame (rotation around node axis of ecliptic).
+!
+! ANGLES ARE GIVEN IN RADIAN !!!!
+!
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) ieqec
 !f2py intent(in) o_mi
@@ -568,6 +577,9 @@ contains
 ! Reference frame is given by Omega (om), the node longitude (rotation
 ! around Z axis of ecliptic) and Epsilon (eps), the inclination of the
 ! reference frame (rotation around node axis of ecliptic).
+!
+! ANGLES ARE GIVEN IN RADIAN !!!!
+!
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) ieqec
 !f2py intent(in) ii
@@ -592,6 +604,8 @@ contains
     o_mi%inc = ii
     o_mi%node = noi
     call ref_ecl_osc (ieqec, o_mi, o_mo, eps, om, ierr)
+    io = o_mo%inc
+    noo = o_mo%node
 
     return
   end subroutine ref_ecl_inc_node
