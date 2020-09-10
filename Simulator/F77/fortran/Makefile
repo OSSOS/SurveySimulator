@@ -26,7 +26,7 @@ Driver: link Driver.f SurveySubs.f GiMeObj.o Makefile
 	$(FC) -O3 GiMeObj.f SurveySubs.f Driver.f -o Driver
 
 clean:
-	\rm -f *.o *.so core Driver *.log LOG
+	\rm -f *.o *.so core Driver *.log LOG GiMeObj.f
 
 # Python Module parts
 
