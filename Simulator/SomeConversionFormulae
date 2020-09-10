@@ -1,0 +1,112 @@
+Here I gather some conversion formulae and other geenral use formulae.
+
+1) Apparent magnitude, absolute magnitude and size.
+
+This conversion depends on 2 main parameters, the distance from object to Sun
+and observer, and the phase angle.
+
+r:     Sun-object distance in AU
+delta: Observer-object distance in AU
+
+without phase effect, the conversion would be:
+
+m_0 = 5*Log(r*delta) + H
+
+Here, m_0 stands for magntiude at 0 phase angle.
+
+robs:  Sun-observer distance in AU
+
+The phase angle alpha is defined as:
+
+alpha = acos((r^2+delta^2-robs^2)/(2*r*delta))
+
+There are several ways to account for the phase effect. The one I use mostly is
+the Bowell's H-G formalism:
+
+m = m_0 - 2.5*Log((1. - G)*phi1 + G*phi2)
+
+with G the slope parameter, originally thought to be in the range 0 to 1,
+typically ~0.15 for asteroids, but seems for be negative for many TNOs, ~-0.12,
+
+phi1 = exp(-3.33*(tan(alpha/2.0))^0.63)
+
+phi2 = exp(-1.87*(tan(alpha/2.0))^1.22)
+
+One can also use the linear phase effect as described in Schaefer & Rabinowitz
+(2002) and Sheppard & Jewitt (2002):
+
+m = m_0 + 2.5*beta*alpha
+
+
+More generally, the apparent magnitude is determined from geometrical factors
+and the intensity of light source, i.e. of the Sun:
+
+m_X = m_Sun_X - 2.5*Log(p_X*R^2* Phi(alpha)/(2.25*10^16*r^2*delta^2))
+
+where m_X is the apparent magnitude in filter X, m_Sun_X the apparent magnitude
+of the Sun in filter X, p_X the albedo in filter X, R the radius of the object
+in km, r and delta the Sun-object and observer objects in AU. Phi(alpa) is the
+phase angle effect, with Phi(0) = 1.
+
+For Bowell's H-G formalism, Phi(alpha) = (1. - G)*phi1 + G*phi2, while for
+linear effect, Phi(alpha) = 10^(-beta*alpha).
+
+Using the previous notations, we get:
+
+m = m_0 - 2.5*Log(Phi(alpha)),
+
+m_0 = m_Sun - 2.5*Log(p*R^2/(2.25*10^16*r^2*delta^2))
+    = m_Sun - 2.5*Log(p*R^2/(2.25*10^16)) + 5*Log(r*delta),
+
+hence
+
+H = m_Sun - 2.5*Log(p*R^2/(2.25*10^16))
+
+The usual value of m_Sun is -27.1 in filter R.
+
+
+2) Rate of motion on sky.
+
+One could in principle write down a general equation for this, but it would be
+an intrinsic equation which would require solving Kepler's equation. In
+practice, the easiest way to compute the rate of motion on sky is to perform a
+numerical derivative, i.e. compute the positions at 2 slightly different times
+(2 hours difference for example), and then divide the position difference by
+the time difference.
+
+In case of an object on a circular orbit in the plane of motion of the Earth,
+and assuming the Earth is on a circular orbit, one can compute the apparent
+motion on sky.
+
+a_K:     Semimajor-axis (radius) of KBO orbit (AU)
+a_E:     Semimajor-axis (radius) of Earth orbit (AU)
+omega_K: Angular mean motion of KBO
+omega_E: Angular mean motion of Earth
+theta_S: Earth-Sun-KBO angle
+
+d theta_a / d t = (omega_K - omega_E)*(a_K^2 - a_K*a_E*cos(theta_S))/(a_K^2 +
+a_E^2 - 2*a_K*a_E*cos(theta_S)) + omega_E
+
+where d theta_a / d t is the apparent rate of motion of the KBO with respect to
+the stars.
+
+
+3) Single, double and divot exponential distribution functions.
+
+3.1) Single exponential.
+
+d N(H) = A*10^(alpha*H) and H between H_0 and H_1. Let Xi be a uniform random
+number between 0 and 1,
+
+H = 1/alpha*Log(Xi*(10^(alpha*H_1) - 10^(alpha*h_0)) + 10^(alpha*H_0))
+
+3.2) Double exponential.
+
+N(<H_0) = 0
+H_0 <= H < H_1,  d N(H) = A*10^(alpha_1*H)
+H_1 <= H <= H_2, d N(H) = B*10^(alpha_2*H)
+
+For a double exponential, A*10^(alpha_1*H_1) = B*10^(alpha_2*H_1), while for a
+divot, A*10^(alpha_1*H_1) = C*B*10^(alpha_2*H_1).
+
+... more later ...
