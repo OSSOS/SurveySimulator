@@ -1,11 +1,15 @@
+MODELS = InnerBeltModel ReadModelFromFile
 
-all: test
+test: clean $(MODELS)
 
-test: 
-	@$(MAKE) -C .. Driver GIMEOBJ=InnerBeltModel
-	@./test.sh ../InnerBeltModel
-	@$(MAKE) -C .. Driver GIMEOBJ=ReadModelFromFile
-	@./test.sh ../ReadModelFromFile
+$(MODELS):
+	$(MAKE) -C .. Driver GIMEOBJ=$@
+	@./test.sh ../$@
+
+.PHONY: $(MODELS)
+
+.DEFAULT:
 
 clean:
 	\rm -f ModelUsed.dat SimulDetect.dat SimulTrack.dat LOG
+

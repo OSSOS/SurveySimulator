@@ -1,11 +1,12 @@
+MODELS = InnerHotModel ReadModelFromFile
 
-all: test
+test: clean $(MODELS)
 
-test: clean
-	@$(MAKE) -C .. Driver GIMEOBJ=InnerHotModel
-	@./test.sh ../InnerHotModel
-	@$(MAKE) -C .. Driver GIMEOBJ=ReadModelFromFile
-	@./test.sh ../ReadModelFromFile
+$(MODELS):
+	$(MAKE) -C .. Driver GIMEOBJ=$@
+	@./test.sh ../$@
+
+.PHONY: $(MODELS)
 
 clean:
 	\rm -f ModelUsed.dat SimulDetect.dat SimulTrack.dat LOG

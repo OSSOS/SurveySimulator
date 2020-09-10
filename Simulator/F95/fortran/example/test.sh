@@ -11,9 +11,6 @@ if [ -f SimulTrack.dat ]; then
     \rm SimulTrack.dat
 fi
 
-test_dir=$(pwd)
-cd ${src_dir} && make Driver GIMEOBJ=${cmd} || exit
-cd ${test_dir}
 time ${src_dir}/Driver < ${cmd}.in > LOG
 
 a=`head -10 SimulDetect.dat | tail -1 | awk '{print $1}'`
