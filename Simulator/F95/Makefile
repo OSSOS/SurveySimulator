@@ -2,7 +2,7 @@
 #
 ### also works with ifort and f77
 FC = gfortran
-SUBDIRS := src
+SUBDIRS := fortran python
 TOPTARGETS := all clean
 
 $(TOPTARGETS): $(SUBDIRS)

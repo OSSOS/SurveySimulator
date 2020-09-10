@@ -2,6 +2,7 @@
 #
 ### also works with ifort and f77
 FC = gfortran
+
 SUBDIRS := test
 TOPTARGETS := all clean
 
@@ -12,21 +13,24 @@ $(SUBDIRS):
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
-all: Parametric ReadModelFromFile
+%.o : %.f
+	$(FC) $(FFLAGS) -c $<
 
-Parametric: Driver.f SurveySubs.f InnerHotModel.f Makefile
-	$(FC) -O3 InnerHotModel.f SurveySubs.f Driver.f -o Parametric
+all: Driver
 
-ReadModelFromFile: Driver.f SurveySubs.f ReadModelFromFile.f Makefile
-	$(FC) -O3 ReadModelFromFile.f SurveySubs.f Driver.f -o ReadModelFromFile
+link:
+	\rm -f GiMeObj.f
+	ln -s $(GIMEOBJ).f GiMeObj.f
+
+Driver: link Driver.f SurveySubs.f GiMeObj.o Makefile
+	$(FC) -O3 GiMeObj.f SurveySubs.f Driver.f -o Driver
 
 clean:
-	\rm -f *.o core Parametric ReadModelFromFile
+	\rm -f *.o *.so core Driver *.log LOG
 
-# CFEPS Survey Simulator Makefile
-#
+# Python Module parts
 
-Modules: SurveySubs.so GiMeObj.so ModelUtils.so Makefile
+Modules: SurveySubs.so ModelUtils.so GiMeObj.so Makefile
 	echo "Modules have been built"
 
 SurveySubs.so: SurveySubs.f Makefile
@@ -34,13 +38,11 @@ SurveySubs.so: SurveySubs.f Makefile
 	mv SurveySubs.*.so SurveySubs.so
 
 ModelUtils.so: ModelUtils.f Makefile
-	f2py -c --f77exec=$(FC) --f77flags=-fPIC --f90flags=-fPIC -m ModelUtils ./SurveySubs.so ModelUtils.f 1>f2py_ModelUtils.log 2>&1
+	f2py -c --f77exec=$(FC) --f77flags=-fPIC --f90flags=-fPIC -m ModelUtils ModelUtils.f 1>f2py_ModelUtils.log 2>&1
 	mv ModelUtils.*.so ModelUtils.so
 
-GiMeObj.so: Res32Model.f SurveySubs.so Makefile
-	\rm -f GiMeObj.f
-	ln -s Res32Model.f GiMeObj.f
-	f2py -c --f77exec=$(FC) --f77flags=-fPIC -m GiMeObj ./SurveySubs.so GiMeObj.f 1>f2py_GiMeObj.log 2>&1
+GiMeObj.so: link GiMeObj.f Makefile
+	f2py -c --f77exec=$(FC) --f77flags=-fPIC -m GiMeObj GiMeObj.f 1>f2py_GiMeObj.log 2>&1
 	\rm GiMeObj.f
 	mv GiMeObj.*.so GiMeObj.so
 

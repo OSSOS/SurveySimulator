@@ -1,12 +1,10 @@
 
 all: test
 
-CMDS := Parametric ReadModelFromFile
-
-
 test: 
-	@$(MAKE) -C .. $(CMDS)
-	@./test.sh ../Parametric
+	@$(MAKE) -C .. Driver GIMEOBJ=InnerBeltModel
+	@./test.sh ../InnerBeltModel
+	@$(MAKE) -C .. Driver GIMEOBJ=ReadModelFromFile
 	@./test.sh ../ReadModelFromFile
 
 clean:

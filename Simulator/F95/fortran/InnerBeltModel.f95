@@ -1,4 +1,4 @@
-module innerbeltmodel
+module gimeobjut
 
   use datadec
   use elemutils
@@ -20,6 +20,7 @@ module innerbeltmodel
 ! Values of time and planet positions for all models
 !
        lambdaN /5.489d0/, epoch_m /2453157.5d0/
+
 
 contains
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -278,8 +279,7 @@ contains
        write (lun_ll, '(a,3(1x,f6.2))') &
             '# H limits and slope for hot: ', (h_params(i),i=4,6)
        write (lun_ll, '(a,3(1x,f6.2))') &
-            '# Width of cold, warm and hot:', &
-            (brown_params(i)/drad,i=1,3)
+            '# Width of cold, warm and hot:', (brown_params(i),i=1,3)
        write (lun_ll, '(''#'')')
        close (lun_ll)
 ! Change "first" so this is not called anymore
@@ -378,4 +378,4 @@ contains
 
   end subroutine GiMeObj
 
-end module innerbeltmodel
+end module gimeobjut

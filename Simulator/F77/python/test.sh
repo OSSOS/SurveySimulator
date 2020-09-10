@@ -1,9 +1,10 @@
 #! /bin/bash
-
+cmd=$1
 if [ -f SimulDetect.dat ]; then
     \rm SimulDetect.dat
 fi
-time ./Driver.py < Driver.in > LOG
+time ./Driver.py < ${cmd}.in > LOG
+
 a=`head -10 SimulDetect.dat | tail -1 | awk '{print $1}'`
 s=`head -10 SimulDetect.dat | tail -1 | awk '{print $15}'`
 no=`tail -3 SimulDetect.dat | head -1 | awk '{printf "%10d", $6}'`

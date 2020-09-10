@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 import sys, time
-sys.path.append('.')
+sys.path.append('../fortran/')
 
 def conv(st):
     return "".join(chr(x) for x in st)

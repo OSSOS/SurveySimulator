@@ -1,4 +1,4 @@
-module readmodelfromfile
+module gimeobjut
 
   use datadec
   use modelutils
@@ -233,20 +233,20 @@ contains
     end if
 
 ! Check if there are still objects available in the arrays
-    if (i_obj .le. 0) then
+    if (i_obj <= 0) then
 ! Get new objects. If this is the first call to GetDistrib, it will
 ! first open the data file, otherwise, will simply return the following
 ! objects. When reaching the end of the file, returns "ierr_d = 30".
        call GetDistrib (filena, lun_d, n_obj_max, n_obj, obj_o, &
             obj_h, obj_jday, color0, comp, ierr_d)
-       if (n_obj .le. 0) then
+       if (n_obj <= 0) then
           ierr = -20
           return
        end if
-       if (ierr_d .ne. 0) then
-          if (ierr_d .eq. 10) then
+       if (ierr_d /= 0) then
+          if (ierr_d == 10) then
              write (screen, *) 'Unable to open ', filena
-          else if (ierr_d .eq. 30) then
+          else if (ierr_d == 30) then
              end_of_file = .true.
              goto 100
           else
@@ -496,4 +496,4 @@ contains
 
   end subroutine read_obj
 
-end module readmodelfromfile
+end module gimeobjut
