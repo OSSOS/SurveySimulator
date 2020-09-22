@@ -1,6 +1,6 @@
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 c
-c File Parametrci.f
+c File Parametric.f
 c
 c J.-M. Petit  Observatoire de Besançon
 c Version 1 :  May 2013
