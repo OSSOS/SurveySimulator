@@ -29,19 +29,17 @@ FFLAGP	= -O3
 CFLAGS  = 
 
 SUBDIRS := example
-TOPTARGETS := all clean 
+TOPTARGETS := all clean
+GIMEOBJ ?= InnerBeltModel
 
-$(TOPTARGETS): $(SUBDIRS)
+#$(TOPTARGETS): $(SUBDIRS)
 
 .PHONY: $(SUBDIRS) 
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-all:	Driver test_read_pointings
-
-test:   test_read_pointings $(SUBDIRS)
-	@./test_read_pointings && echo "FORMAT TEST PASSED" || echo "FORMAT TEST FAILED"
+all:	Driver $(SUBDIRS)
 
 %.fpp :	%.f95
 	$(FPP) $< -o $@
@@ -49,13 +47,17 @@ test:   test_read_pointings $(SUBDIRS)
 %.o : %.f95
 	$(FC) $(FFLAGS) -c $<
 
+%: %.sh
+	echo " "
+
+.PHONY: clean
+
 clean:
 	rm -f *~ *.o *.mod *.fpp f90wrap*f90 $(SSIM).py $(GOBJ).py _$(SSIM)*.so _$(GOBJ)*.so SimulDetect.dat SimulTrack.dat
 	rm -f *~ $(SSIM).py $(GOBJ).py $(IOBJ).py $(ROBJ).py _$(SSIM)*.so _$(GOBJ)*.so _$(IOBJ)*.so _$(ROBJ)*.so
 	rm -f *.log LOG .f2py_f2cmap Driver test_read_pointings
 
-test_read_pointings: test_read_pointings.f95 $(OBJU) Makefile
-	$(FC) $(FFLAGP) -o test_read_pointings $(OBJU) test_read_pointings.f95
+.PHONY: link
 
 link:
 	\rm -f GiMeObj.f95
