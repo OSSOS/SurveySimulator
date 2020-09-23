@@ -20,4 +20,4 @@ ReadModelFromFile: ../fortran/ReadModelFromFile.f95
 	$(MAKE) -C ../fortran Modules GIMEOBJ=ReadModelFromFile
 
 clean:
-	\rm -f ModelUsed.dat SimulDetect.dat SimulTrack.dat LOG
+	\rm -f ModelUsed.dat SimulDetect.dat SimulTrack.dat LOG test .f2py_f2cmap
