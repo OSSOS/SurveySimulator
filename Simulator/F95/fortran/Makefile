@@ -1,3 +1,8 @@
+# Set a default for the type of model to make
+GIMEOBJ=ReadModelFromFile
+# Set GIMEOBJ=FORTRAN_CODE (no extension!) on the 
+# command line to build a different one.
+
 U	= poly_dec poly_lib datadec ioutils effut elemutils rot xvutils getsur numutils surveysub
 OBJU	= $(addsuffix .o,${U})
 SRCU	= $(addsuffix .f95,${U})
