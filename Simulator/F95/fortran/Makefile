@@ -59,6 +59,7 @@ clean:
 	rm -f *~ *.o *.mod *.fpp f90wrap*f90 $(SSIM).py $(GOBJ).py _$(SSIM)*.so _$(GOBJ)*.so SimulDetect.dat SimulTrack.dat
 	rm -f *~ $(SSIM).py $(GOBJ).py $(IOBJ).py $(ROBJ).py _$(SSIM)*.so _$(GOBJ)*.so _$(IOBJ)*.so _$(ROBJ)*.so
 	rm -f *.log LOG .f2py_f2cmap Driver test_read_pointings
+	rm -fr __pycache__
 
 test_read_pointings: test_read_pointings.f95 $(OBJU) Makefile
 	$(FC) $(FFLAGP) -o test_read_pointings $(OBJU) test_read_pointings.f95

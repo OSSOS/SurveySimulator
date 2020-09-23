@@ -21,3 +21,4 @@ ReadModelFromFile: ../fortran/ReadModelFromFile.f95
 
 clean:
 	\rm -f ModelUsed.dat SimulDetect.dat SimulTrack.dat LOG test .f2py_f2cmap
+	\rm -rf __pycache__
