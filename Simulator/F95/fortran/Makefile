@@ -32,6 +32,7 @@ FPP	= gfortran -E -x f95-cpp-input -fPIC -DPYTHON
 FFLAGS	= -O3 -fPIC -x f95-cpp-input
 FFLAGP	= -O3
 CFLAGS  = 
+CPPFLAGS =
 
 SUBDIRS := example
 TOPTARGETS := all clean 
