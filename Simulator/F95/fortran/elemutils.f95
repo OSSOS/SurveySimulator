@@ -19,7 +19,7 @@ contains
 ! \verb|x, y, z, vx, vy, vz| = cartesian variables: $X, Y, Z, Px, Py, Pz$
 ! \end{verse}
 !
-! Angles are in [radian]
+! Angles are in [rad]
 !
 ! \subsubsection{Declarations}
 !
@@ -164,7 +164,7 @@ contains
 ! \verb|x, y, z| = cartesian variables: $X, Y, Z$
 ! \end{verse}
 !
-! Angles are in [radian]
+! Angles are in [rad]
 !
 ! \subsubsection{Declarations}
 !

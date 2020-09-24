@@ -238,7 +238,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
 c     nparam: Number of parameters (I4)
 c     param : Parameters (n*R8)
-c     inc   : Inclination [Radian] (R8)
+c     inc   : Inclination [rad] (R8)
 c
 c OUPUT
 c     offgau: Value of the probability (R8)
@@ -292,7 +292,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
 c     nparam: Number of parameters (I4)
 c     param : Parameters (n*R8)
-c     inc   : Inclination [Radian] (R8)
+c     inc   : Inclination [rad] (R8)
 c
 c OUPUT
 c     onecomp: Value of the probability (R8)
@@ -352,7 +352,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
 c     nparam: Number of parameters (I4)
 c     param : Parameters (n*R8)
-c     inc   : Inclination [Radian] (R8)
+c     inc   : Inclination [rad] (R8)
 c
 c OUPUT
 c     onecomp: Value of the probability (R8)
@@ -414,7 +414,7 @@ c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
 c     nparam: Number of parameters (I4)
 c     param : Parameters (n*R8)
-c     inc   : Inclination [Radian] (R8)
+c     inc   : Inclination [rad] (R8)
 c
 c OUPUT
 c     onecomp: Value of the probability (R8)
@@ -960,7 +960,7 @@ c
 c \alpha_k = h_params(k+n)
 c H_k = h_params(k)
 c
-c for k in [1; n]. h_params(0) is not present and implicit at -\infty.
+c for k in [1; n ]. h_params(0) is not present and implicit at -\infty.
 c This corresponds to dropping the lower limit as we want straight lines.
 c
 c The function is continuous at H_k = h_params(k) ofr all k's:
@@ -1041,7 +1041,7 @@ c bigger than H_{k+1} as:
 c
 c x_k = N_{k-1} / N_k = 10^{(H_{k-1}-H_k) \alpha_k}
 c
-c for k in [2; n], and x_1 = 0.
+c for k in [2; n ], and x_1 = 0.
 c
 c The fraction of object bigger than B_k compared to the total
 c number of objects is
@@ -1052,7 +1052,7 @@ c
 c We define x_k as described above, then we set
 c
 c f_n = 1.
-c f_{k-1} = x_k f_k, for k in [2; n]
+c f_{k-1} = x_k f_k, for k in [2; n ]
 c
 c Therefore, if (f_{k-1} < random <= f_k), then we have an object in
 c range ]H_{k-1}; H_k]. 'random' needs to be rescaled to go to 1.

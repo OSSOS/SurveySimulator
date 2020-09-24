@@ -116,7 +116,7 @@ contains
 ! INPUT
 !     nparam: Number of parameters (I4)
 !     param : Parameters (n*R8)
-!     inc   : Inclination [Radian] (R8)
+!     inc   : Inclination [rad] (R8)
 !
 ! OUPUT
 !     offgau: Value of the probability (R8)
@@ -163,7 +163,7 @@ contains
 ! INPUT
 !     nparam: Number of parameters (I4)
 !     param : Parameters (n*R8)
-!     inc   : Inclination [Radian] (R8)
+!     inc   : Inclination [rad] (R8)
 !
 ! OUPUT
 !     cold_low_a_inc: Value of the probability (R8)
@@ -213,7 +213,7 @@ contains
 ! INPUT
 !     nparam: Number of parameters (I4)
 !     param : Parameters (n*R8)
-!     inc   : Inclination [Radian] (R8)
+!     inc   : Inclination [rad] (R8)
 !
 ! OUPUT
 !     cold_high_a_inc: Value of the probability (R8)
@@ -266,7 +266,7 @@ contains
 ! INPUT
 !     nparam: Number of parameters (I4)
 !     param : Parameters (n*R8)
-!     inc   : Inclination [Radian] (R8)
+!     inc   : Inclination [rad] (R8)
 !
 ! OUPUT
 !     hot_inc: Value of the probability (R8)
@@ -643,7 +643,7 @@ contains
 ! \alpha_k = h_params(k+n)
 ! H_k = h_params(k)
 !
-! for k in [1; n]. h_params(0) is not present and implicit at -\infty.
+! for k in [1; n ]. h_params(0) is not present and implicit at -\infty.
 ! This corresponds to dropping the lower limit as we want straight lines.
 !
 ! The function is continuous at H_k = h_params(k) ofr all k's:
@@ -717,7 +717,7 @@ contains
 !
 ! x_k = N_{k-1} / N_k = 10^{(H_{k-1}-H_k) \alpha_k}
 !
-! for k in [2; n], and x_1 = 0.
+! for k in [2; n ], and x_1 = 0.
 !
 ! The fraction of object bigger than B_k compared to the total
 ! number of objects is
@@ -728,7 +728,7 @@ contains
 ! We define x_k as described above, then we set
 !
 ! f_n = 1.
-! f_{k-1} = x_k f_k, for k in [2; n]
+! f_{k-1} = x_k f_k, for k in [2; n ]
 !
 ! Therefore, if (f_{k-1} < random <= f_k), then we have an object in
 ! range ]H_{k-1}; H_k]. 'random' needs to be rescaled to go to 1.
