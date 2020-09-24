@@ -47,9 +47,6 @@ all:	Driver $(SUBDIRS)
 %.o : %.f95
 	$(FC) $(FFLAGS) -c $<
 
-%: %.sh
-	echo " "
-
 .PHONY: clean
 
 clean:

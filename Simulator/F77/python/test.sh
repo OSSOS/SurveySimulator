@@ -1,20 +1,26 @@
 #! /bin/bash
-cmd=$1
+cmd=$(basename ${1})
+echo "Testing ${cmd}"
+
 if [ -f SimulDetect.dat ]; then
     \rm SimulDetect.dat
 fi
-time ./Driver.py < ${cmd}.in > LOG
+if [ -f SimulTrack.dat ]; then
+    \rm SimulTrack.dat
+fi
+
+time LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../fortran ./Driver.py < ${cmd}.in > LOG
 
 a=`head -10 SimulDetect.dat | tail -1 | awk '{print $1}'`
 s=`head -10 SimulDetect.dat | tail -1 | awk '{print $15}'`
 no=`tail -3 SimulDetect.dat | head -1 | awk '{printf "%10d", $6}'`
 nd=`tail -2 SimulDetect.dat | head -1 | awk '{print $5}'`
 nt=`tail -1 SimulDetect.dat | awk '{print $6}'`
-ac=`head -10 SimulDetect-check.dat | tail -1 | awk '{print $1}'`
-sc=`head -10 SimulDetect-check.dat | tail -1 | awk '{print $15}'`
-ndo=`tail -3 SimulDetect-check.dat | head -1 | awk '{printf "%10d", $6}'`
-ndc=`tail -2 SimulDetect-check.dat | head -1 | awk '{print $5}'`
-ntc=`tail -1 SimulDetect-check.dat | awk '{print $6}'`
+ac=`head -10 ${cmd}-check.dat | tail -1 | awk '{print $1}'`
+sc=`head -10 ${cmd}-check.dat | tail -1 | awk '{print $15}'`
+ndo=`tail -3 ${cmd}-check.dat | head -1 | awk '{printf "%10d", $6}'`
+ndc=`tail -2 ${cmd}-check.dat | head -1 | awk '{print $5}'`
+ntc=`tail -1 ${cmd}-check.dat | awk '{print $6}'`
 
 cd ../
 
