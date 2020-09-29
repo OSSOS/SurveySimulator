@@ -1,0 +1,12 @@
+# This is the 2013A-E block description file.
+#
+# From JJ's e-mail on Dec. 2nd, 2014, there were 7 chips out of 756 that had
+# a PSF problem, thus the pipeline did not run to the end. All other cases
+# had good trans.jmp files and completed correctly. So effective surface
+# area is 749/756 = 99.07%, so filling factor is 0.9907*0.9164=0.9079
+#
+poly 4 14:15:28.89 -12:32:28.5 2456391.86686 0.9079 500 2013AE.eff
+-3.5 -0.434889
+-3.5  2.565111
+ 3.5  0.473417
+ 3.5 -2.526583

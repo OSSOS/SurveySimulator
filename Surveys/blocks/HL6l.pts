@@ -1,0 +1,6 @@
+# This is the HL6l block description file.
+#
+# HL6l block 15 sq.deg. Initially 16 pointings, but 2 at the same place
+1.00 6.00 18:14:00.00 -06:30:00.0 2453909.9164294 0.80  500 HL6l-smooth.eff
+1.00 8.00 18:18:03.00 -06:30:00.0 2453909.9164294 0.80  500 HL6l-smooth.eff
+1.00 1.00 18:14:00.00 -11:00:00.0 2453909.9164294 0.80  500 HL6l-smooth.eff

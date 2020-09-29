@@ -1,0 +1,7 @@
+# This is the L3q block description file.
+#
+poly 4 22:01:39.48 -12:04:38.5 2452882.8300000 0.89 500 L3q-smooth.eff
+-2. -2.5
+-2.  1.5
+ 2.  2.5
+ 2. -1.5

@@ -1,0 +1,19 @@
+# This is the 2013B-L block description file.
+#
+# From checking the vtags of Lblock_redo, only 20 fields were searched, and out
+# of the 720 chips, 1 had problems at step2 which propaged to step3 and
+# combine. So effective surface area is 719/720 = 99.86% of the total area, so
+# filling factor is 0.9986*0.9164 = 0.9151
+#
+# Here we use the 'polygon search' feature. Make sure we remove the 1
+# sq.deg. field that was not searched, at the bottom of the central column.
+#
+poly 8 00:52:55.81 +03:43:49.1 2456596.72735 0.9151 500 2013BL.eff
+-3.5 -2.743222
+-3.5  0.256778
+ 3.5  2.743222
+ 3.5 -0.256778
+ 0.5 -1.322397
+ 0.5 -0.322397
+-0.5 -0.677603
+-0.5 -1.677603

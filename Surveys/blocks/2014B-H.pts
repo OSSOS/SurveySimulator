@@ -1,0 +1,16 @@
+# This is the 2014B-H block description file.
+#
+# From checking the vtags of Hblock, I find only 751 chips successful out of
+# 756 (my e-mail to JJ from Nov. 30, 2015). In the same time, JJ find only 2
+# faulty chips. Until I get an answer from him, I'll stick to my findings.
+# So effective surface area is 751/756 = 99.34% of the total area, so
+# filling factor is 0.9986*0.9164 = 0.9103
+#
+# This is using the new feature (as of 2016-03-09) of polygons to describe the
+# footprint of the block.
+#
+poly 4 01:35:14.39 +13:28:25.3 2456952.77017 0.9103 500 2014BH.eff
+-3.5 -2.700361
+-3.5  0.299639
+ 3.5  2.670528
+ 3.5 -0.329472
