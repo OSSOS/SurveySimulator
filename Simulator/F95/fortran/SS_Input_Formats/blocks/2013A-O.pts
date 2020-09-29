@@ -1,0 +1,12 @@
+# This is the 2013A-O block description file.
+#
+# From my own work and from JJ's e-mail from Nov. 30th, 2014, there were 9
+# chips out of 756 which had bad trans.jmp files. So the effective search area
+# was 747/756 = 98.81% of the total area, so the filling factor is
+# 0.9881*0.9164 = 0.9055
+#
+poly 4 15:58:01.35 -12:19:54.2 2456420.95956 0.9055 500 2013AO.eff
+-3.5 -0.862333
+-3.5  2.137667
+ 3.5  0.915750
+ 3.5 -2.084250

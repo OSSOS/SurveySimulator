@@ -82,3 +82,6 @@ _$(GOBJ).so: link $(FPPM) $(OBJM) $(FPPA) $(OBJA) _$(SSIM).so $(GIMEOBJ).f95 Mak
 	\rm GiMeObj.f95
 	\rm f90wrap_*.f90
 	mv _$(GOBJ)*.so _$(GOBJ).so
+
+test_read_pointings: test_read_pointings.f95 $(OBJU) Makefile
+	$(FC) $(FFLAGP) -o test_read_pointings $(OBJU) test_read_pointings.f95

@@ -9,6 +9,10 @@ if [ -f SimulTrack.dat ]; then
     \rm SimulTrack.dat
 fi
 
+sur_dir=$(head -3 ${cmd}.in | tail -1)
+\rm ${sur_dir}/block.list
+ln -s CFEPS.list ${sur_dir}/block.list
+
 time ./DriverF95.py < ${cmd}.in > LOG
 a=`head -10 SimulDetect.dat | tail -1 | awk '{print $1}'`
 s=`head -10 SimulDetect.dat | tail -1 | awk '{print $15}'`

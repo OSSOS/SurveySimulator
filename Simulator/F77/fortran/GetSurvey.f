@@ -161,6 +161,10 @@ c Open and read in survey definitions
          end if
 
          n_sur = n_sur + 1
+         if (n_sur .gt. n_sur_max) then
+            ierr = 100
+            return
+         end if
          sur_t(n_sur) = jday_p
          sur_ff(n_sur) = ff
          sur_co(n_sur) = code

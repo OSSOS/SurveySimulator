@@ -288,7 +288,7 @@ contains
     RETURN
   END subroutine hms
 
-  subroutine read_eff (filen, lun_in, c, ierr)
+  subroutine read_eff (dirn, effn, lun_in, c, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in efficiency file.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -297,13 +297,16 @@ contains
 ! Version 1 : February 2004
 ! Version 2 : April 2013
 !             Changed to read new pointings and efficiency file format
-! Version 5 : May 2016
+! Version 3 : May 2016
 !             Changed API to remove size of arrays, added parameter
 !             statement to define array sizes (in include file)
+! Version 5 : September 2020
+!             Changed survey directory structure
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
-!     filen : object element file name
+!     dirn  : Survey directory name (CH)
+!     effn  : Efficiency filename (CH)
 !     lun_in: File unit
 !
 ! OUTPUT
@@ -330,7 +333,8 @@ contains
 !     c%track : tracking fraction parameters (3*R8)
 !     ierr  : Error code
 !                0 : nominal run
-!               10 : unable to open filen
+    !               10 : unable to open dirn//'/eff/'//effn
+    
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py inten(in) filen
 !f2py inten(in) lun_in
@@ -341,11 +345,11 @@ contains
     type(t_charact), intent(out) :: c
     integer, intent(in) :: lun_in
     integer, intent(out) :: ierr
-    character(*), intent(in) :: filen
-    integer :: eq_ind, nw, lw(nw_max), i, j
-    character(256) :: line
+    character(*), intent(in) :: dirn, effn
+    integer :: eq_ind, nw, lw(nw_max), i, j, i1, i2, i3, i4
+    character(256) :: line, filen
     character(80) :: word(nw_max)
-    logical rcut, tr, fi, mag, in_rates, in_func, rate(0:n_r_max), ph
+    logical rcut, tr, fi, mag, in_rates, in_func, rate(0:n_r_max), ph, finished
 
     rcut = .false.
     tr = .false.
@@ -358,7 +362,10 @@ contains
     rate(0) = .true.
 
     ierr = 0
-    open (unit=lun_in, file=filen, status='old', err=1000)
+    call read_file_name (dirn, i1, i2, finished, len(dirn))
+    call read_file_name (effn, i3, i4, finished, len(effn))
+    filen = dirn(i1:i2)//'/eff/'//effn(i3:i4)
+    open (unit=lun_in, file=filen(1:i2+i4-(i1+i3)+7), status='old', err=1000)
     c%nr = 0
 
 1500 continue
@@ -569,7 +576,7 @@ contains
 
   end subroutine read_eff
 
-  subroutine read_sur (dirn, lun_in, point, ierr)
+  subroutine read_sur (dirn, blkn, lun_in, point, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in the survey description file.
 ! Angles are returned in radian.
@@ -581,10 +588,13 @@ contains
 ! Version 3 : May 2016
 !             Changed API to remove size of arrays, added parameter
 !             statement to define array sizes (in include file)
+! Version 5 : September 2020
+!             Changed survey directory structure
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
 !     dirn  : Name of directory with survey definition (CH)
+!     blkn  : Block filename (CH)
 !     lun_in: File unit (I4)
 !
 ! OUTPUT
@@ -596,6 +606,7 @@ contains
 !               30 : end of file reached
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) dirn
+!f2py intent(in) blkn
 !f2py intent(in) lun_in
 !f2py intent(out) point
 !f2py intent(out) ierr
@@ -604,11 +615,11 @@ contains
     type(t_pointing), intent(out) :: point
     integer, intent(in) :: lun_in
     integer, intent(out) :: ierr
-    character(*), intent(in) :: dirn
+    character(*), intent(in) :: dirn, blkn
     type(t_v3d) :: vel
     real (kind=8) :: w, h, ra, dec, r
     integer :: j, nw, lw(nw_max), lun_e, ierr_e, i1, i2, i3, i4
-    character(100) :: line, fname
+    character(100) :: line
     character(80) :: word(nw_max)
     logical, save :: opened, finished
 
@@ -618,9 +629,11 @@ contains
     ierr = 0
     lun_e = lun_in + 1
     if (.not. opened) then
-       line(1:i2-i1+1) = dirn(i1:i2)
-       line(i2-i1+2:) = '/pointings.list'
-       open (unit=lun_in, file=line, status='old', err=1000)
+       call read_file_name (blkn, i3, i4, finished, len(blkn))
+       line(1:i2-i1+9) = dirn(i1:i2)//'/blocks/'
+       line(i2-i1+10:i2+i4-(i1+i3)+14) = blkn(i3:i4)//'.pts'
+       print *, 'read_sur: reading ', line(1:i2+i4-(i1+i3)+14)
+       open (unit=lun_in, file=line(1:i2+i4-(i1+i3)+14), status='old', err=1000)
        opened = .true.
     end if
 1500 continue
@@ -705,12 +718,9 @@ contains
 ! Ephemerides).
 
     point%efnam = word(8)
-    call read_file_name (point%efnam, i3, i4, finished, len(point%efnam))
 
 ! Open and read in efficiency function
-    fname(1:i2-i1+2) = dirn(i1:i2)//'/'
-    fname(i2-i1+3:) = point%efnam
-    call read_eff (fname, lun_e, point%c, ierr_e)
+    call read_eff (dirn, point%efnam, lun_e, point%c, ierr_e)
 
     if (ierr_e .eq. 10) then
        write (6, *) 'Unable to open '//word(8)
@@ -784,6 +794,8 @@ contains
 ! Version 4 : May 2016
 !             Changed API to remove size of arrays, added parameter
 !             statement to define array sizes (in include file)
+! Version 5 : September 2020
+!             Changed survey directory structure
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
@@ -796,6 +808,8 @@ contains
 !     sur_mm: Limiting magnitude for each survey (n*R8)
 !     ierr  : Error code (I4)
 !                0 : nominal run
+!               10 : Cannot open blocks.list file
+!               
 !              100 : Maximum number of objects reached
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) survey
@@ -813,20 +827,29 @@ contains
     character(*), intent(in) :: survey
     type(t_pointing) :: point
     real (kind=8) :: rate, tmp, mag, eff
-    integer :: nr, n, j, i, i1, i2
+    integer :: nr, n, j, i, i1, i2, i3, i4, lun_p
+    character(100) :: blkn
     logical :: finished
 
+    lun_p = lun_s + 1
 ! Open and read in survey definitions
     call read_file_name (survey, i1, i2, finished, len(survey))
     n_sur = 0
+! Open list of blocks
+    open (unit=lun_s, file=survey(i1:i2)//'/block.list', status='old', err=1000)
+! Loop on block list lines
+100 continue
+    read (lun_s, '(a)', err=100, end=110) blkn
+    if (blkn(1:1) == '#') goto 100
+    call read_file_name (blkn, i3, i4, finished, len(blkn))
 200 continue
-       call read_sur (survey(i1:i2), lun_s, point, ierr)
-
+       call read_sur (survey(i1:i2), blkn(i3:i4), lun_p, point, ierr)
+print *, 'GetSur, return from read_sur: ', ierr
        if (ierr .ne. 0) then
           if (ierr .eq. 10) then
-             write (6, *) 'Unable to open ',survey(i1:i2),'/pointings.list'
+             write (6, *) 'Unable to open '//survey(i1:i2)//'/blocks/'//blkn(i3:i4)//'.pts'
           else if (ierr .eq. 20) then
-             write (6, *) 'Error reading ',survey(i1:i2),'/pointings.list'
+             write (6, *) 'Error reading '//survey(i1:i2)//'/blocks/'//blkn(i3:i4)//'.pts'
              write (6, *) 'Survey number: ', n_sur
              goto 200
           else if (ierr .eq. 30) then
@@ -838,6 +861,10 @@ contains
        end if
 
        n_sur = n_sur + 1
+       if (n_sur > n_sur_max) then
+          ierr = 100
+          return
+       end if
        points(n_sur) = point
 ! START comment out in production mode
 !       write (18, *) 'Survey number: ', n_sur
@@ -909,8 +936,15 @@ contains
 ! END comment out in production mode
        goto 200
 300 continue
-
     ierr = 0
+    goto 100
+
+110 continue
+    ierr = 0
+    return
+
+1000 continue
+    ierr = 10
     return
   end subroutine GetSurvey
 
