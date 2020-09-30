@@ -3,7 +3,7 @@ program Driver
 !
 ! File Driver.f95
 !
-! J.-M. Petit  Observatoire de Besançon
+! J.-M. Petit  Observatoire de Besac
 ! Version 1 :  May 2013
 !
 ! The purpose of this program is to compare models of the Kuiper Belt to

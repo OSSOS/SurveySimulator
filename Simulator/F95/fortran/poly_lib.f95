@@ -7,7 +7,7 @@ contains
 !
 ! File Polygon-lib.f
 !
-! J.-M. Petit  Observatoire de Besançon
+! J.-M. Petit  Observatoire de Besacon
 ! Version 1 :  February 2016
 !
 ! The purpose of this library is to provide polygon-oriented routines.

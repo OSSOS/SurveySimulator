@@ -33,8 +33,8 @@ contains
     real (kind=8), intent(in) :: ra, dec
     real (kind=8) :: dra, h, w, e_w, e_h
 
-! Below values are from assuming a size of 1°x1° for the "central"
-! square and add 1/2° height and 1/9° width ears. However, looking at
+! Below values are from assuming a size of 1dx1d for the "central"
+! square and add 1/2 height and 1/9 width ears. However, looking at
 ! the resulting polygons, they seem to be somewhat too large
 !      data
 !     $  h /0.008726646259971648d0/,
@@ -49,22 +49,22 @@ contains
 ! (13:34:27.66; -10:00:36.0) or (203.615250; -10.010000)
 ! (13:34:26.45; -09:00:58.4) or (203.610208; -09.016222)
 ! (13:30:29.44; -09:01:11.4) or (202.622667; -09.019833)
-! This is a "square" of 0.9753° x 0.9937°
+! This is a "square" of 0.9753d x 0.9937d
 !
 ! Now, add the ears:
 ! (13:34:53.45; -09:16:26.2) or (203.722708; -09.273944)
 ! (13:34:27.30; -09:16:26.1) or (203.613750; -09.273917)
 ! (13:34:27.89; -09:45:09.2) or (203.616208; -09.752556)
 ! (13:34:54.05; -09:45:04.4) or (203.725208; -09.751222)
-! This is a "rectangle" of 0.1075° x 0.4780°
+! This is a "rectangle" of 0.1075d x 0.4780d
 !
 ! (13:30:29.09; -09:16:38.9) or (202.621208; -09.277472)
 ! (13:30:02.88; -09:16:42.3) or (202.512000; -09.278417)
 ! (13:30:03.18; -09:45:19.7) or (202.513250; -09.755472)
 ! (13:30:29.33; -09:45:21.5) or (202.622208; -09.755972)
-! This is a "rectangle" of 0.1076° x 0.4778°
+! This is a "rectangle" of 0.1076d x 0.4778d
 !
-! So let's make the area 0.9753° x 0.9937° + 2 x 0.010755° x 0.4779° =
+! So let's make the area 0.9753 x 0.9937 + 2 x 0.010755 x 0.4779
 ! 0.979435239 sq.deg. The CCDs are 2048x4612 with pixels
 ! 0.18689x0.18689" resulting in an area of 0.0254558 sq.deg. for each
 ! CCD, or 1.0182 sq.deg. Oops, there is a big problem. I guess it's the
@@ -84,12 +84,12 @@ contains
 ! 9x2112 = 19008 pixels or 3552.4". This implies a gap of ~32 pixels
 ! between the chips, in addition to the oversans, 32 pixels on each
 ! side. I'll assume the small horizontal gap is similar in the center
-! of the frame. Then for the same 1° full size, the wisth of the large
+! of the frame. Then for the same 1d full size, the wisth of the large
 ! gaps is 327 and 328 pixels.
 !
-! From all this, I assume a half width of 0.5°, a half height of 0.5°,
-! the width of the ears (32+2112)*0.18689" = 1/9°, and half height of
-! (2*4644+32)*0.18689" = 0.483837°
+! From all this, I assume a half width of 0.5d, a half height of 0.5d,
+! the width of the ears (32+2112)*0.18689" = 1/9d, and half height of
+! (2*4644+32)*0.18689" = 0.483837d
 !      data
 !     $  h /0.008726646259971648d0/,
 !     $  w /0.008726646259971648d0/,
