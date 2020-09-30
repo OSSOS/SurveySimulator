@@ -16,6 +16,8 @@ c Version 3 : January 2006
 c Version 4 : May 2016
 c             Changed API to remove size of arrays, added parameter
 c             statement to define array sizes (in include file)
+c Version 5 : September 2020
+c             Changed survey directory structure
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
@@ -58,6 +60,7 @@ c     sur_ml: Limiting magnitude of survey (n_r_max,n*R8)
 c     sur_f : Filter used for this survey (n*I4)
 c     ierr  : Error code (I4)
 c                0 : nominal run
+c               10 : Cannot open blocks.list file
 c              100 : Maximum number of objects reached
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) survey
@@ -122,23 +125,32 @@ Cf2py intent(out) ierr
 
       integer*4
      $  sur_co(n_sur_max), sur_en(n_r_max,n_sur_max), sur_nr(n_sur_max),
-     $  sur_f(n_sur_max), nr, j,
+     $  sur_f(n_sur_max), nr, j, i3, i4, lun_p,
      $  eff_n(n_r_max), code, i, lun_s, n_sur, ierr, i1, i2, filt_i,
      $  n_e, sur_ne(n_sur_max)
 
       character
-     $  survey*(*), sur_ef(n_sur_max)*80, eff_name*80
+     $  survey*(*), sur_ef(n_sur_max)*80, eff_name*80, blkn*100
 
       logical
      $  finished
 
       external eta
 
+      lun_p = lun_s + 1
 c Open and read in survey definitions
       call read_file_name (survey, i1, i2, finished, len(survey))
       n_sur = 0
+c Open list of blocks
+      open (unit=lun_s, file=survey(i1:i2)//'/block.list', status='old',
+     $  err=1000)
+c Loop on block list lines
+ 100  continue
+      read (lun_s, '(a)', err=100, end=110) blkn
+      if (blkn(1:1) .eq. '#') goto 100
+      call read_file_name (blkn, i3, i4, finished, len(blkn))
  200  continue
-         call read_sur (survey(i1:i2), lun_s, poly, n_e,
+         call read_sur (survey(i1:i2), blkn(i3:i4), lun_p, poly, n_e,
      $     jday_p, ff, code, obspos, ros, jday_p2,
      $     obspos2, ros2, eff_name, nr, rates, eff_n, eff_b, eff_m,
      $     rate_c, track, d_mag, photf, maglim, filt_i, ierr)
@@ -146,10 +158,12 @@ c Open and read in survey definitions
          if (ierr .ne. 0) then
             if (ierr .eq. 10) then
                write (6, *)
-     $           'Unable to open ',survey(i1:i2),'/pointings.list'
+     $           'Unable to open ',survey(i1:i2)//survey(i1:i2)//
+     $           '/blocks/'//blkn(i3:i4)//'.pts'
             else if (ierr .eq. 20) then
                write (6, *)
-     $           'Error reading ',survey(i1:i2),'/pointings.list'
+     $           'Error reading '//survey(i1:i2)//
+     $           '/blocks/'//blkn(i3:i4)//'.pts'
                write (6, *) 'Survey number: ', n_sur
                goto 200
             else if (ierr .eq. 30) then
@@ -256,8 +270,15 @@ c            write (18, *) n_sur, j, sur_mm(n_sur)
 c         write (18, *) n_sur, sur_mm(n_sur)
          goto 200
  300  continue
-
       ierr = 0
+      goto 100
+
+ 110  continue
+      ierr = 0
+      return
+
+ 1000 continue
+      ierr = 10
       return
       end
 
@@ -354,7 +375,7 @@ Cf2py intent(out) finished
       return
       end
 
-      subroutine read_sur (dirn, lun_in, poly, n_e, jday,
+      subroutine read_sur (dirn, blkn, lun_in, poly, n_e, jday,
      $  ff, code, pos, r, jday2, pos2, r2, efnam, nr, rates, eff_n,
      $  eff_b, eff_m, rate_c, track, d_mag, photf, maglim, filt_i, ierr)
 
@@ -369,10 +390,13 @@ c Version 2 : October 2004
 c Version 3 : May 2016
 c             Changed API to remove size of arrays, added parameter
 c             statement to define array sizes (in include file)
+c Version 5 : September 2020
+c             Changed survey directory structure
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
 c     dirn  : Name of directory with survey definition (CH)
+c     blkn  : Block filename (CH)
 c     lun_in: File unit (I4)
 c
 c OUTPUT
@@ -405,6 +429,7 @@ c               20 : error reading record
 c               30 : end of file reached
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) dirn
+cf2py intent(in) blkn
 Cf2py intent(in) lun_in
 Cf2py intent(out) poly
 Cf2py intent(out) n_e
@@ -449,7 +474,8 @@ Cf2py intent(out) ierr
      $  ierr_e, i1, i2, i3, i4, filt_i, nr
 
       character
-     $  line*100, dirn*(*), efnam*(*), word(nw_max)*80, fname*100
+     $  line*100, dirn*(*), efnam*(*), word(nw_max)*80, fname*100,
+     $  blkn*(*)
 
       logical
      $  opened, finished
@@ -462,9 +488,11 @@ Cf2py intent(out) ierr
       ierr = 0
       lun_e = lun_in + 1
       if (.not. opened) then
-         line(1:i2-i1+1) = dirn(i1:i2)
-         line(i2-i1+2:) = '/pointings.list'
-         open (unit=lun_in, file=line, status='old', err=1000)
+         call read_file_name (blkn, i3, i4, finished, len(blkn))
+         line(1:i2-i1+9) = dirn(i1:i2)//'/blocks/'
+         line(i2-i1+10:i2+i4-(i1+i3)+14) = blkn(i3:i4)//'.pts'
+         open (unit=lun_in, file=line(1:i2+i4-(i1+i3)+14), status='old',
+     $     err=1000)
          opened = .true.
       end if
  1500 continue
@@ -549,12 +577,9 @@ c get the LST (see documentation on EXPLANATION AND EXAMPLES:
 c Ephemerides).
 
       efnam = word(8)
-      call read_file_name (efnam, i3, i4, finished, len(efnam))
 
 c Open and read in efficiency function
-      fname(1:i2-i1+2) = dirn(i1:i2)//'/'
-      fname(i2-i1+3:) = efnam
-      call read_eff (fname, lun_e, eff_b, eff_m, eff_n,
+      call read_eff (dirn, efnam, lun_e, eff_b, eff_m, eff_n,
      $  rates, nr, rate_c, d_mag, photf, track, maglim, filt_i, ierr_e)
 
       if (ierr_e .eq. 10) then
@@ -615,7 +640,7 @@ c The same, 2 hours later
 
       end
 
-      subroutine read_eff (filen, lun_in, bin, eff, eff_n,
+      subroutine read_eff (dirn, effn, lun_in, bin, eff, eff_n,
      $  rates, nrates, rate_c, mag_er, photf, track, maglim, filt_i,
      $  ierr)
 
@@ -627,13 +652,16 @@ c J-M. Petit  Observatoire de Besancon
 c Version 1 : February 2004
 c Version 2 : April 2013
 c             Changed to read new pointings and efficiency file format
-c Version 5 : May 2016
+c Version 3 : May 2016
 c             Changed API to remove size of arrays, added parameter
 c             statement to define array sizes (in include file)
+c Version 5 : September 2020
+c             Changed survey directory structure
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c INPUT
-c     filen : object element file name
+c     dirn  : Survey directory name (CH)
+c     effn  : Efficiency filename (CH)
 c     lun_in: File unit
 c
 c OUTPUT
@@ -666,7 +694,8 @@ c     ierr  : Error code
 c                0 : nominal run
 c               10 : unable to open filen
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-Cf2py inten(in) filen
+cf2py inten(in) dirn
+cf2py inten(in) effn
 Cf2py inten(in) lun_in
 Cf2py intent(out) bin
 Cf2py intent(out) eff
@@ -692,13 +721,14 @@ Cf2py intent(out) ierr
 
       integer
      $  lun_in, ierr, eff_n(n_r_max), eq_ind, nw, lw(nw_max), i, nrates,
-     $  j, filt_i
+     $  j, filt_i, i1, i2, i3, i4
 
       character
-     $  line*100, filen*(*), word(nw_max)*80
+     $  line*256, filen*256, word(nw_max)*80, dirn*(*), effn*(*)
 
       logical
-     $  rcut, tr, fi, mag, in_rates, in_func, rate(0:n_r_max), ph
+     $  rcut, tr, fi, mag, in_rates, in_func, rate(0:n_r_max), ph,
+     $  finished
 
       rcut = .false.
       tr = .false.
@@ -713,7 +743,11 @@ Cf2py intent(out) ierr
       ph = .false.
 
       ierr = 0
-      open (unit=lun_in, file=filen, status='old', err=1000)
+      call read_file_name (dirn, i1, i2, finished, len(dirn))
+      call read_file_name (effn, i3, i4, finished, len(effn))
+      filen = dirn(i1:i2)//'/eff/'//effn(i3:i4)
+      open (unit=lun_in, file=filen(1:i2+i4-(i1+i3)+7), status='old',
+     $  err=1000)
       nrates = 0
 
  1500 continue

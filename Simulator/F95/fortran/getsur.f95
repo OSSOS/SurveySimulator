@@ -336,7 +336,8 @@ contains
     !               10 : unable to open dirn//'/eff/'//effn
     
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-!f2py inten(in) filen
+!f2py inten(in) dirn
+!f2py inten(in) effn
 !f2py inten(in) lun_in
 !f2py intent(out) c
 !f2py intent(out) ierr
@@ -632,7 +633,6 @@ contains
        call read_file_name (blkn, i3, i4, finished, len(blkn))
        line(1:i2-i1+9) = dirn(i1:i2)//'/blocks/'
        line(i2-i1+10:i2+i4-(i1+i3)+14) = blkn(i3:i4)//'.pts'
-       print *, 'read_sur: reading ', line(1:i2+i4-(i1+i3)+14)
        open (unit=lun_in, file=line(1:i2+i4-(i1+i3)+14), status='old', err=1000)
        opened = .true.
     end if
@@ -809,7 +809,6 @@ contains
 !     ierr  : Error code (I4)
 !                0 : nominal run
 !               10 : Cannot open blocks.list file
-!               
 !              100 : Maximum number of objects reached
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) survey
@@ -844,7 +843,6 @@ contains
     call read_file_name (blkn, i3, i4, finished, len(blkn))
 200 continue
        call read_sur (survey(i1:i2), blkn(i3:i4), lun_p, point, ierr)
-print *, 'GetSur, return from read_sur: ', ierr
        if (ierr .ne. 0) then
           if (ierr .eq. 10) then
              write (6, *) 'Unable to open '//survey(i1:i2)//'/blocks/'//blkn(i3:i4)//'.pts'

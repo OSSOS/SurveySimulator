@@ -1,6 +1,6 @@
 123456789		! Random number generator seed
 20			! Number of tracked detections
-../../../Surveys/CFEPS
+../../../Surveys
 ../../../Models/Resonance_3_2-g.in
 ./SimulDetect.dat
 ./SimulTrack.dat
