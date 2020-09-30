@@ -206,7 +206,7 @@ contains
 !     The equator is assumed to be the ICRF frame
 !     The ecliptic is the so called 'conventional ecliptic'
 !     going through the origin of the ICRF  with the obliquity
-!     epsilon = 23°26'21".410 = 84381".41
+!     epsilon = 23d26'21".410 = 84381".41
 !     It differs by ~ 50 mas from the inertial mean ecliptic(s) of J2000.
 !
 !     One can call equat_ecl(ieqec,vv,vv,ierr)
@@ -275,12 +275,12 @@ contains
 !        at J2000.
 !     The invariable plane is given with respect to the ecliptic plane
 !     (J2000) by Burkhardt, AA, 1982:
-!     inclination of invariable plane:   1° 35' 13.86" =   5713.86"
-!     direction of ascending node:     107° 36' 30.8"  = 387390.8"
+!     inclination of invariable plane:   1d 35' 13.86" =   5713.86"
+!     direction of ascending node:     107d 36' 30.8"  = 387390.8"
 !
 !     The ecliptic is the so called 'conventional ecliptic'
 !     going through the origin of the ICRF  with the obliquity
-!     epsilon = 23°26'21".410 = 84381".41
+!     epsilon = 23d26'21".410 = 84381".41
 !     It differs by ~ 50 mas from the inertial mean ecliptic(s) of J2000.
 !
 !     One can call invar_ecl(ieqec,vv,vv,ierr)
@@ -447,7 +447,7 @@ contains
 !
 !     The ecliptic is the so called 'conventional ecliptic'
 !     going through the origin of the ICRF  with the obliquity
-!     epsilon = 23°26'21".410 = 84381".41
+!     epsilon = 23d26'21".410 = 84381".41
 !     It differs by ~ 50 mas from the inertial mean ecliptic(s) of J2000.
 !
 !     One can call ref_ecl(ieqec,vv,vv,ierr)
