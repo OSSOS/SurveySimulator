@@ -1,4 +1,5 @@
-U	= poly_dec poly_lib datadec ioutils effut elemutils rot xvutils getsur numutils surveysub
+U	= poly_dec poly_lib datadec ioutils effut elemutils rot xvutils getsur numutils surveysub 
+#U	= poly_lib effut getsur numutils surveysub
 OBJU	= $(addsuffix .o,${U})
 SRCU	= $(addsuffix .f95,${U})
 FPPU	= $(addsuffix .fpp,${U})
@@ -27,12 +28,13 @@ FPP	= gfortran -E -x f95-cpp-input -fPIC -DPYTHON
 FFLAGS	= -O3 -fPIC -x f95-cpp-input
 FFLAGP	= -O3
 CFLAGS  = 
+CPPFLAGS = 
 
 SUBDIRS := example
-TOPTARGETS := all clean
+TOPTARGETS := clean test
 GIMEOBJ ?= InnerBeltModel
 
-#$(TOPTARGETS): $(SUBDIRS)
+$(TOPTARGETS): $(SUBDIRS)
 
 .PHONY: $(SUBDIRS) 
 
@@ -52,7 +54,7 @@ all:	Driver $(SUBDIRS)
 clean:
 	rm -f *~ *.o *.mod *.fpp f90wrap*f90 $(SSIM).py $(GOBJ).py _$(SSIM)*.so _$(GOBJ)*.so SimulDetect.dat SimulTrack.dat
 	rm -f *~ $(SSIM).py $(GOBJ).py $(IOBJ).py $(ROBJ).py _$(SSIM)*.so _$(GOBJ)*.so _$(IOBJ)*.so _$(ROBJ)*.so
-	rm -f *.log LOG .f2py_f2cmap Driver test_read_pointings
+	rm -f *.log LOG .f2py_f2cmap Driver test_read_pointings  GeMeObj.f95
 
 .PHONY: link
 
@@ -65,7 +67,7 @@ Driver: link Driver.f95 $(OBJU) ${SRCM} Makefile
 	$(FC) $(FFLAGP) -o Driver $(OBJU) ${SRCM} Driver.f95
 	rm GiMeObj.f95
 
-Modules: clean _$(SSIM).so _$(GOBJ).so Makefile
+Modules: _$(SSIM).so _$(GOBJ).so Makefile
 	echo "Modules have been built"
 
 _$(SSIM).so: $(FPPU) $(OBJU) Makefile
