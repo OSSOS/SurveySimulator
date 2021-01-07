@@ -35,8 +35,7 @@ contains
     integer, intent(out) :: ierr
     real (kind=8), intent(in) :: jday
     integer, parameter :: n_planets = 9
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
-         drad = Pi/180.d0, jday_min = 2415020.0, jday_max = 2488070.0, &
+    real (kind=8), parameter :: jday_min = 2415020.0, jday_max = 2488070.0, &
          mu = TwoPi**2
     type(t_v3d) :: pos_p, vel_p
     integer :: ind, istat
@@ -119,7 +118,7 @@ contains
     type(t_v3d), intent(in) :: pos
     real (kind=8), intent(in) :: jday
     real (kind=8), intent(out) :: r
-    type(t_v3d) :: pos_b, vel_b
+    type(t_v3d), save :: pos_b, vel_b
     integer :: ierr
     real (kind=8), save :: jday_b
     logical, save :: done
@@ -281,8 +280,7 @@ contains
     integer, intent(in) :: ind
     integer, intent(out) :: ierr
     real (kind=8), intent(in) :: jday
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
-         drad = Pi/180.d0, jday_min = 2378496.5d0, jday_max = 2470171.5d0
+    real (kind=8), parameter :: jday_min = 2378496.5d0, jday_max = 2470171.5d0
     integer, parameter :: n_planets = 9
     real (kind=8) :: a_p(n_planets), e_p(n_planets), i_p(n_planets), &
          node_p(n_planets), peri_p(n_planets), capl_p(n_planets), &
@@ -420,8 +418,7 @@ contains
     integer, intent(in) :: ind
     integer, intent(out) :: ierr
     real (kind=8), intent(in) :: jday
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi, &
-         drad = Pi/180.d0, jday_min = 2415020.0d0, jday_max = 2488070.0d0, &
+    real (kind=8), parameter :: jday_min = 2415020.0d0, jday_max = 2488070.0d0, &
          mu = TwoPi**2
     integer, parameter :: n_planets = 9
     integer :: istat
