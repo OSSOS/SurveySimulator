@@ -78,8 +78,7 @@ c Chapront et al. 2002 gamma to O_icrs in arcsec
       return
       end
 
-      subroutine RotX (alpha, posin, posout)
-
+      subroutine RotX(alpha, posin, posout)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c This routine computes position in a frame rotated by angle alpha (rd)
 c about the X axis.
@@ -107,22 +106,22 @@ Cf2py intent(out) posout
      $  i
 
       real*8
-     $  alpha, posin(3), posout(3), pos(3), ca, sa
+     $  alpha, posin(3), posout(3), ta2, sa, x1, y1
 
-      do i = 1, 3
-         pos(i) = posin(i)
-      end do
-      posout(1) = pos(1)
-      ca = dcos(alpha)
+c      print *, '[RX] in:', posin(1)**2+posin(2)**2+posin(3)**2
+      ta2 = dtan(alpha/2.d0)
       sa = dsin(alpha)
-      posout(2) = pos(2)*ca + pos(3)*sa
-      posout(3) = pos(3)*ca - pos(2)*sa
+      x1 = posin(2) + posin(3)*ta2
+      y1 = posin(3) - x1*sa
+      posout(1) = posin(1)
+      posout(2) = x1 + y1*ta2
+      posout(3) = y1
+c      print *, '[RX] out:', posout(1)**2+posout(2)**2+posout(3)**2
 
       return
       end
 
-      subroutine RotY (alpha, posin, posout)
-
+      subroutine RotY(alpha, posin, posout)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c This routine computes position in a frame rotated by angle alpha (rd)
 c about the Y axis.
@@ -150,22 +149,22 @@ Cf2py intent(out) posout
      $  i
 
       real*8
-     $  alpha, posin(3), posout(3), pos(3), ca, sa
+     $  alpha, posin(3), posout(3), ta2, sa, x1, y1
 
-      do i = 1, 3
-         pos(i) = posin(i)
-      end do
-      posout(2) = pos(2)
-      ca = dcos(alpha)
+c      print *, '[RY] in:', posin(1)**2+posin(2)**2+posin(3)**2
+      ta2 = dtan(alpha/2.d0)
       sa = dsin(alpha)
-      posout(3) = pos(3)*ca + pos(1)*sa
-      posout(1) = pos(1)*ca - pos(3)*sa
+      x1 = posin(3) + posin(1)*ta2
+      y1 = posin(3) - x1*sa
+      posout(2) = posin(2)
+      posout(3) = x1 + y1*ta2
+      posout(1) = y1
+c      print *, '[RY] out:', posout(1)**2+posout(2)**2+posout(3)**2
 
       return
       end
 
-      subroutine RotZ (alpha, posin, posout)
-
+      subroutine RotZ(alpha, posin, posout)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c This routine computes position in a frame rotated by angle alpha (rd)
 c about the Z axis.
@@ -193,16 +192,17 @@ Cf2py intent(out) posout
      $  i
 
       real*8
-     $  alpha, posin(3), posout(3), pos(3), ca, sa
+     $  alpha, posin(3), posout(3), ta2, sa, x1, y1
 
-      do i = 1, 3
-         pos(i) = posin(i)
-      end do
-      posout(3) = pos(3)
-      ca = dcos(alpha)
+c      print *, '[RZ] in:', posin(1)**2+posin(2)**2+posin(3)**2
+      ta2 = dtan(alpha/2.d0)
       sa = dsin(alpha)
-      posout(1) = pos(1)*ca + pos(2)*sa
-      posout(2) = pos(2)*ca - pos(1)*sa
+      x1 = posin(1) + posin(2)*ta2
+      y1 = posin(2) - x1*sa
+      posout(3) = posin(3)
+      posout(1) = x1 + y1*ta2
+      posout(2) = y1
+c      print *, '[RZ] out:', posout(1)**2+posout(2)**2+posout(3)**2
 
       return
       end
@@ -243,7 +243,7 @@ Cf2py intent(out) ierr
       implicit none
 
       real*8
-     $  epsilon, v_in(3), v_out(3), ww(3), coseps, sineps, Pi, secrad
+     $  epsilon, v_in(3), v_out(3), ww(3), Pi, secrad
 
 c obliquity at J20000 in arcsec
 
@@ -254,25 +254,15 @@ c obliquity at J20000 in arcsec
       integer*4
      $  ieqec, ierr
 
-      coseps = dcos(epsilon*secrad)
-      sineps = dsin(epsilon*secrad)
-
 c regular exit
       ierr   = 0
 
 c to allow a call like ::  call equat_ecl(ieqec,vv,vv,ierr)
-      ww(1)  = v_in(1)
-      ww(2)  = v_in(2)
-      ww(3)  = v_in(3)
 
       if (ieqec .eq. 1) then
-        v_out(1) =   ww(1)
-        v_out(2) =   coseps*ww(2) + sineps*ww(3)
-        v_out(3) = - sineps*ww(2) + coseps*ww(3)
+         call RotX(epsilon*secrad, v_in, v_out)
       else if (ieqec .eq. -1) then
-        v_out(1) =   ww(1)
-        v_out(2) =   coseps*ww(2) - sineps*ww(3)
-        v_out(3) =   sineps*ww(2) + coseps*ww(3)
+         call RotX(-epsilon*secrad, v_in, v_out)
       else
 c anomalous exit ieqec not allowed
         ierr     =   100
@@ -325,8 +315,7 @@ Cf2py intent(out) ierr
       implicit none
 
       real*8
-     $  epsilon, v_in(3), v_out(3), ww(3), coseps, sineps, Pi, secrad,
-     $  omega, cosom, sinom
+     $  epsilon, v_in(3), v_out(3), ww(3), Pi, secrad, omega
 
 c obliquity at J20000 in arcsec
 
@@ -337,27 +326,17 @@ c obliquity at J20000 in arcsec
       integer*4
      $  ieqec, ierr
 
-      coseps = dcos(epsilon*secrad)
-      sineps = dsin(epsilon*secrad)
-      cosom = dcos(omega*secrad)
-      sinom = dsin(omega*secrad)
-
 c regular exit
       ierr   = 0
 
 c to allow a call like ::  call invar_ecl(ieqec,vv,vv,ierr)
-      ww(1)  = v_in(1)
-      ww(2)  = v_in(2)
-      ww(3)  = v_in(3)
 
       if (ieqec .eq. 1) then
-        v_out(1) =   cosom*ww(1) - sinom*(coseps*ww(2) - sineps*ww(3))
-        v_out(2) =   sinom*ww(1) + cosom*(coseps*ww(2) - sineps*ww(3))
-        v_out(3) =   sineps*ww(2) + coseps*ww(3)
+         call RotX(-epsilon*secrad, v_in, ww)
+         call RotZ(-omega*secrad, ww, v_out)
       else if (ieqec .eq. -1) then
-        v_out(1) =   cosom*ww(1) + sinom*ww(2)
-        v_out(2) =   coseps*(-sinom*ww(1) + cosom*ww(2)) + sineps*ww(3)
-        v_out(3) = - sineps*(-sinom*ww(1) + cosom*ww(2)) + coseps*ww(3)
+         call RotZ(omega*secrad, v_in, ww)
+         call RotX(epsilon*secrad, ww, v_out)
       else
 c anomalous exit ieqec not allowed
         ierr     =   100
@@ -519,38 +498,22 @@ Cf2py intent(out) ierr
       implicit none
 
       real*8
-     $  eps, v_in(3), v_out(3), ww(3), coseps, sineps, Pi, secrad,
-     $  om, cosom, sinom
-
-c obliquity at J20000 in arcsec
-
-      parameter
-     $  (Pi = 3.141592653589793238d0, secrad = Pi/180.d0/3600.d0)
+     $  eps, v_in(3), v_out(3), ww(3), om
 
       integer*4
      $  ieqec, ierr
-
-      coseps = dcos(eps)
-      sineps = dsin(eps)
-      cosom = dcos(om)
-      sinom = dsin(om)
 
 c regular exit
       ierr   = 0
 
 c to allow a call like ::  call ref_ecl(ieqec,vv,vv,ierr)
-      ww(1)  = v_in(1)
-      ww(2)  = v_in(2)
-      ww(3)  = v_in(3)
 
       if (ieqec .eq. 1) then
-        v_out(1) =   cosom*ww(1) - sinom*(coseps*ww(2) - sineps*ww(3))
-        v_out(2) =   sinom*ww(1) + cosom*(coseps*ww(2) - sineps*ww(3))
-        v_out(3) =   sineps*ww(2) + coseps*ww(3)
+         call RotX(-eps, v_in, ww)
+         call RotZ(-om, ww, v_out)
       else if (ieqec .eq. -1) then
-        v_out(1) =   cosom*ww(1) + sinom*ww(2)
-        v_out(2) =   coseps*(-sinom*ww(1) + cosom*ww(2)) + sineps*ww(3)
-        v_out(3) = - sineps*(-sinom*ww(1) + cosom*ww(2)) + coseps*ww(3)
+         call RotZ(om, v_in, ww)
+         call RotX(eps, ww, v_out)
       else
 c anomalous exit ieqec not allowed
         ierr     =   100
