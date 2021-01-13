@@ -263,7 +263,7 @@ contains
     integer, intent(out) :: ierr
     real (kind=8), intent(in) :: angle
     character(13), intent(out) :: string
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, raddeg = 180.0d0/Pi
+    real (kind=8), parameter :: raddeg = 180.0d0/Pi
     integer :: deg, mn, si
     real (kind=8) :: sec, rm, w
 

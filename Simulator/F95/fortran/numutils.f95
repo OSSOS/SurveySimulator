@@ -42,7 +42,6 @@ contains
     integer, intent(out) :: ierr
     real (kind=8), intent(in) :: r, delta, robs, h, g
     real (kind=8), intent(out) :: alpha, mag
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, raddeg = 180.0d0/Pi
     real (kind=8) :: denom, phi1, phi2
 
     ierr = 0
@@ -259,7 +258,6 @@ contains
 
     type(t_v3d), intent(in) :: pos
     real (kind=8), intent(out) :: lat, long, r
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi
 
     r = dsqrt (pos%x**2 + pos%y**2 + pos%z**2)
     long = datan2(pos%y, pos%x)
@@ -383,9 +381,6 @@ contains
 
 ! Calling arguments
     real (kind=8), intent(inout) :: var
-
-!Some values better set up as parameters
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi
 
 771 if (var .gt. TwoPi) then
        var = var - TwoPi
@@ -523,8 +518,6 @@ contains
     integer, intent(out) :: ierr
     type(t_orb_m) :: o_m
     type(t_v3d) :: pos, obpos, tmp
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, &
-         drad = Pi/180.0d0
     integer, parameter :: screen = 6
     real (kind=8), save :: r, delta, ros
     integer :: code
