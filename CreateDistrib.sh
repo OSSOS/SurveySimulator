@@ -15,8 +15,6 @@ if [ -d $d ]; then
     \rm -rf $d
 fi
 mkdir $d
-mkdir $d/src
-mkdir $d/srcF95
 if [ -e ../CurrentDistrib ]; then
     \rm ../CurrentDistrib
 fi
@@ -24,38 +22,35 @@ if [ -h ../CurrentDistrib ]; then
     \rm ../CurrentDistrib
 fi
 ln -s ${d/./} ../CurrentDistrib
+curdir=$(pwd)
 
 # Copy fix files
 cat > $d/README.version <<EOF
 
-Survey Simulator for OSSOSv11
+## Survey Simulator for OSSOSv12
 
-Survey simulator as of $dt
+## Survey simulator as of $dt
 
 EOF
-head -2 README.first > $d/README.first
-cat >> $d/README.first <<EOF
+head -2 README.md > $d/README.md
+cat >> $d/README.md <<EOF
 $df release to $intended_audience
 EOF
-tail --line=+3 README.first >> $d/README.first
-cp -a eupl* README.contact lookup* parametric* Python* $d/
-for s in CFEPS OSSOS All_r_Surveys All_Surveys Deep_Surveys; do
-    mkdir $d/$s
-    cp ../$s/* $d/$s/
-    \rm $d/$s/*pointings
+tail --line=+3 README.md >> $d/README.md
+cp -a eupl* Simulator Models $d/
+for s in CFEPS OSSOS All_r_Surveys All_Surveys; do
+    mkdir -p $d/Surveys/$s
+    cp Surveys/$s/* $d/Surveys/$s/
 done
-for s in CFEPS OSSOS All_r_Surveys Deep_Surveys; do
-    \rm -f $d/$s/README.formats
-    ln -s ../All_Surveys/README.formats $d/$s/README.formats
+for s in CFEPS OSSOS All_r_Surveys; do
+    \rm -f $d/Surveys/$s/README.formats
+    ln -s ../All_Surveys/README.formats $d/Surveys/$s/README.formats
 done
-cp src/Driver.f src/Driver.py src/README.* src/ModelUtils.f $d/src/
-cp srcF95/*.f95 srcF95/DriverF95.py srcF95/Makefile srcF95/kind_map $d/srcF95/
-cp src/README.* $d/srcF95/
-\rm -f $d/CFEPS/*.py
-\rm -f $d/srcF95/test*f95
+\rm -f $d/Simulator/F77/fortran/Test*f
+\rm -f $d/Simulator/F95/fortran/test*f95
 
 # Initialize SurveySubs.f
-cd src
+cd $d/Simulator/F77/fortran
 cp SurveySubs.f zzzz0
 n=`grep -i include zzzz0 | grep -i -v "[a-z].*include" | grep -i -v "include 'param.inc'" | wc -l`
 
@@ -75,21 +70,21 @@ done
 
 # Now inline the "include 'param.inc'" statements.
 cp zzzz0 zzzz1
-../InlineIncludeParam.py
+${curdir}/InlineIncludeParam.py
 \rm -f zzzz1
 
 # Move the result in the distribution directory
-cp SurveySubsHistory ../$d/src/SurveySubs.f
-cat >> ../$d/src/SurveySubs.f <<EOF
+cat > SurveySubs.f <<EOF
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 c
 c File generated on $da
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 EOF
-cat zzzz0 >> ../$d/src/SurveySubs.f
-\rm zzzz0
-cd ../
+cat zzzz0 >> SurveySubs.f
+\rm GetSurvey.f EffUtils.f PosVelUtils.f Polygon-lib.f ElemPosUtils.f Rotation.f zzzz0
+cd ${curdir}
 
 # Create the tarball
 tar czf ../SurveySimulator-${ID}.tgz $d
