@@ -187,9 +187,8 @@ contains
          color0(10)              ! Color parameters of model
     character(5) :: zone         ! Time zone
     character(8) :: date         ! Date of execution
-    character(10), save :: &
-         time,                  &! Time of execution
-         comp(n_obj_max)         ! Array of strings telling the component
+    character(10), save :: time  ! Time of execution
+    character(30), save :: comp(n_obj_max)  ! Array of strings telling the component
                                  ! the object belongs too
     integer, save :: &
          values(8),             &! Date and time of execution
@@ -240,6 +239,7 @@ contains
        call GetDistrib (filena, lun_d, n_obj_max, n_obj, obj_o, &
             obj_h, obj_jday, color0, comp, ierr_d)
        if (n_obj <= 0) then
+          write (6, *) n_obj
           ierr = -20
           return
        end if
@@ -254,7 +254,7 @@ contains
           end if
 ! If we get here, there is something really wrong, better return with
 ! panic code.
-          ierr = -20
+          ierr = -22
           return
        end if
     end if
@@ -353,7 +353,8 @@ contains
     real (kind=8) :: obj_h(:), obj_t(:), color(:), h, g, mag, r, alpha
     integer :: lun_d, n_obj, ierr
     character(*) :: distri
-    character(10) :: comp(*), co
+    character(30) :: comp(*), co
+    character(200) :: line
     real (kind=8), save :: jday
 
     ierr = 0
@@ -364,7 +365,7 @@ contains
 ! Open and read in object distribution
     n_obj = 0
 100 continue
-    call read_obj (distri, lun_d, o_m, h, jday, color, co, ierr)
+    call read_obj (distri, lun_d, o_m, h, jday, color, co, ierr, line)
 
     if (ierr .ne. 0) then
        if (ierr .eq. 10) then
@@ -389,13 +390,16 @@ contains
     if (n_obj .ge. n_max) then
        return
     end if
+    if (n_obj <= 0) then
+       write (6,*) line, n_obj
+    end if
     goto 100
 110 continue
 
     return
   end subroutine GetDistrib
 
-  subroutine read_obj (filen, lun_in, o_m, h, jday, color, co, ierr)
+  subroutine read_obj (filen, lun_in, o_m, h, jday, color, co, ierr, line)
 
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in the object element file.
@@ -433,9 +437,9 @@ contains
     integer, parameter :: nw_max = 20
     integer :: lun_in, ierr, j, nw, lw(nw_max)
     character(*) :: filen
-    character(100) :: line
+    character(200) :: line
     character(80) :: word(nw_max)
-    character(10) :: co
+    character(30) :: co
     logical, save :: opened
 
     data opened /.false./
@@ -476,8 +480,8 @@ contains
     o_m%node = o_m%node*drad
     o_m%peri = o_m%peri*drad
     o_m%m = o_m%m*drad
-    co = '          '
-    if (nw .ge. 9) co = word(9)
+    co = 'TTTTTTTTTTTTTTTTTTTT'
+    if (nw .ge. 7) co = word(8)
     return
 
 1000 continue
@@ -485,6 +489,7 @@ contains
     return
 
 2000 continue
+    write (6, *) line
     ierr = 20
     return
 
