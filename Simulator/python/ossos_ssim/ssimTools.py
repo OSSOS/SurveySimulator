@@ -55,12 +55,17 @@ def input_variables(f_name):
 def drawn_header(f_name):
     """
     Open drawn file and write header
+
+    The file format of the header set by SurveySimulator.
     """
+    # TODO make this header for the columns that will be written.
     with open(f_name, 'w') as f:
-        f.write(
-            f'#{"a":>7} {"e":>6} {"inc":>8} {"node":>8} {"peri":>8} {"Manom":>8} {"H":>6} {"resamp":>8} '
-            f'{"Comments":>10s}\n'
-        )
+        f.write(f'# {"a":>7} {"e":>6} '
+                f'{"inc":>8} {"node":>8} '
+                f'{"peri":>8} {"Manom":>8} '
+                f'{"H":>6} {"resamp":>8} '
+                f'{"Comments":>10s}\n'
+                )
 
 
 def det_header(f_name, seed):
