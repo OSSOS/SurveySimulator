@@ -19,7 +19,7 @@ contains
 ! \verb|x, y, z, vx, vy, vz| = cartesian variables: $X, Y, Z, Px, Py, Pz$
 ! \end{verse}
 !
-! Angles are in [rad]
+! Angles are in [radian]
 !
 ! \subsubsection{Declarations}
 !
@@ -50,7 +50,6 @@ contains
     integer :: i
     real (kind=8) :: delau(8), cos_e, cos_i, e, mat(3,3), q_vec(2), qp(2), &
          sin_e, sin_i, tmp, signe, f, de, fp, fpp, fppp
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi
 
 ! Computation of sinus and cosines of angles.
 
@@ -164,7 +163,7 @@ contains
 ! \verb|x, y, z| = cartesian variables: $X, Y, Z$
 ! \end{verse}
 !
-! Angles are in [rad]
+! Angles are in [radian]
 !
 ! \subsubsection{Declarations}
 !
@@ -191,7 +190,6 @@ contains
     integer :: i
     real (kind=8) :: delau(8), cos_e, cos_i, e, mat(3,3), q_vec(2), &
          sin_e, sin_i, signe, f, de, fp, fpp, fppp
-    real (kind=8), parameter :: Pi = 3.141592653589793238d0, TwoPi = 2.d0*Pi
 
 ! Computation of sinus and cosines of angles.
 

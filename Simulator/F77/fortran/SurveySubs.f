@@ -642,10 +642,7 @@ Cf2py intent(out) ierr
      $  ierr
 
       real*8
-     $  r, delta, robs, h, g, alpha, mag, Pi, raddeg, denom, phi1, phi2
-
-      parameter
-     $  (Pi = 3.141592653589793238d0, raddeg = 180.0d0/Pi)
+     $  r, delta, robs, h, g, alpha, mag, denom, phi1, phi2
 
       ierr = 0
       denom = 2.d0*r*delta
