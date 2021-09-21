@@ -112,7 +112,7 @@ program Driver
        //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
   write (lun_t, '(a,a)') &
        '#   a      e        i        q        r        M       node ', &
-       '    peri  m_rand H_rand color Comments'
+       '    peri  m_rand H_rand color Comments delta'
 
 ! Initialize counters
   n_hits = 0
@@ -169,7 +169,7 @@ program Driver
            n_track = n_track + 1
            write (lun_t, 9010) o_m%a, o_m%e, o_m%inc/drad, o_m%a*(1.d0-o_m%e), &
                 r, mt/drad, o_m%node/drad, o_m%peri/drad, m_rand, h_rand, &
-                color(ic), comments(1:nchar)
+                color(ic), comments(1:nchar), delta
         end if
      end if
 
@@ -195,7 +195,7 @@ program Driver
 
 9000 format (f8.3,1x,f6.3,1x,6(f8.3,1x),2(f6.2,1x),f5.2,1x,i2,2(1x,f8.3), &
           1x,f6.2,1x,f4.2,1x,f8.5,1x,f8.4,1x,a6,1x,a)
-9010 format (f8.3,1x,f6.3,1x,6(f8.3,1x),2(f6.2,1x),f5.2,1x,a)
+9010 format (f8.3,1x,f6.3,1x,6(f8.3,1x),2(f6.2,1x),f5.2,1x,a,f8.2)
 
 9500 continue
   write (screen, *) 'File "', det_outfile, '" already exists. '
