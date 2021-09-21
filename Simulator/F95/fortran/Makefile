@@ -65,6 +65,11 @@ link:
 
 Driver: link Driver.f95 $(OBJU) ${SRCM} Makefile
 	$(FC) $(FFLAGP) -o Driver $(OBJU) ${SRCM} Driver.f95
+
+#	rm GiMeObj.f95
+
+magerr: link magerr.f95 $(OBJU) ${SRCM} Makefile
+	$(FC) $(FFLAGP) -o magerr $(OBJU) ${SRCM} magerr.f95
 	rm GiMeObj.f95
 
 Modules: _$(SSIM).so _$(GOBJ).so Makefile
