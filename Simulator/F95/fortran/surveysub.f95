@@ -11,7 +11,7 @@ contains
 
   subroutine Detos1 (o_m, jday, hx, color, gb, ph, period, amp, surnam, seed, &
        flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, &
-       jdayp, ic, surna, h_rand)
+       jdayp, ic, surna, h_rand, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine determines if a given object is seen by the survey
 ! described in the directory \verb|surnam|.
@@ -109,7 +109,7 @@ contains
 
     type(t_orb_m), intent(in) :: o_m
     integer, intent(inout) :: seed
-    integer, intent(out) :: flag, isur, ic
+    integer, intent(out) :: flag, isur, ic, ierr
     real (kind=8), intent(in) :: jday, hx, color(:), gb, ph, period, amp
     real (kind=8), intent(out) :: ra, dec, d_ra, d_dec, r, delta, m_int, &
          m_rand, eff, mt, jdayp, h_rand
@@ -131,7 +131,7 @@ contains
          track_slope, angle, rate, delta2, mag_peri, dmag, &
          p(2), ra_l, dec_l, d_ra_l, d_dec_l, r_l, delta_l, &
          m_int_l, m_rand_l, eff_l, mt_l
-    integer, save :: i, filt_i, flag_l, n_sur, ierr, &
+    integer, save :: i, filt_i, flag_l, n_sur, &
          incode, outcod, i_sur, nph
     character(13), save :: stra, stdec
     logical, save :: debug, newpos, rate_ok, first
@@ -160,7 +160,7 @@ contains
           else
              write (screen, *) 'Unknown return code in read_sur.'
           end if
-          stop
+          return
        end if
 100    continue
 ! Determine overall faintest 'x' magnitude for all surveys
