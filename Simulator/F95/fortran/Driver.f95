@@ -52,20 +52,19 @@ program Driver
 
   integer, parameter :: n_obj_max = 10000, screen = 6, keybd = 5, verbose = 9
   integer :: lun_h, lun_t
-
   type(t_orb_m) :: o_m
 ! color array NEEDS to be length 10 or more!
   real (kind=8) :: h, epoch, m_int, d_ra, d_dec, r, delta, ra, dec, random, &
        mt, color(10), gb, ph, period, amp, jday_p, m_rand, eff, rn_iter, &
        eff_lim, h_rand
   integer :: n_hits, n_track, ierr, seed, flag, isur, ic, n_iter, &
-       n_track_max, nchar, values(8)
+       n_track_max, nchar, values(8), c_idx, i1, i2
   character(80) :: distri_file, trk_outfile, det_outfile
   character(100) :: survey_dir, comments
   character(10) :: surna, time
   character(8) :: date
   character(5) :: zone
-  logical :: keep_going
+  logical :: keep_going, finished
 
   lun_h = 10
   lun_t = 11
@@ -78,12 +77,16 @@ program Driver
   read (5, *, err=9999) n_track_max
 ! Directory containing the characterization files
   read (5, '(a)', err=9999) survey_dir
+  survey_dir = strip_comment(survey_dir)
 ! File with model parameters
   read (5, '(a)', err=9999) distri_file
+  distri_file = strip_comment(distri_file)
 ! Name for the detected objects outfile
   read (5, '(a)', err=9999) det_outfile
+  det_outfile = strip_comment(det_outfile)
 ! Name for the tracked objects outfile
   read (5, '(a)', err=9999) trk_outfile
+  trk_outfile = strip_comment(trk_outfile)
 
 !  print *, n_track_max
 
@@ -133,12 +136,12 @@ program Driver
 
 !     print *, o_m, epoch
 
-     if (ierr .eq. -10) then       !Something wrong with this object, go to next one
+     if (ierr .eq. -10) then       ! Something wrong with this object, go to next one
         goto 100
-     else if (ierr .eq. -20) then     !Something very wrong happend, stop
+     else if (ierr .eq. -20) then     ! Something very wrong happend, stop
         write (screen, '(a)') 'GiMeObj returned -20, stopping.'
-        goto 2000
-     else if (ierr .eq. 100) then     !Reached end of model, prepare to stop
+        goto 2010
+     else if (ierr .eq. 100) then     ! Reached end of model, prepare to stop
         keep_going = .false.
      end if
 
@@ -153,7 +156,12 @@ program Driver
 !        Determine if the object would be detected
      call Detos1 (o_m, epoch, h, color, gb, ph, period, amp, survey_dir, seed, &
           flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, &
-          jday_p, ic, surna, h_rand)
+          jday_p, ic, surna, h_rand, ierr)
+
+     if (ierr < 0) then
+         write(screen, *) "Failed while attempting to determine if object is detectable: ", ierr
+         goto 2011
+     end if
 
 !        Check if detected and tracked, and write to output files
      if (flag .gt. 0) then
@@ -191,7 +199,7 @@ program Driver
   close (lun_h)
   close (lun_t)
 
-  stop
+  call exit (0)
 
 9000 format (f8.3,1x,f6.3,1x,6(f8.3,1x),2(f6.2,1x),f5.2,1x,i2,2(1x,f8.3), &
           1x,f6.2,1x,f4.2,1x,f8.5,1x,f8.4,1x,a6,1x,a)
@@ -208,7 +216,7 @@ program Driver
 9502 continue
   write (screen, *) 'Make sure "', det_outfile, '" and "', trk_outfile, &
        '" do not exist and restart SurveySimulator.'
-  stop
+  call exit(-1)
 
 9999 continue
   write (screen, *) 'Usage: SurveySimulator < input'
@@ -231,6 +239,15 @@ program Driver
   write (screen, *) '<det_file>: output file for detected objects'
   write (screen, *) '<track_file>: output file for tracked objects'
 
-  stop
+  call exit(0)
+
+  2010 continue
+  write (lun_h,*) "# Failed while loading objects from "//distri_file
+  call exit(-20)
+
+  2011 continue
+  write (lun_h,*) "# Failed while loading survey information "
+  call exit(-20)
+
 
 end program Driver

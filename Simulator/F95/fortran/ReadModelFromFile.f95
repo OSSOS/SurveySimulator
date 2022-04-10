@@ -231,6 +231,7 @@ contains
        first = .false.
     end if
 
+
 ! Check if there are still objects available in the arrays
     if (i_obj <= 0) then
 ! Get new objects. If this is the first call to GetDistrib, it will
@@ -238,8 +239,9 @@ contains
 ! objects. When reaching the end of the file, returns "ierr_d = 30".
        call GetDistrib (filena, lun_d, n_obj_max, n_obj, obj_o, &
             obj_h, obj_jday, color0, comp, ierr_d)
-       if (n_obj <= 0) then
-          write (6, *) n_obj
+
+       if (n_obj <= 0 .and. ierr_d /= 30) then
+           write (screen, *) 'Got zero objects from file but not at end'
           ierr = -20
           return
        end if
@@ -247,6 +249,7 @@ contains
           if (ierr_d == 10) then
              write (screen, *) 'Unable to open ', filena
           else if (ierr_d == 30) then
+              write (screen, *) 'End of model file ', filena, ' reached'
              end_of_file = .true.
              goto 100
           else
@@ -254,7 +257,8 @@ contains
           end if
 ! If we get here, there is something really wrong, better return with
 ! panic code.
-          ierr = -22
+          write (screen, *) 'Got errro code ', ierr_d
+          ierr = -20
           return
        end if
     end if
@@ -312,7 +316,6 @@ contains
           ierr = 100
        end if
     end if
-
     return
   end subroutine GiMeObj
 
