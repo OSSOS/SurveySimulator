@@ -11,7 +11,14 @@ if [ -f SimulTrack.dat ]; then
     \rm SimulTrack.dat
 fi
 
-time ${src_dir}/Driver < ${cmd}.in > LOG
+${src_dir}/Driver < ${cmd}.in
+if [ $? != 0 ]; then
+  status=$?
+  echo "================================================================="
+  echo "=======================  Test FAILED!   ========================="
+  echo "================================================================="
+  exit ${status}
+fi
 
 a=`head -10 SimulDetect.dat | tail -1 | awk '{print $1}'`
 s=`head -10 SimulDetect.dat | tail -1 | awk '{print $15}'`
@@ -40,6 +47,8 @@ if [ $nt -gt $(($ntc + 10)) -o $nt -lt $(($ntc - 10)) ]; then
     echo "Error: wrong number of tracking!"
     exit 1
 fi
-echo "Test successful!"
+echo "================================================================="
+echo "=====================  Test successful!  ========================"
+echo "================================================================="
 
 exit
