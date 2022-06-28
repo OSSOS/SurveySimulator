@@ -5,7 +5,7 @@
 # flag: >0: detected; >2: characterized; 0 mod(2): tracked
 # Survey: name of the block
 #
-#   a      e        i        q        r        M       node     peri  m_rand H_rand color flag delta    m_int    H_int eff   RA(H)     DEC    Surv. Comments
+    a      e        i        q        r        M       node     peri  m_rand H_rand color flag delta    m_int    H_int eff   RA(H)     DEC    Surv. Comments
   34.976  0.112    4.377   31.059   38.753  162.785  261.891    6.291  23.72   7.81  0.00  4   37.783   23.643   7.73 0.70  4.84460  23.0789 L3w-sm resonant  
   42.232  0.130    9.111   36.742   42.136  278.418   44.709   95.173  23.89   7.65  0.00  4   41.148   23.741   7.50 0.69  2.72788  15.6264 L4v-sm resonant  
   42.128  0.202   13.293   33.618   41.496  285.788  100.408  279.527  23.82   7.62  0.00  1   40.490   24.413   8.21 0.33 18.91733 -23.3244 L4m-sm resonant  
