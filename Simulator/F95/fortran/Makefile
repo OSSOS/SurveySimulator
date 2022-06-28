@@ -52,7 +52,7 @@ all:	Driver $(SUBDIRS)
 .PHONY: clean
 
 clean: rmtmp
-	rm -f _$(SSIM)*.so _$(GOBJ)*.so  _$(IOBJ)*.so _$(ROBJ)*.so
+	rm -f _$(SSIM)*.so _$(GOBJ)*.so  _$(IOBJ)*.so _$(ROBJ)*.so Driver GiMeObjF95.f95
 
 rmtmp:
 	rm -f *~ *.o *.mod *.fpp f90wrap*f90 SimulDetect.dat SimulTrack.dat
@@ -89,3 +89,4 @@ _$(SSIM).so: $(FPPU) $(OBJU) Makefile
 	\rm f90wrap_*.f90
 	\rm *.fpp *.mod *.o
 	mv _$(SSIM)*.so _$(SSIM).so
+     
