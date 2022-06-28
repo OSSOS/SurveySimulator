@@ -11,12 +11,6 @@ src
   \---------- README.pythonF95 (this file) Describes the architecture of the
    \                                       driver and GiMeOjb routines
     \-------- DriverF95.py                 The driver program that rules them all
-     \------- <modules>.f95                A set of subroutines and functions that
-      \                                    determine if an object was found, and
-       \                                   also provide interesting utilities
-        \---- InnerBeltModel.f95           Example "GiMeObj" routine to generate
-         \                                 objects via parametric prescription
-          \                                of inner belt
            \- Makefile                     Simplistic Makefile to build executable
 
 --------------------------------------------------------------------------------
