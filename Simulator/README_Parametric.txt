@@ -156,7 +156,7 @@ OUTPUT
     M           : Mean anomaly [rad] (R8)
     epoch       : epoch for M (and rotational phase below), in Julian Day (R8)
     h           : absolute magnitude of object in band filter "x" (R8)
-    color       :varray of colors "y-x", where the index of "y" is as
+    color       : array of colors "y-x", where the index of "y" is as
                  described in detos1 (10*R8)
                    colors(1) : g-x
                    colors(2) : r-x

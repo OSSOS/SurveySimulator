@@ -11,7 +11,7 @@ contains
 
   subroutine Detos1 (o_m, jday, hx, color, gb, ph, period, amp, surnam, seed, &
        flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, &
-       jdayp, ic, surna, h_rand)
+       jdayp, ic, surna, h_rand, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine determines if a given object is seen by the survey
 ! described in the directory \verb|surnam|.
@@ -75,6 +75,7 @@ contains
 !     ic    : Index of color used for survey (I4)
 !     surna : Detection survey name (CH10)
 !     h_rand: Absolute randomized magnitude, in detection filter (R8)
+!     ierr  : error flag
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !
 ! Set of F2PY directive to create a Python module
@@ -105,11 +106,13 @@ contains
 !f2py intent(out) ic
 !f2py intent(out) surna
 !f2py intent(out) h_rand
+!f2py intent(out) ierr
+
     implicit none
 
     type(t_orb_m), intent(in) :: o_m
     integer, intent(inout) :: seed
-    integer, intent(out) :: flag, isur, ic
+    integer, intent(out) :: flag, isur, ic, ierr
     real (kind=8), intent(in) :: jday, hx, color(:), gb, ph, period, amp
     real (kind=8), intent(out) :: ra, dec, d_ra, d_dec, r, delta, m_int, &
          m_rand, eff, mt, jdayp, h_rand
@@ -131,9 +134,10 @@ contains
          track_slope, angle, rate, delta2, mag_peri, dmag, &
          p(2), ra_l, dec_l, d_ra_l, d_dec_l, r_l, delta_l, &
          m_int_l, m_rand_l, eff_l, mt_l
-    integer, save :: i, filt_i, flag_l, n_sur, ierr, &
+    integer, save :: i, filt_i, flag_l, n_sur, &
          incode, outcod, i_sur, nph
     character(13), save :: stra, stdec
+    integer :: in_poly
     logical, save :: debug, newpos, rate_ok, first
 
     data &
@@ -160,7 +164,7 @@ contains
           else
              write (screen, *) 'Unknown return code in read_sur.'
           end if
-          stop
+          return
        end if
 100    continue
 ! Determine overall faintest 'x' magnitude for all surveys
@@ -186,6 +190,14 @@ contains
 ! mag_peri in 'x' filter
     call AppMag (r_l, r_l-1.d0, 1.d0, h, gb, alpha, mag_peri, ierr)
 
+    if (ierr .ne. 0) then
+       write (screen, *) 'line: 194'
+       write (screen, *)  o_m, r_l
+       write (screen, *) 'AppMag: something''s wrong !'
+       write (screen, *) 'ierr = :', ierr
+       write (screen, *) 'Survey number: ', i_sur
+       return
+    end if
     if (mag_peri .le. mag_faint) then
        jday_o = -1.d30
        o_ml = o_m
@@ -246,10 +258,11 @@ contains
 ! mag in survey's filter
              call AppMag (r_l, delta_l, obspos(1)%r, h, gb, alpha, m_int_l, ierr)
              if (ierr .ne. 0) then
+                write (screen, *) 'line: 259'
                 write (screen, *) 'AppMag: something''s wrong !'
                 write (screen, *) 'ierr = :', ierr
                 write (screen, *) 'Survey number: ', i_sur
-                stop
+                return
              end if
 
 ! Format angles for output
@@ -258,16 +271,18 @@ contains
                 outcod = 1
                 call Format (ra_l, incode, outcod, stra, ierr)
                 if (ierr .ne. 0) then
+                   write (screen, *) 'line: 272'
                    write (screen, *) 'Error in formatting output.'
                    write (screen, *) 'ierr = ', ierr
-                   stop
+                   return
                 end if
                 outcod = 0
                 call Format (dec_l, incode, outcod, stdec, ierr)
                 if (ierr .ne. 0) then
+                   write (screen, *) 'line: 280'
                    write (screen, *) 'Error in formatting output.'
                    write (screen, *) 'ierr = ', ierr
-                   stop
+                   return
                 end if
                 write (verbose, '(3(f8.3, 1x), a13, 1x, a13)') &
                      o_m%m/drad, o_m%peri/drad, o_m%node/drad, stra, stdec
@@ -282,15 +297,15 @@ contains
 ! Is the object in the FOV ?
 !
 ! Here we use polygons.
-                ierr = point_in_polygon(p, poly)
+                in_poly = point_in_polygon(p, poly)
                 if (debug) then
                    write (verbose, *) 'Check for FOV.'
-                   write (verbose, *) poly%n, ierr
+                   write (verbose, *) poly%n, in_poly
                    do i = 1, poly%n+1
                       write (verbose, *) poly%x(i)/drad, poly%y(i)/drad
                    end do
                 end if
-                if (ierr .gt. 0) then
+                if (in_poly .gt. 0) then
 
 ! Check for chip gaps, ..., the filling factor.
                    random = ran3(seed)
@@ -405,11 +420,12 @@ contains
                                call AbsMag (r, delta, obspos(1)%r, m_rand, gb, &
                                     alpha, h_rand, ierr)
                                if (ierr .ne. 0) then
+                                  write (screen, *) 'line: 421'
                                   write (screen, *) &
                                        'AbsMag: something''s wrong !'
                                   write (screen, *) 'ierr = :', ierr
                                   write (screen, *) 'Survey number: ', i_sur
-                                  stop
+                                  return
                                end if
                                if (debug) then
                                   write (verbose, *) 'All is good, h_rand.'

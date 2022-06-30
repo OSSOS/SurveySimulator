@@ -1,2 +1,6 @@
 .idea
 __pycache__
+build
+OSSOSv11/
+OSSOSv11.tgz
+.DS_Store

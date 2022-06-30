@@ -508,17 +508,20 @@ contains
     if (.not. rcut) then
        write (6, *) 'Survey file: ', filen
        write (6, *) 'ERROR: rate cut parameters not defined.'
-       stop
+       ierr = -10
+       return
     end if
     if (.not. tr) then
        write (6, *) 'Survey file: ', filen
        write (6, *) 'ERROR: tracking parameters not defined.'
-       stop
+       ierr = -10
+       return
     end if
     if (.not. fi) then
        write (6, *) 'Survey file: ', filen
        write (6, *) 'ERROR: filter not defined.'
-       stop
+       ierr = -10
+       return
     end if
 3010 continue
     if ((c%nr .gt. 0) .and. .not. rate(c%nr)) then
@@ -528,7 +531,8 @@ contains
     if (c%nr .le. 0) then
        write (6, *) 'Survey file: ', filen
        write (6, *) 'ERROR: no efficiency function defined.'
-       stop
+       ierr = -10
+       return
     end if
     if (.not. mag) then
        c%mag_er(1) = 0.026d0
@@ -719,7 +723,8 @@ contains
        goto 1610
     else 
        write (6, *) 'Unknown return code in read_sur.'
-       stop
+       ierr = ierr_e
+       return
     end if
 1610 continue
 
@@ -825,6 +830,7 @@ contains
        if (ierr .ne. 0) then
           if (ierr .eq. 10) then
              write (6, *) 'Unable to open ',survey(i1:i2),'/pointings.list'
+             ierr = -10
           else if (ierr .eq. 20) then
              write (6, *) 'Error reading ',survey(i1:i2),'/pointings.list'
              write (6, *) 'Survey number: ', n_sur
@@ -834,7 +840,7 @@ contains
           else
              write (6, *) 'Unknown return code in read_obj.'
           end if
-          stop
+          return
        end if
 
        n_sur = n_sur + 1
@@ -881,7 +887,8 @@ contains
           else
              write (6, *) 'Got efficiency function type ', n, j
              write (6, *) 'Should be >0, -1, -2, -3 or -4.'
-             stop 'Something is wrong with this. Aborting.'
+             ierr = -100
+             return
           end if
           if (n .lt. 0) then
              rate = 0.5d0*(points(n_sur)%c%eff_p(j)%min + &

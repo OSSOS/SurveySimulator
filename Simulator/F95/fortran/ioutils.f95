@@ -307,4 +307,18 @@ contains
     return
   end subroutine Format
 
+    character(100) function strip_comment(str)
+        character (*), intent(in) :: str
+        integer c_idx, i1, i2
+        logical finished
+        strip_comment = str
+        c_idx = index(strip_comment, '!')
+        if (c_idx /= 0) then
+            strip_comment = strip_comment(1:c_idx-1)
+        end if
+        call trim(strip_comment, i1, i2, finished, len(strip_comment))
+        strip_comment = strip_comment(i1:i2)
+
+    end function strip_comment
+
 end module ioutils
