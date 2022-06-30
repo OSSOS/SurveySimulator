@@ -715,6 +715,111 @@ contains
 
   end subroutine forced_plane
 
+  subroutine forced_plane_damp(a, inc, ifd, Omfd)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+! This routine returns the inclination iforced and node Omforced of the
+! forced plane as a function of semimajor-axis in the region of the
+! main classical Kuiper belt, according to second order theory with all
+! 8 planets.
+!
+! This version damps the forced plane to the invariable plane according
+! to inclination.
+!
+! The fit is valid only between 35 au and 47.74 au (2:1 MMR).
+! Returns 0 for a < 35 au, and the invariable plane for a > 47.74 au
+!
+! Returns degrees.
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : November 2021
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+! INPUT
+!     a     : semimajor-axis [au] (R8)
+!     inc   : Inclination [deg] (R8)
+!
+! OUTPUT
+!     ifd   : Inclination of forced plane [deg] (R8)
+!     Omfd  : Node of forced plane [deg] (R8)
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+!
+! Set of F2PY directives to create a Python module
+!
+!f2py intent(in) a
+!f2py intent(in) inc
+!f2py intent(out) ifd
+!f2py intent(out) Omfd
+    implicit none
+
+! Calling arguments
+    real (kind=8), intent(in) ::  a, inc
+    real (kind=8), intent(out) ::  ifd, Omfd
+
+! Internal variables
+    real (kind=8) :: ci0(4), ci1(3), ci2(3), ci3(3), co0(3), co1(3), co2(5), &
+         co3(5), alpha, beta, gamma, delta, om_lim_low, om_lim_high, damp, y
+    real (kind=8), parameter :: epsilon = 5713.86d0/3600.d0, &
+         omega = 387390.8d0/3600.d0, ce_damp = 16.d0, wi_damp = 6.d0
+
+    data &
+         ci0 /-0.115657583d0,34.8097343d0,7.79198557d-02,-1.06252408d0/, &
+         ci1 /-0.392018467d0, 40.5282974d0, 0.137285933/, &
+         ci2 /-0.391531527d0, 40.6837921d0, 0.190758109/, &
+         ci3 /0.391087621d0, 40.2941360d0, 0.146276891/, &
+         co0 /971.35006612732775d0, -50.061061665365997d0, &
+              0.74715152013989472d0/, &
+         co1 /4694.6567730091410d0, -249.62252879980477d0, &
+              3.4214148236506192d0/, &
+         co2 /11.7058372d0, -294.139587d0, 30.8862801d0, &
+              -1049.41772d0, 15.2022839d0/, &
+         co3 /30.4611244d0, -1203.70593d0, 2.47961617d0, &
+              -16.6130295d0, 302.805359d0/, &
+         alpha /1.d0/, &
+         om_lim_low /200.d0/, &
+         om_lim_high /20.d0/
+
+    common /om_lim_com/ om_lim_low, om_lim_high
+
+    damp(y) = 1.d0*(1.d0-tanh((y-ce_damp)/wi_damp))/2.d0
+
+    if (a .lt. 35.d0) then
+       ifd = 0.d0
+       Omfd = 0.d0
+    else if (a .lt. 37.d0) then
+       ifd = (ci0(1)/(a - ci0(2)) + ci0(3)*a + ci0(4))
+       Omfd = co0(1) + co0(2)*a + co0(3)*a*a
+    else if (a .lt. 39.0d0) then
+       ifd = 10.d0**(ci1(1)/(a - ci1(2)) + ci1(3))
+       Omfd = co1(1) + co1(2)*a + co1(3)*a*a
+    else if (a .lt. 40.0d0) then
+       ifd = 2.477d0
+       Omfd = (om_lim_low-163.187d0)/(40.0d0-39.d0)*(a-40.0d0) &
+            + om_lim_low
+    else if (a .lt. 41.9d0) then
+       ifd = 2.477d0
+       Omfd = (61.791d0-om_lim_high)/(41.9d0-40.0d0)*(a-40.0d0) &
+            + om_lim_high
+    else if (a .lt. 47.74d0) then
+       ifd = 10.d0**(ci3(1)/(a - ci3(2)) + ci3(3))
+       beta = -((co3(1) + co3(3))*a + co3(2) + co3(4))
+       gamma = (co3(1)*a + co3(2))*(co3(3)*a + co3(4)) - co3(5)
+       delta = max(0., beta**2 - 4.d0*alpha*gamma)
+       Omfd = (-beta - sqrt(delta))/(2.d0*alpha)
+    else
+       ifd = epsilon
+       Omfd = omega
+    end if
+    ifd = min(ifd, 40.d0)
+    ifd = epsilon + (ifd-epsilon)*damp(inc)
+    Omfd = omega + (Omfd-omega)*damp(inc)
+
+    return
+
+  end subroutine forced_plane_damp
+
   subroutine ztopi (var)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This subroutine resets var to be between 0 and 2Pi.

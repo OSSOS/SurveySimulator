@@ -73,17 +73,17 @@ Cf2py intent(out) ierr
      $  (np = 10000)
 
       integer
-     $  ierr, seed, nparam, i, ilo, ihi
+     $  ierr, seed, nparam, i
 
       real*8
      $  param(*), inc, proba(0:np), inctab(0:np), random, func,
-     $  incmin, incmax, ran_3
+     $  incmin, incmax, ran_3, interp
 
       logical
      $  first
 
       external
-     $  func, ran_3
+     $  func, ran_3, interp
 
       save proba, inctab, first
 
@@ -104,23 +104,7 @@ Cf2py intent(out) ierr
       end if
 
       random = ran_3(seed)
-      ilo = 0
-      ihi = np
- 1000 continue
-      if (ihi - ilo .gt. 1) then
-         i = (ihi + ilo)/2
-         if (proba(i) .lt. random) then
-            ilo = i
-         else if (proba(i) .gt. random) then
-            ihi = i
-         else
-            inc = inctab(i)
-            return
-         end if
-         goto 1000
-      end if
-      inc = inctab(ilo) + (inctab(ihi) - inctab(ilo))*
-     $  (random - proba(ilo))/(proba(ihi) - proba(ilo))
+      inc = interp(proba, inctab, random, np+1)
 
       return
       end
@@ -170,17 +154,17 @@ Cf2py intent(out) ierr
      $  (np = 10000, nd = 10)
 
       integer
-     $  ierr, seed, nparam, i, ilo, ihi, dist, di
+     $  ierr, seed, nparam, i, dist, di
 
       real*8
      $  param(*), inc, proba(0:np,nd), inctab(0:np,nd), random, func,
-     $  incmin, incmax, ran_3
+     $  incmin, incmax, ran_3, interp
 
       logical
      $  first(nd)
 
       external
-     $  func, ran_3
+     $  func, ran_3, interp
 
       save proba, inctab, first
 
@@ -204,23 +188,382 @@ Cf2py intent(out) ierr
       end if
 
       random = ran_3(seed)
-      ilo = 0
-      ihi = np
- 1000 continue
-      if (ihi - ilo .gt. 1) then
-         i = (ihi + ilo)/2
-         if (proba(i,di) .lt. random) then
-            ilo = i
-         else if (proba(i,di) .gt. random) then
-            ihi = i
-         else
-            inc = inctab(i,di)
-            return
-         end if
-         goto 1000
+      inc = interp(proba(0,di), inctab(0,di), random, np+1)
+
+      return
+      end
+
+      real*8 function Variably_tapered(h, params)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine returns the number of objects brighter or equal to H
+c following an exponentially tapered exponential with parameters in
+c params.
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : October 2021
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     seed  : Random number generator seed (I4)
+c     params: parameters for the distribution (4*R8)
+c
+c OUTPUT
+c     Variably_tapered : Random value of H (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) h
+Cf2py intent(in) params
+
+      implicit none
+
+      real*8 params(4), h
+
+      Variably_tapered = 10.d0**(params(3)*3.d0*(h-params(1))/5.d0)
+     $     *exp(-10.d0**(-params(4)*3.d0*(h-params(2))/5.d0))
+
+      return
+      end
+
+      real*8 function H_dist_cold(seed, h_max)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine draws randomly a number according to the cold belt H_r
+c distribution, represented by an exponentially tapered exponential,
+c with parameters frmo the exponential cutoff paper.
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : October 2021
+c Version 2 : December 2021- updated parameter values.
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     seed  : Random number generator seed (I4)
+c     h_max : Maximum value of H (R8)
+c
+c OUTPUT
+c     H_dist_cold : Random value of H (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in,out) seed
+
+      implicit none
+
+      integer
+     $  np
+
+      parameter
+     $  (np = 16384)
+
+      integer
+     $  seed, nparam, i
+
+      real*8
+     $  params(4), proba(0:np), htab(0:np), random,
+     $  Variably_tapered, h_min, h_max, ran_3, interp
+
+      logical
+     $  first
+
+      external
+     $  Variably_tapered, ran_3, interp
+
+      save proba, htab, first
+
+      data first /.true./
+      data params /-2.6d0, 8.1d0, 0.666d0, 0.42d0/
+c      data params /-2.466d0, 7.895d0, 0.667d0, 0.438d0/
+      data h_min /4.6d0/
+
+      if (first) then
+         htab(0) = h_min
+         proba(0) = 1.d-10
+         do i = 1, np
+            htab(i) = h_min + dfloat(i)*(h_max-h_min)/dfloat(np)
+            proba(i) = Variably_tapered(htab(i), params)
+         end do
+         do i = 0, np
+            proba(i) = proba(i)/proba(np)
+         end do
+         first = .false.
       end if
-      inc = inctab(ilo,di) + (inctab(ihi,di) - inctab(ilo,di))*
-     $  (random - proba(ilo,di))/(proba(ihi,di) - proba(ilo,di))
+
+      random = ran_3(seed)
+      H_dist_cold = interp(proba, htab, random, np+1)
+
+      return
+      end
+
+      real*8 function H_dist_cold_2(seed, nparam, hparam)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine draws randomly a number according to the cold belt H_r
+c distribution, represented by an exponentially tapered exponential,
+c with parameters frmo the exponential cutoff paper.
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : October 2021
+c Version 2 : December 2021 - updated parameter values.
+c Version 3 : January 2022 - forcing slope at small sizes.
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     seed  : Random number generator seed (I4)
+c     nparam: Number of parameters (I4)
+c     hparam: Parameters for asymptotic slope(s) (n*R8)
+c             hparam(1): start of asymptote
+c             hparam(2): contrast at start of asymptote
+c             hparam(3): slope of asymptote
+c             hparam(4): end of asymptote
+c
+c OUTPUT
+c     H_dist_cold_2 : Random value of H (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in,out) seed
+      implicit none
+
+      integer
+     $  np
+
+      parameter
+     $  (np = 16384)
+
+      integer
+     $  seed, nparam, i
+
+      real*8
+     $  params(4), proba(0:np), htab(0:np), random, hparam(*),
+     $  Variably_tapered, h_min, h_max, ran_3, interp, n, c
+
+      logical
+     $  first
+
+      external
+     $  Variably_tapered, ran_3, interp
+
+      save proba, htab, first
+
+      data first /.true./
+      data params /-2.6d0, 8.1d0, 0.666d0, 0.42d0/
+c      data params /-2.466d0, 7.895d0, 0.667d0, 0.438d0/
+      data h_min /4.6d0/
+
+      if (first) then
+         h_max = hparam(nparam)
+         htab(0) = h_min
+         proba(0) = 1.d-10
+         n = Variably_tapered(hparam(1), params)
+         c = hparam(2)
+         do i = 1, np
+            htab(i) = h_min + dfloat(i)*(h_max-h_min)/dfloat(np)
+            if (htab(i) .lt. hparam(1)) then
+               proba(i) = Variably_tapered(htab(i), params)
+            else
+               proba(i) = n
+     $           + n*c*(10.0d0**(hparam(3)*(htab(i)-hparam(1))) -
+     $           1.0d0)
+            end if
+         end do
+         do i = 0, np
+            proba(i) = proba(i)/proba(np)
+         end do
+         first = .false.
+      end if
+
+      random = ran_3(seed)
+      H_dist_cold_2 = interp(proba, htab, random, np+1)
+
+      return
+      end
+
+      real*8 function H_dist_hot(seed, h_max)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine draws randomly a number according to the hot belt H_r
+c distribution, represented by an exponentially tapered exponential,
+c with parameters I've fitted on the OSSOS hot belt data, in range 6
+c -8.3. This is the actual maximu likelihood, not the MCMC value.
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : October 2021
+c Version 2 : December 2021- updated parameter values.
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     seed  : Random number generator seed (I4)
+c     h_max : Maximum value of H (R8)
+c
+c OUTPUT
+c     H_dist_hot : Random value of H (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in,out) seed
+
+      implicit none
+
+      integer
+     $  np
+
+      parameter
+     $  (np = 16384)
+
+      integer
+     $  seed, nparam, i
+
+      real*8
+     $  params(4), proba(0:np), htab(0:np), random,
+     $  Variably_tapered, h_min, h_max, ran_3, interp, n1, n2, n3,
+     $  sl1, sl2, sl3, c1, cb, c, h1, h2, h3
+
+      logical
+     $  first
+
+      external
+     $  Variably_tapered, ran_3, interp
+
+      save proba, htab, first
+
+      data first /.true./
+      data params /-2.465d0, 7.114d0, 0.666d0, 0.875d0/
+      data h_min /-1.d0/
+      data sl1 /0.13d0/, sl2 /0.5d0/, sl3 /0.4d0/, c /1.d0/
+      data h1 /3.2d0/, h2 /6.d0/, h3 /8.5d0/, n1 /3.d0/
+
+      if (first) then
+         htab(0) = h_min
+         proba(0) = 1.d-10
+         n2 = Variably_tapered(h2, params)
+         n3 = Variably_tapered(h3, params)
+c The normalisation is done with the exponentially tapered exponential,
+c as fitted on the OSSOS hot component. This determines the normalisation
+c of the exponential between H = h2 and H = h1
+c N(<H) = n2*10**(sl2*(H-h2))
+c Then, there is an excess divot at h1. See
+c [[file:///home/petit/Research/OSSOS/tes/OSSOSpapers/Papers/GlobalLuminosityFunction/CumDiffDistributions.org]]
+c for the appropriate formula.
+         cb = n1*sl1*log(10.d0)
+         c1 = (n2-n1)*sl2/(n1*sl1*(10.d0**(sl2*(h2-h1))-1.d0))
+         do i = 1, np
+            htab(i) = h_min + dfloat(i)*(h_max-h_min)/dfloat(np)
+            if (htab(i) .lt. h1) then
+               proba(i) = n1*10.d0**(sl1*(htab(i)-h1))
+            else if (htab(i) .lt. h2) then
+               proba(i) = n1 + c1*cb
+     $           *(10.d0**(sl2*(htab(i)-h1))-1.d0)/(sl2*log(10.d0))
+            else if (htab(i) .lt. h3) then
+               proba(i) = Variably_tapered(htab(i), params)
+            else
+               proba(i) = n3 + n3*c*(10.d0**(sl3*(htab(i)-h3)) - 1.d0)
+            end if
+         end do
+         do i = 0, np
+            proba(i) = proba(i)/proba(np)
+         end do
+         first = .false.
+      end if
+
+      random = ran_3(seed)
+      H_dist_hot = interp(proba, htab, random, np+1)
+
+      return
+      end
+
+      real*8 function H_dist_hot_2(seed, nparam, hparam)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine draws randomly a number according to the hot belt H_r
+c distribution, represented by an exponentially tapered exponential,
+c with parameters I've fitted on the OSSOS hot belt data, in range 6
+c -8.3. This is the actual maximu likelihood, not the MCMC value.
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : October 2021
+c Version 2 : December 2021- updated parameter values.
+c Version 3 : January 2022 - forcing slope at small sizes.
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     seed  : Random number generator seed (I4)
+c     nparam: Number of parameters (I4)
+c     hparam: Parameters for asymptotic slope(s) (n*R8)
+c             hparam(1): start of asymptote
+c             hparam(2): contrast at start of asymptote
+c             hparam(3): slope of asymptote
+c             hparam(4): end of asymptote
+c
+c OUTPUT
+c     H_dist_hot_2 : Random value of H (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in,out) seed
+
+      implicit none
+
+      integer
+     $  np
+
+      parameter
+     $  (np = 16384)
+
+      integer
+     $  seed, nparam, i
+
+      real*8
+     $  params(4), proba(0:np), htab(0:np), random, hparam(*),
+     $  Variably_tapered, h_min, h_max, ran_3, interp, n1, n2, n3,
+     $  sl1, sl2, sl3, c1, cb, c, h1, h2, h3
+
+      logical
+     $  first
+
+      external
+     $  Variably_tapered, ran_3, interp
+
+      save proba, htab, first
+
+      data first /.true./
+      data params /-2.465d0, 7.114d0, 0.666d0, 0.875d0/
+      data h_min /-1.d0/
+      data sl1 /0.13d0/, sl2 /0.5d0/
+      data h1 /3.2d0/, h2 /6.d0/, n1 /3.d0/
+
+      if (first) then
+         h_max = hparam(nparam)
+         htab(0) = h_min
+         proba(0) = 1.d-10
+         h3 = hparam(1)
+         n2 = Variably_tapered(h2, params)
+         n3 = Variably_tapered(h3, params)
+         c = hparam(2)
+         sl3 = hparam(3)
+c The normalisation is done with the exponentially tapered exponential,
+c as fitted on the OSSOS hot component. This determines the normalisation
+c of the exponential between H = h2 and H = h1
+c N(<H) = n2*10**(sl2*(H-h2))
+c Then, there is an excess divot at h1. See
+c [[file:///home/petit/Research/OSSOS/tes/OSSOSpapers/Papers/GlobalLuminosityFunction/CumDiffDistributions.org]]
+c for the appropriate formula.
+         cb = n1*sl1*log(10.d0)
+         c1 = (n2-n1)*sl2/(n1*sl1*(10.d0**(sl2*(h2-h1))-1.d0))
+         do i = 1, np
+            htab(i) = h_min + dfloat(i)*(h_max-h_min)/dfloat(np)
+            if (htab(i) .lt. h1) then
+               proba(i) = n1*10.d0**(sl1*(htab(i)-h1))
+            else if (htab(i) .lt. h2) then
+               proba(i) = n1 + c1*cb
+     $           *(10.d0**(sl2*(htab(i)-h1))-1.d0)/(sl2*log(10.d0))
+            else if (htab(i) .lt. h3) then
+               proba(i) = Variably_tapered(htab(i), params)
+            else
+               proba(i) = n3 + n3*c*(10.d0**(sl3*(htab(i)-h3)) - 1.d0)
+            end if
+         end do
+         do i = 0, np
+            proba(i) = proba(i)/proba(np)
+         end do
+         first = .false.
+      end if
+
+      random = ran_3(seed)
+      H_dist_hot_2 = interp(proba, htab, random, np+1)
 
       return
       end
@@ -295,7 +638,7 @@ c     param : Parameters (n*R8)
 c     inc   : Inclination [rad] (R8)
 c
 c OUPUT
-c     onecomp: Value of the probability (R8)
+c     cold_low_a_inc: Value of the probability (R8)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 Cf2py intent(in) nparam
 Cf2py intent(in), depend(nparam) :: param
@@ -314,26 +657,157 @@ Cf2py intent(in) inc
 
       parameter
      $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, drad = Pi/180.)
+      real*8 a1, a2, a3, a4
+      parameter (a1 = 0.8d0, a2 = 2.6d0, a3 = 4.3d0, a4 = 4.7d0)
 
       real*8
-     $  fe, angle
+     $  angle
 
       angle = mod(inc, TwoPi)
       if (angle .gt. Pi) angle = angle - TwoPi
-      if (angle .lt. 0.8d0*drad) then
-         cold_low_a_inc = angle/(0.8*drad)
-      else if (angle .lt. 2.6d0*drad) then
+      if (angle .lt. a1*drad) then
+         cold_low_a_inc = angle/(a1*drad)
+      else if (angle .lt. a2*drad) then
          cold_low_a_inc = 1.d0
-      else if (angle .le. 4.3d0*drad) then
-         cold_low_a_inc = 0.7d0*(4.3d0*drad-angle)/(1.7d0*drad) + 0.3d0
-c      else if (angle .le. 5.d0*drad) then
-c         cold_low_a_inc = 0.3d0*(5.d0*drad - angle)/(0.7d0*drad)
-      else if (angle .le. 4.7d0*drad) then
-         cold_low_a_inc = 0.3d0*(4.7d0*drad - angle)/(0.4d0*drad)
+      else if (angle .le. a3*drad) then
+         cold_low_a_inc = 0.7d0*(a3*drad-angle)/((a3-a2)*drad) + 0.3d0
+      else if (angle .le. a4*drad) then
+         cold_low_a_inc = 0.3d0*(a4*drad - angle)/((a4-a3)*drad)
       else
          cold_low_a_inc = 0.d0
       end if
-      
+
+      return
+      end
+
+      real*8 function cold_low_a_inc_2 (nparam, param, inc)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine returns the unnormalized inclination "probability"
+c density for cold objects with a < 44.4
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : December 2019
+c Version 2 : December 2019, 20th
+c Version 3 : December 2019, 28th
+c Version 4 : December 2021, 6th
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     nparam: Number of parameters (I4)
+c     param : Parameters (n*R8)
+c     inc   : Inclination [rad] (R8)
+c
+c OUPUT
+c     cold_low_a_inc_2: Value of the probability (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) nparam
+Cf2py intent(in), depend(nparam) :: param
+Cf2py intent(in) inc
+
+      implicit none
+
+      integer
+     $  nparam
+
+      real*8
+     $  param(*), inc
+
+      real*8
+     $  Pi, TwoPi, drad
+
+      parameter
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, drad = Pi/180.)
+      real*8 a1, a2, a3
+      parameter (a1 = 0.3d0, a2 = 4.05d0, a3 = 4.5d0)
+
+      real*8
+     $  angle
+
+      angle = mod(inc, TwoPi)
+      if (angle .gt. Pi) angle = angle - TwoPi
+      if (angle .lt. a1*drad) then
+         cold_low_a_inc_2 = angle/(a1*drad)
+      else if (angle .lt. a2*drad) then
+         cold_low_a_inc_2 = 1.d0
+      else if (angle .le. a3*drad) then
+         cold_low_a_inc_2 = (a3*drad - angle)/((a3-a2)*drad)
+      else
+         cold_low_a_inc_2 = 0.d0
+      end if
+
+      return
+      end
+
+      real*8 function kernel_inc (nparam, param, inc)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c This routine returns the unnormalized inclination "probability"
+c density for cold objects in the kernel region.
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c
+c J-M. Petit  Observatoire de Besancon
+c Version 1 : December 2021, 7th
+c
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+c INPUT
+c     nparam: Number of parameters (I4)
+c     param : Parameters (n*R8)
+c     inc   : Inclination [rad] (R8)
+c
+c OUPUT
+c     onecomp: Value of the probability (R8)
+c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+Cf2py intent(in) nparam
+Cf2py intent(in), depend(nparam) :: param
+Cf2py intent(in) inc
+
+      implicit none
+
+      integer nparam
+
+      real*8 param(*), inc
+
+      real*8 Pi, TwoPi, drad
+
+      parameter
+     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, drad = Pi/180.)
+      real*8 a1, a2, delta
+      parameter (a1 = 0.9d0, a2 = 2.0d0, delta = 0.8d0)
+
+      real*8 angle, fkrla, fkla, fli, sum_la, da, lli, lhi
+      real*8 cold_low_a_inc_2
+      integer i, nstep
+      logical first
+
+      common /com_kernel/ fkrla, fkla, fli
+
+      external cold_low_a_inc_2
+      data first /.true./, nstep /5000/
+
+      save
+
+      if (first) then
+         sum_la = 0.d0
+         da = 5.d0*drad/dble(nstep)
+         do i = 1, nstep
+            angle = i*da
+            sum_la = sum_la + cold_low_a_inc_2(nparam, param, angle)
+         end do
+         sum_la = sum_la*da*fkla/(fkrla-fkla)
+         lli = fli*sum_la/(delta*drad)
+         lhi = (1.d0-fli)*sum_la/(delta*drad)
+      end if
+
+      angle = mod(inc, TwoPi)
+      if (angle .gt. Pi) angle = angle - TwoPi
+      kernel_inc = cold_low_a_inc_2(nparam, param, angle)
+      if ((angle .ge. a1*drad) .and. (angle .le. (a1+delta)*drad)) then
+         kernel_inc = kernel_inc + lli
+      else if ((angle .ge. a2*drad).and.(angle .le. (a2+delta)*drad))
+     $     then
+         kernel_inc = kernel_inc + lhi
+      end if
+
       return
       end
 
@@ -373,29 +847,26 @@ Cf2py intent(in) inc
 
       parameter
      $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, drad = Pi/180.)
+      real*8 a1, a2, a3, a4
+      parameter (a1 = 1.2d0, a2 = 4.0d0, a3 = 6.0d0, a4 = 12.0d0)
 
       real*8
-     $  fe, angle
+     $  angle
 
       angle = mod(inc, TwoPi)
       if (angle .gt. Pi) angle = angle - TwoPi
-      if (angle .lt. 0.9d0*drad) then
-         cold_high_a_inc = angle/(0.9d0*drad)
-c      if (angle .lt. 0.8d0*drad) then
-c         cold_high_a_inc = angle/(0.8d0*drad)
-      else if (angle .le. 2.7d0*drad) then
-c      else if (angle .le. 2.6d0*drad) then
+      if (angle .lt. a1*drad) then
+         cold_high_a_inc = angle/(a1*drad)
+      else if (angle .le. a2*drad) then
          cold_high_a_inc = 1.d0
-      else if (angle .le. 4.3d0*drad) then
-         cold_high_a_inc = 0.3d0*(4.3d0*drad-angle)/(1.6d0*drad) + 0.7d0
-c      else if (angle .le. 9.d0*drad) then
-c         cold_high_a_inc = (9.d0*drad - angle)/(6.3d0*drad)
-      else if (angle .le. 12.d0*drad) then
-         cold_high_a_inc = 0.7d0*(12.d0*drad - angle)/(7.7d0*drad)
+      else if (angle .le. a3*drad) then
+         cold_high_a_inc = 0.3d0*(a3*drad-angle)/((a3-a2)*drad) + 0.7d0
+      else if (angle .le. a4*drad) then
+         cold_high_a_inc = 0.7d0*(a4*drad - angle)/((a4-a3)*drad)
       else
          cold_high_a_inc = 0.d0
       end if
-      
+
       return
       end
 
@@ -436,24 +907,26 @@ Cf2py intent(in) inc
 
       parameter
      $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi, drad = Pi/180.)
+      real*8 a0, a1, a2, a3
+      parameter (a0 = 5.0d0, a1 = 7.0d0, a2 = 26.0d0, a3 = 46.0d0)
 
       real*8
-     $  fe, angle
+     $  angle
 
       angle = mod(inc, TwoPi)
       if (angle .gt. Pi) angle = angle - TwoPi
-      if (angle .lt. 10.d0*drad) then
-c         hot_inc = sin(angle)
-         hot_inc = 0.5d0*angle/(10.d0*drad)
-      else if (angle .le. 20.d0*drad) then
+      if (angle .lt. a0*drad) then
+         hot_inc = 0.d0
+      else if (angle .lt. a1*drad) then
+         hot_inc = 0.5d0*(angle-a0*drad)/((a1-a0)*drad)
+      else if (angle .le. a2*drad) then
          hot_inc = 0.5d0
-      else if (angle .le. 50.d0*drad) then
-c         hot_inc = 0.5d0*(50.d0*drad - angle)/(20.d0*drad)
-         hot_inc = 1.d0 - cos((50.d0*drad-angle)/30.d0*60.d0)
+      else if (angle .le. a3*drad) then
+         hot_inc = 1.d0 - cos((a3*drad-angle)/(a3-a2)*60.d0)
       else
          hot_inc = 0.d0
       end if
-      
+
       return
       end
 
@@ -968,7 +1441,7 @@ c   A_k 10^{H_k*\alpha_k} = A_{k+1} 10^{H_k*\alpha_{k+1}}
 c
 c for k in [1; n-1].
 c
-c To avoid using allocatale arrays and dynamical allocation, I restrict
+c To avoid using allocatable arrays and dynamical allocation, I restrict
 c the number of slopes to be <= 10.
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-

@@ -12,7 +12,7 @@ test_RMFF: ReadModelFromFile
 F2PY = f90wrap
 
 K := $(if $(shell which $(F2PY)),0,$(error "No $(F2PY) in PATH. Please install f90wrap"))
-	
+
 InnerBeltModel: ../fortran/InnerBeltModel.f95 
 	$(MAKE) -C ../fortran Modules GIMEOBJ=InnerBeltModel
 

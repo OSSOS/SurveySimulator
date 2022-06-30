@@ -436,8 +436,10 @@ contains
     signe = 1.d0
     if (tmp1 .lt. 0.d0) signe = -1.d0
     delau(6) = signe*mu/dsqrt(signe*tmp1)
-    delau(7) = dsqrt(h_vec(1)**2 + h_vec(2)**2 + h_vec(3)**2)
+    delau(7) = h_vec(1)**2 + h_vec(2)**2 + h_vec(3)**2
     delau(8) = h_vec(3)
+    o_m%e = dsqrt(dmax1(mu**2 - delau(7)*tmp1, 0.d0))/mu
+    delau(7) = dsqrt(delau(7))
 
     if ((p%z .eq. 0.d0) .and. (v%z .eq. 0.d0)) then
        delau(4) = 1.d0
@@ -495,7 +497,6 @@ contains
 !     l = E - e \sin(E)
 ! \end{displaymath}
 
-    o_m%e = dsqrt(dmax1(1.d0 - signe*(delau(7)/delau(6))**2, 0.d0))
     tmp1 = (p%x*p_vec(1) + p%y*p_vec(2) + p%z*p_vec(3))
     tmp2 = ((p%z*p_vec(2) - p%y*p_vec(3))*h_vec(1) &
          + (p%x*p_vec(3) - p%z*p_vec(1))*h_vec(2) &

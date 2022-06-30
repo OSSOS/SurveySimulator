@@ -489,8 +489,10 @@ c \end{eqnarray*}
       signe = 1.d0
       if (tmp1 .lt. 0.d0) signe = -1.d0
       delau(6) = signe*mu/dsqrt(signe*tmp1)
-      delau(7) = dsqrt(h_vec(1)**2 + h_vec(2)**2 + h_vec(3)**2)
+      delau(7) = h_vec(1)**2 + h_vec(2)**2 + h_vec(3)**2
       delau(8) = h_vec(3)
+      ecc = dsqrt(dmax1(mu**2 - delau(7)*tmp1, 0.d0))/mu
+      delau(7) = dsqrt(delau(7))
 
       if ((cart(3) .eq. 0.d0) .and. (cart(6) .eq. 0.d0)) then
          delau(4) = 1.d0
@@ -523,10 +525,8 @@ c     \sin(g) & = & \frac{\vec N \times \vec p}{|\vec N||\vec p|}
 c                   \cdot \frac{\vec h}{|\vec h|}
 c \end{eqnarray*}
 
-         tmp2 = 1.d0/dsqrt(p_vec(1)**2 + p_vec(2)**2 + p_vec(3)**2
-     $     )
-         delau(2) = (h_vec(1)*p_vec(2) - h_vec(2)*p_vec(1))*tmp1
-     $     *tmp2
+         tmp2 = 1.d0/dsqrt(p_vec(1)**2 + p_vec(2)**2 + p_vec(3)**2)
+         delau(2) = (h_vec(1)*p_vec(2) - h_vec(2)*p_vec(1))*tmp1*tmp2
          delau(3) = ((h_vec(1)**2 + h_vec(2)**2)*p_vec(3)
      $     - h_vec(3)*(h_vec(1)*p_vec(1) + h_vec(2)*p_vec(2)))
      $     *tmp1*tmp2/delau(7)
@@ -550,7 +550,6 @@ c \begin{displaymath}
 c     l = E - e \sin(E)
 c \end{displaymath}
 
-      ecc = dsqrt(dmax1(1.d0 - signe*(delau(7)/delau(6))**2, 0.d0))
       tmp1 = (cart(1)*p_vec(1) + cart(2)*p_vec(2) + cart(3)*p_vec(3))
       tmp2 = ((cart(3)*p_vec(2) - cart(2)*p_vec(3))*h_vec(1)
      $  + (cart(1)*p_vec(3) - cart(3)*p_vec(1))*h_vec(2)

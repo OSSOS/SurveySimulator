@@ -81,6 +81,6 @@ _$(GOBJ).so: link $(FPPM) $(OBJM) $(FPPA) $(OBJA) _$(SSIM).so $(GIMEOBJ).f95 Mak
 	\rm -f _$(GOBJ).so
 	f90wrap -k kind_map -m $(GOBJ) $(FPPM) $(FPPA) 1>f90wrap_GiMeObj.log 2>&1
 	f2py-f90wrap --fcompiler=$(FC) -c -m _$(GOBJ) $(OBJA) $(OBJM) f90wrap_*.f90 1>f2py_GiMeObj.log 2>&1
-	\rm GiMeObj.f95
+	\rm GiMeObj.f95 gimeobjut.mod GiMeObj.o GiMeObj.fpp
 	\rm f90wrap_*.f90
 	mv _$(GOBJ)*.so _$(GOBJ).so
