@@ -7,7 +7,7 @@ import numpy as np
 from astropy import units as u
 from astropy.time import Time
 from astropy.units import Quantity
-from f95 import SurveySubsF95
+import SurveySubsF95
 
 import ssim_util
 
@@ -112,6 +112,9 @@ class OSSSIM(object):
             seed = random.randint(0, 123456789)
 
         detect_file = ssim_util.DetectFile(detect_filename)
+        detect_file.epoch = self.model.epoch.jd
+        detect_file.lambda_neptune = self.model.lambda_neptune
+        detect_file.colors = self.model.colors
         detect_file.write_header(seed)
 
         n_iter = n_hits = n_track = 0
@@ -141,7 +144,7 @@ class OSSSIM(object):
                 row['h_rand'], ierr = \
                 SurveySubsF95.Surveysub.detos1(o_m,
                                                epoch,
-                                               row['h'].to(u.mag).value,
+                                               row['H'].to(u.mag).value,
                                                colors,
                                                row['gb'],
                                                row['phase'],
@@ -155,7 +158,7 @@ class OSSSIM(object):
             # record model objects that are detected include flag if 'tracked'
             if row['flag'] > 0:
                 # ic gives the filter that the object was 'detected' in, this allows us to determine the color
-                row['color'] = row['colors'][ic - 1]
+                row['color'] = colors[ic - 1]
                 row['q'] = row['a'] * (1 - row['e'])
                 row['M'] *= u.rad
                 row['RA'] *= u.rad
