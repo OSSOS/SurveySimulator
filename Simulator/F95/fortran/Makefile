@@ -1,5 +1,4 @@
-U	= poly_dec poly_lib datadec ioutils effut elemutils rot xvutils getsur numutils surveysub 
-#U	= poly_lib effut getsur numutils surveysub
+U	= poly_dec poly_lib datadec ioutils effut elemutils rot xvutils getsur numutils surveysub
 OBJU	= $(addsuffix .o,${U})
 SRCU	= $(addsuffix .f95,${U})
 FPPU	= $(addsuffix .fpp,${U})
@@ -69,15 +68,9 @@ link:
 Driver: link Driver.f95 $(OBJU) ${SRCM} Makefile
 	$(FC) $(FFLAGP) -o Driver $(OBJU) ${SRCM} Driver.f95
 
-#	rm GiMeObj.f95
-
 magerr: link magerr.f95 $(OBJU) ${SRCM} Makefile
 	$(FC) $(FFLAGP) -o magerr $(OBJU) ${SRCM} magerr.f95
 	rm GiMeObj.f95
-
-# No longer build a GOBJ module, GiMeObj is written in Python
-# Modules: _$(SSIM).so _$(GOBJ).so Makefile
-#	echo "Modules have been built"
 
 Modules: _$(SSIM).so Makefile
 	echo "Modules have been built"
@@ -89,12 +82,3 @@ _$(SSIM).so: $(FPPU) $(OBJU) Makefile
 	\rm f90wrap_*.f90
 	\rm *.fpp *.mod *.o
 	mv _$(SSIM)*.so _$(SSIM).so
-
-_$(GOBJ).so: link $(FPPM) $(OBJM) $(FPPA) $(OBJA) _$(SSIM).so $(GIMEOBJ).f95 Makefile
-	\rm -f _$(GOBJ).so
-	f90wrap -k kind_map -m $(GOBJ) $(FPPM) $(FPPA) 1>f90wrap_GiMeObj.log 2>&1
-	f2py-f90wrap --fcompiler=$(FC) -c -m _$(GOBJ) $(OBJA) $(OBJM) f90wrap_*.f90 1>f2py_GiMeObj.log 2>&1
-	\rm GiMeObj.f95 gimeobjut.mod GiMeObj.o GiMeObj.fpp
-	\rm f90wrap_*.f90
-	mv _$(GOBJ)*.so _$(GOBJ).so
-
