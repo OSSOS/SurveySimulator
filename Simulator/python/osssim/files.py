@@ -76,7 +76,7 @@ class SSimResults:
                'k': f'{COLUMN_WIDTH}d',
                'default': f'{COLUMN_WIDTH}.4f'}
 
-    colnames = ['a', 'e', 'inc', 'node', 'peri', 'm', 'h',
+    colnames = ['a', 'e', 'inc', 'node', 'peri', 'm', 'H',
                 'q', 'r', 'm_rand', 'H_rand',
                 'color', 'comp', 'j', 'k']
 
@@ -104,9 +104,12 @@ class SSimResults:
 
     @epoch.setter
     def epoch(self, value):
-        if not isinstance(value, float):
-            raise ValueError(f"setting epoch to non flaot value, expected JD as float")
-        self._epoch = Time(value)
+        if isinstance(value, Time):
+            self._epoch = value
+        elif isinstance(value, float) or isinstance(value, int):
+            self._epoch = Time(float(value), format='jd')
+        else:
+            raise ValueError(f"Don't know how to set epoch using: {value}")
 
     @property
     def lambda_neptune(self):
@@ -168,7 +171,7 @@ class SSimResults:
             f_detect.write(f"# Epoch of elements: JD = {self.epoch}\n")
             f_detect.write(f"# Longitude of Neptune: lambdaN = {self.lambda_neptune}\n")
             color_str = [f"{c:5.2f} " for c in self.colors]
-            f_detect.write(f"Colors = {color_str}\n")
+            f_detect.write(f"# Colors = {color_str}\n")
             f_detect.write(f"#\n")
             dati = time.strftime("%Y-%m-%dT%H:%M:%S.000  %z")
             f_detect.write(f"# Creation_time: {dati:30s}\n")
@@ -196,7 +199,7 @@ class DetectFile(SSimResults):
     """
     Detected object output file structure.
     """
-    colnames = ['a', 'e', 'inc', 'node', 'peri', 'm', 'h', 'q', 'r', 'm', 'm_rand', 'h_rand', 'color', 'flag',
+    colnames = ['a', 'e', 'inc', 'node', 'peri', 'm', 'H', 'q', 'r', 'm', 'm_rand', 'h_rand', 'color', 'flag',
                 'delta', 'm_int', 'eff', 'RA', 'DEC', 'Survey', 'comp', 'j', 'k']
 
 
@@ -204,7 +207,7 @@ class TrackFile(SSimResults):
     """
     Tracked object output file structure.
     """
-    colnames = ['a', 'e', 'inc', 'node', 'peri', 'm', 'h', 'q', 'r',
+    colnames = ['a', 'e', 'inc', 'node', 'peri', 'm', 'H', 'q', 'r',
                 'm_rand', 'H_rand', 'color', 'Survey', 'comp', 'j', 'k']
 
 
