@@ -5,6 +5,7 @@ from astropy import units
 import osssim
 from osssim.parametric import Resonant
 import numpy
+from osssim import definitions
 
 
 def run(detect_filename, characterization_directory, seed, ntrack):
@@ -21,19 +22,14 @@ def run(detect_filename, characterization_directory, seed, ntrack):
     """
     ssim = osssim.OSSSSim(characterization_directory=characterization_directory)
 
-    symm_model = Resonant(j=2, k=1, res_centre=0 * units.deg)
-    symm_model.comp = 'Sym'
-
-    leading_model = Resonant(j=2, k=1, res_centre=80 * units.deg)
-    leading_model.comp = 'Asym_leading'
-
-    trailing_model = Resonant(j=2, k=1, res_centre=280 * units.deg)
-    trailing_model.comp = 'Asum_trailing'
+    symm_model = Resonant(j=2, k=1, res_centre=0 * units.deg, component='Symmetric')
+    leading_model = Resonant(j=2, k=1, res_centre=80 * units.deg, component='Asym_Leading')
+    trailing_model = Resonant(j=2, k=1, res_centre=280 * units.deg, component='Asym_Trailing')
 
     detect_file = osssim.DetectFile(detect_filename)
     detect_file.epoch = symm_model.epoch_neptune
     detect_file.lambda_neptune = symm_model.longitude_neptune
-    detect_file.colors = osssim.SSimModelFile.COLORS.values()
+    detect_file.colors = definitions.COLORS.values()
     detect_file.write_header(seed)
 
     n_iter = n_track = n_hits = 0

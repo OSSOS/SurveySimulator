@@ -7,38 +7,16 @@ import re
 import time
 from collections import OrderedDict, Iterable
 
-from astropy import units as u
+from astropy.table import QTable
+
+from . import definitions
+from astropy import units as u, units
 from astropy.time import Time
 from astropy.units import Quantity
-from numpy.random import random
+from numpy import random
+import numpy
 
 RE_FLOAT = re.compile('\d+\.?\d*[de]?\d*')
-
-colunits = {'a': u.au,
-            'e': None,
-            'inc': u.degree,
-            'q': u.au,
-            'r': u.au,
-            'm': u.degree,
-            'node': u.degree,
-            'peri': u.degree,
-            'm_rand': u.mag,
-            'h_rand': u.mag,
-            'color': u.mag,
-            'flag': None,
-            'delta': u.au,
-            'm_int': u.mag,
-            'h': u.mag,
-            'H': u.mag,
-            'eff': None,
-            'RA': u.deg,
-            'DEC': u.deg,
-            'Survey': None,
-            'comp': None,
-            'dist': u.au,
-            'j': None,
-            'k': None
-            }
 
 
 def get_floats_in_str(line):
@@ -104,10 +82,14 @@ class SSimResults:
 
     @epoch.setter
     def epoch(self, value):
+        """
+        Args:
+            value (Time or float or int or Quantity): the value of the epoch
+        """
         if isinstance(value, Time):
             self._epoch = value
-        elif isinstance(value, float) or isinstance(value, int):
-            self._epoch = Time(float(value), format='jd')
+        elif isinstance(value, float) or isinstance(value, int) or isinstance(value, Quantity):
+            self._epoch = Time(value, format='jd')
         else:
             raise ValueError(f"Don't know how to set epoch using: {value}")
 
@@ -130,13 +112,12 @@ class SSimResults:
     def colors(self):
         """Returns color array from file header or default if no color array in header."""
         if self._colors is None:
-            raise ValueError(f"colors list has not been initialized.")
+            # pickup the
+            self._colors = list(definitions.COLORS.values())
         return self._colors
 
     @colors.setter
     def colors(self, values):
-        if not isinstance(values, list):
-            raise ValueError(f"Attempt to set color list with non-list object.")
         self._colors = values
 
     def write_row(self, this_row):
@@ -151,7 +132,7 @@ class SSimResults:
             for colname in self.colnames:
                 col_format = self.formats.get(colname, self.formats['default'])
                 if isinstance(this_row[colname], Quantity):
-                    value = this_row[colname].to(colunits[colname]).value
+                    value = this_row[colname].to(definitions.colunits[colname]).value
                 else:
                     value = this_row[colname]
                 o_str = "{sep}{value:{col_format}}".format(value=value,
@@ -170,8 +151,9 @@ class SSimResults:
             f_detect.write(f"# Seed = {seed:10d}\n")
             f_detect.write(f"# Epoch of elements: JD = {self.epoch}\n")
             f_detect.write(f"# Longitude of Neptune: lambdaN = {self.lambda_neptune}\n")
-            color_str = [f"{c:5.2f} " for c in self.colors]
-            f_detect.write(f"# Colors = {color_str}\n")
+            if self.colors is not None:
+                color_str = [f"{c.to(u.mag).value:5.2f} " for c in self.colors]
+                f_detect.write(f"# Colors = {color_str}\n")
             f_detect.write(f"#\n")
             dati = time.strftime("%Y-%m-%dT%H:%M:%S.000  %z")
             f_detect.write(f"# Creation_time: {dati:30s}\n")
@@ -199,7 +181,7 @@ class DetectFile(SSimResults):
     """
     Detected object output file structure.
     """
-    colnames = ['a', 'e', 'inc', 'node', 'peri', 'm', 'H', 'q', 'r', 'm', 'm_rand', 'h_rand', 'color', 'flag',
+    colnames = ['a', 'e', 'inc', 'node', 'peri', 'm', 'H', 'q', 'r', 'mt', 'm_rand', 'h_rand', 'color', 'flag',
                 'delta', 'm_int', 'eff', 'RA', 'DEC', 'Survey', 'comp', 'j', 'k']
 
 
@@ -208,7 +190,7 @@ class TrackFile(SSimResults):
     Tracked object output file structure.
     """
     colnames = ['a', 'e', 'inc', 'node', 'peri', 'm', 'H', 'q', 'r',
-                'm_rand', 'H_rand', 'color', 'Survey', 'comp', 'j', 'k']
+                'mt', 'm_rand', 'H_rand', 'color', 'Survey', 'comp', 'j', 'k']
 
 
 class SSimModelFile(Iterable):
@@ -219,21 +201,6 @@ class SSimModelFile(Iterable):
     and then loops over or randomly offsets into the file to read model objects.
     """
 
-    # Default color values, appropriate for mean values of TNOs
-    COLORS = OrderedDict(
-        (('g-x', +0.0),
-         ('r-x', -0.7),
-         ('i-x', -1.2),
-         ('z-x', -1.7),
-         ('u-x', +0.8),
-         ('V-x', +0.5),
-         ('B-x', +0.1),
-         ('R-x', -0.8),
-         ('I-x', -1.2),
-         ('x-x', +0.0)))
-
-    COLUMN_MAP = {'i': 'inc'}
-
     def __init__(self, filename, randomize=False):
         self.filename = filename
         self.randomize = randomize
@@ -242,11 +209,13 @@ class SSimModelFile(Iterable):
         self._colnames = None
         self._colors = None
         self._epoch = None
-        self._lambda_neptune = None
+        self._longitude_neptune = None
         self._seed = None
         self.header_lines = []
-        self.floc = None
         self._fobj = open(self.filename, 'r')
+        self.floc = 0
+        self._targets = None
+        self._f = None
 
     @property
     def epoch(self):
@@ -255,24 +224,24 @@ class SSimModelFile(Iterable):
         """
         if self._epoch is None:
             self._epoch = Time(float(self.header['JD'].replace('d', 'e')),
-                               format='jd')
+                               format='jd').jd * units.day
         return self._epoch
 
     @property
-    def lambda_neptune(self):
+    def longitude_neptune(self):
         """
         Longitude of Neptune at epoch
         """
-        if self._lambda_neptune is None:
-            self._lambda_neptune = float(self.header['lambdaN'].replace('d', 'e')) * u.radian
-        return self._lambda_neptune
+        if self._longitude_neptune is None:
+            self._longitude_neptune = float(self.header['lambdaN'].replace('d', 'e')) * u.radian
+        return self._longitude_neptune
 
     @property
     def colors(self):
         """Returns color array from file header or default if no color array in header."""
         if self._colors is None:
             # pickup the
-            self._colors = list(self.COLORS.values())
+            self._colors = list(definitions.COLORS.values())
             _header_colors = get_floats_in_str(self.header.get('colors', ""))
             for idx in range(len(_header_colors)):
                 self._colors[idx] = _header_colors[idx]
@@ -287,7 +256,7 @@ class SSimModelFile(Iterable):
         if self._colnames is None:
             self._colnames = []
             for colname in self.header.get('colnames', "").split():
-                colname = self.COLUMN_MAP.get(colname, colname)
+                colname = definitions.COLUMN_MAP.get(colname, colname)
                 self._colnames.append(colname)
         if len(self._colnames) == 0:
             raise IOError(f"Failed to get column names in {self.filename}\n")
@@ -306,7 +275,8 @@ class SSimModelFile(Iterable):
             if self.floc is not None:
                 fobj.seek(self.floc)
             self.floc = fobj.tell()
-            for line in fobj.readlines():
+            while True:
+                line = fobj.readline()
                 # line = line.decode('utf-8')
                 if line.startswith('#'):
                     logging.debug(f"Parsing Comment: {line}")
@@ -315,7 +285,7 @@ class SSimModelFile(Iterable):
                         continue
                     if '=' in line:
                         keyword = line.split('=')[0].split()[-1]
-                        value = line.split('=')[1].strip()
+                        value = line.split('=')[1].strip().split()[0]
                         self._header[keyword] = value
                     previous_line = line
                     self.floc = fobj.tell()
@@ -381,22 +351,113 @@ class SSimModelFile(Iterable):
                     value = 0
                 else:
                     raise ex
-            if colunits[colname] is not None:
-                value = value * colunits[colname]
+            if definitions.colunits[colname] is not None:
+                value = value * definitions.colunits[colname]
             row[colname] = value
         return row
 
+    @property
+    def targets(self):
+        """
+        targets set by looping over the entire file and returning a 'QTable'.  This can be used when you want access to the
+        entire table of data rather than just reading one-line at a time.
+        """
 
-def run(filename):
-    """
-    return the first row of a model file as a test of the SSimModelFile class.
-    """
-    reader = SSimModelFile(filename)
-    for row in reader:
-        print(row)
-        break
+        if self._targets is None:
+            # need to start from the top of the data range
+            # get current file location.
+            loc = self._fobj.tell()
+            # move the pointer to the end of the header.
+            self._fobj.seek(self.header['_end_of_header_offset'])
+            values = {}
+            for column in self.colnames:
+                values[column] = []
+            for row in self:
+                for column in self.colnames:
+                    values[column].append(row[column])
+            self._targets = QTable(values)
+            # set the file pointer back to where we were before.
+            self._fobj.seek(loc)
 
+        return self._targets
 
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    run('../../../Models/L7model-3.0-9.0')
+    @property
+    def f(self):
+        """True anomaly of the orbit.  If the mean anomaly at detection (mt) exists than use that.
+
+        Returns:
+            (float): true anomaly
+        """
+        if self._f is None:
+            e = self.targets['e']
+            if 'mt' not in self.targets.colnames:
+                m = self.targets['m']
+            else:
+                m = self.targets['mt']
+            big_e = m - self.targets['e'] * numpy.sin(m) * units.rad
+            converged = numpy.zeros(len(self.targets)) > 0
+            f1 = numpy.zeros(len(self.targets)) * units.rad
+            fp = numpy.ones(len(self.targets))
+            n = 0
+            while n < 1**4 and numpy.sum(~converged) > 0:
+                f1[~converged] = big_e[~converged] - e[~converged] * numpy.sin(big_e[~converged]) * units.rad - m[~converged]
+                f1[converged] = 0 * units.rad
+                fp[~converged] = (1.0 - e[~converged] * numpy.sin(big_e[~converged]))
+                fp[converged] = 1
+                delta = -f1 / fp
+                big_e = big_e + delta
+                n += 1
+                converged = delta < (1e-6 * units.rad)
+            self._f = (2. * numpy.arctan(((1. + e) / (1. - e)) ** 0.5 * numpy.tan(big_e / 2.)))
+        return self._f
+
+    @property
+    def cartesian(self):
+        """
+        provide the state vector of the orbits.
+
+        Returns:
+            (dict[ndarray, ndarray, ndarray, ndarray, ndarray, ndarray]): dictionary of x/y/z/vx/vy/vz
+        """
+
+        # compute the unit vector
+        f = self.f
+        capom = self.targets['node']
+        om = self.targets['peri']
+        inc = self.targets['inc']
+        a = self.targets['a']
+        e = self.targets['e']
+        u = om + f
+        np = numpy
+        xhat = np.cos(u) * np.cos(capom) - np.cos(inc) * np.sin(capom) * np.sin(u)
+        yhat = np.cos(u) * np.sin(capom) + np.cos(inc) * np.cos(capom) * np.sin(u)
+        zhat = np.sin(inc) * np.sin(u)
+
+        # compute the angular momentum vector (unit vector)
+        hx = np.sin(capom) * np.sin(inc)
+        hy = -np.cos(capom) * np.sin(inc)
+        hz = np.cos(inc)
+
+        # assuming not parabolic, here the magnitudes of the vectors
+        r = a * (1.0 - e * e) / (1.0 + e * np.cos(f))
+        h = (a * (1.0 - e * e)) ** 0.5
+
+        # position vectors
+        x = r * xhat
+        y = r * yhat
+        z = r * zhat
+
+        # compute components of vector theta hat
+        thx = hy * zhat - hz * yhat
+        thy = hz * xhat - hx * zhat
+        thz = hx * yhat - hy * xhat
+
+        # obtain the velocity vector's components and calculate v
+        thdot = h / (r * r)
+        rdot = e * np.sin(f) / h
+
+        vx = r * thdot * thx + rdot * xhat
+        vy = r * thdot * thy + rdot * yhat
+        vz = r * thdot * thz + rdot * zhat
+
+        return {'x': x, 'y': y, 'z': z, 'vx': vx, 'vy': vy, 'vz': vz}

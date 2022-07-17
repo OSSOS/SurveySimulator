@@ -24,13 +24,13 @@ def run(model_filename,
     # create a detection output file and fill header with circumstance values that match the input model.
     detect_file = osssim.DetectFile(detect_filename)
     detect_file.epoch = model.epoch.jd
-    detect_file.lambda_neptune = model.lambda_neptune
+    detect_file.lambda_neptune = model.longitude_neptune
     detect_file.colors = model.colors
     detect_file.write_header(seed)
 
     track_file = osssim.DetectFile(track_filename)
     track_file.epoch = model.epoch.jd
-    track_file.lambda_neptune = model.lambda_neptune
+    track_file.lambda_neptune = model.longitude_neptune
     track_file.colors = model.colors
     track_file.write_header(seed)
 

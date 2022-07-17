@@ -51,8 +51,7 @@ def run(detect_filename, characterization_directory, seed, ntrack):
     ssim = osssim.OSSSSim(characterization_directory=characterization_directory)
 
     # the default Resonant class arguments setup for a Plutino model....
-    model = Ring(80*units.au, 1*units.au, seed=seed)
-    model.comp = "ring"
+    model = Ring(80*units.au, 1*units.au, seed=seed, component='Ring')
 
     detect_file = osssim.DetectFile(detect_filename)
     detect_file.epoch = model.epoch

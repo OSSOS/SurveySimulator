@@ -2,15 +2,13 @@
 The OSSOS Survey Simulator module.  This is front-end for the OSSSim.  The primary OSSSim is writen in f95.
 """
 import random
-
-import numpy as np
 from astropy import units as u
-from astropy.time import Time
 from astropy.units import Quantity
-import SurveySubsF95
+from astropy.table import Row
+from .lib import SurveySubsF95
+from . import definitions
 
-import ssim_util
-
+# these are the units that the SurveySubF95 module (ie the fortran code) expects elements to be in.
 T_ORB_M_UNITS = {'a': u.au,
                  'e': u.dimensionless_unscaled,
                  'inc': u.radian,
@@ -21,157 +19,150 @@ T_ORB_M_UNITS = {'a': u.au,
                  }
 
 
-class OSSSIM(object):
+class OSSSSim(object):
     """
     Outer Solar System Survey Simulator.
 
-    This class simulates the process of observing a model of the solar system using a set of characterize observations.
-
-    The model is provided to the class as an iterator.
-    The survey characterization is provided as a SSimConf object with holds location and info about of characterization files
-
-    :model:
-        model iterator must provide a dictionary like object that provides Quantities for the following properties.
-            - 'a', 'e', 'inc', 'node', 'peri', 'm', 'h'
-
-        The iterator can also provide, optionally, Quantities for LIGHT_CURVE effects:
-            - 'epoch', 'gb', 'period', 'amp', 'phase'
-
-        These additional values will override the default values from light_curve_param values set in the __init__
-
-        The iterator can also provide a color dictionary for types of objects being simulated, each object can have its own color
-        dictionary or a global set can be provided.
-            - 'colors'
-
-        e.g. COLORS = {'g-x': 0.0,
-              'r-x': -0.70,
-              'i-x': -1.2,
-              'z-x': -1.7,
-              'u-x': 0.8,
-              'V-x': 0.5,
-              'B-x': 0.1,
-              'R-x': -0.8,
-              'I-x': -1.2,
-              'x-x': 0.0}
-
-    :characterization:
-        See SSimConf documentation for details.
-
+    This class simulates the process of observing a model of the solar system using a set of characterized observations.
     """
 
     # default lighcurve parameters, appropriate for typical TNO
     LIGHT_CURVE_PARAMS = {
-        'phase': 0.0,
+        'phase': 0.0 * u.rad,
         'period': 0.0 * u.hour,
-        'gb': -0.12,
+        'gb': -0.12 * u.mag,
         'amplitude': 0.0 * u.mag,
     }
 
-    def __init__(self, model, characterization_directory,
-                 light_curve_params=None):
+    def __init__(self, characterization_directory):
+        """
+        Args:
+            characterization_directory (str): the path to survey characterization to be used.
+
+        Format of the characterization_directory is described at https://github.com/OSSOS/SurveySimulator/tree/master/Surveys
+
         """
 
-        :param model: iterator that provides a dictionary of orbital elements and value of 'h'
-        :type model: ssim_util.SSimModelFile
-        :param characterization_directory: the path to survey characterization to be used.
-        :type characterization_directory: str
-
-        The colors dictionary declares the color of the KBO in multiple filters.  The 'x' refers to the bandpass that the values of 'H'
-        (provided by the model iterator) are provided in.  Thus, if the model provide H_r value the colors given should be such that
-        'x' is replaced with 'r'.  The default vector expects that the "H" values are given in 'g' filter and colors are fixed.
-
-        The light_curve_params dictionary is a set of parameters to declare the phase-effect and light-curve variation in the flux.
-
-        """
-        self._colors = None
-        if light_curve_params is None:
-            light_curve_params = OSSSIM.LIGHT_CURVE_PARAMS
-        self.light_curve_params = light_curve_params
-
-        self.model = model
         self.characterization_directory = characterization_directory
 
-    def simulate(self, detect_filename, seed=None, ntrack=None):
+    def simulate(self, row, seed=None, epoch=None, colors=None):
         """
-        :param detect_filename: name of file to store dectections
-        :type detect_filename: str
-        :param seed: random seed passed to fortran modules, to allow reproducible simulations.
-        :type seed: int
-        :param ntrack: number of objects to track:
-        :type ntrack: int
+        Pass the target elements to detos1 and determine if this target would be detected.
 
-        ntrack has special values: 0 - till model exhausted, -ve till this many iterations, +ve till this many detections
+        Args:
+            row (Row or dict): elements of the target to simulate
+            seed (int): a seed to pass to the fortran code to allow reproducible simulations
+            epoch (Quantity or float): JD of elements, can also be provided for each row sent to simulate
+            colors (dict): colors of the target index by 'g-x' etc, see below.
 
-        The detections will be listed in detect_filename which will have the columns defined in ssim_util.DetectFile.colnames
-            units: degree, au, jd  (RA in hours, DEC in degrees)
+        Returns:
+            Row or dict: the target elements/values at time of simulated detection.
 
+        row should have values for a, e, inc, node, peri, M, H, [epoch]
+        can, optionally, also define: gb, phase, period, amplitude
+
+        the result row has, in addition to above, the following items:
+
+        flag: 0 - not detected, 1 - detected, 2 - tracked
+
+        following are values at time of detection, None if not detected
+
+        RA: RA of target
+
+        DEC: DEC of target
+
+        d_ra: rate of RA sky motion
+
+        d_dec: rate of DEC sky motion
+
+        delta: distance from Earth
+
+        r: distance from Sun
+
+        m_int: intrinsic magnitude in filter of target H (ie. the model filter)
+
+        m_rand: magnitude at detection, includes scatter due to flux measurement uncertainty (ie. the survey filter)
+
+        h_rand: inferred absolute magnitude based on m_rand and detection circumstances
+
+        eff: the detection field's efficiency of detection for a source of m_rand
+
+        M: the mean anomaly at detection
+
+        Survey: a string indicating which field detected the target
+
+        The colors list declares the color of the KBO in multiple filters.  The 'x' refers to the bandpass that the values of 'H'
+        (provided to simulate) are provided in.  Thus, if the target passed to simulate provides H_r value the colors given should
+        be such that 'x' is replaced with 'r'.  The default vector expects that the "H" values are given in 'g' filter and colors
+        are fixed.  See SSimModelFile for more details.
+
+        A default light_curve_params dictionary is used if target provided to simulate doesn't have any, set in
+        OSSSIM.LIGHT_CURVE_PARAMS
         """
 
         # if no seed is provide generate a 'random' one... this is the seed passed to the fortran code.
         if seed is None:
             seed = random.randint(0, 123456789)
 
-        detect_file = ssim_util.DetectFile(detect_filename)
-        detect_file.epoch = self.model.epoch.jd
-        detect_file.lambda_neptune = self.model.lambda_neptune
-        detect_file.colors = self.model.colors
-        detect_file.write_header(seed)
+        # pack the orbit into a t_orb_m object to pass to fortran module.
+        o_m = SurveySubsF95.datadec.t_orb_m()
+        row = dict(row)
+        for colname in row:
+            if hasattr(o_m, colname):
+                if isinstance(row[colname], Quantity):
+                    value = row[colname].to(T_ORB_M_UNITS[colname]).value
+                else:
+                    value = row[colname]
+                setattr(o_m, colname, value)
 
-        n_iter = n_hits = n_track = 0
+        # attempt to detect this object
+        # colors = self.colors
+        if 'colors' in row.keys():
+            colors = row['colors']
+        else:
+            colors = [definitions.COLORS[x].to(u.mag).value for x in definitions.COLORS]
+        # if isinstance(colors, dict):
+        #    # order the list correctly using the keys returned by the OrderedDict SSimModelFile.COLORS
+        #    colors = [ colors[x] for x in SSimModelFile.COLORS]
+        # colors = [ x.to(u.mag).value for x in colors]
 
-        for row in self.model:
-            # pack the orbit into a t_orb_m object to pass to fortran module.
-            o_m = SurveySubsF95.datadec.t_orb_m()
-            for colname in row:
-                if hasattr(o_m, colname):
-                    if isinstance(row[colname], Quantity):
-                        value = row[colname].to(T_ORB_M_UNITS[colname]).value
-                    else:
-                        value = row[colname]
-                    setattr(o_m, colname, value)
+        epoch = 'epoch' in row.keys() and row['epoch'].to(u.day).value or epoch.to(u.day).value
+        gb = 'gb' in row.keys() and row['gb'].to(u.mag).value or OSSSSim.LIGHT_CURVE_PARAMS['gb'].to(u.mag).value
+        phase = 'phase' in row.keys() and row['phase'].to(u.radian).value or OSSSSim.LIGHT_CURVE_PARAMS['phase'].to(u.radian).value
+        period = 'period' in row.keys() and row['period'].to(u.day).value or OSSSSim.LIGHT_CURVE_PARAMS['period'].to(u.day).value
+        amplitude = 'amplitude' in row.keys() and row.get('amplitude').to(u.mag).value or OSSSSim.LIGHT_CURVE_PARAMS['amplitude'].to(u.mag).value
+        H = 'H' in row.keys() and row['H'].to(u.mag).value or ('h' in row.keys() and row['h'].to(u.mag).value or 0.0)
 
-            # attempt to detect this object
-            # colors = self.colors
-            colors = row.get('colors', self.model.colors)
-            epoch = row.get('epoch', self.model.epoch.jd)
-            row['gb'] = row.get('gb', self.light_curve_params['gb'])
-            row['phase'] = row.get('phase', self.light_curve_params['phase'])
-            row['period'] = row.get('period', self.light_curve_params['period'])
-            row['amplitude'] = row.get('amplitude', self.light_curve_params['amplitude'])
+        row['flag'], row['RA'], row['DEC'], row['d_ra'], row['d_dec'], row['r'], row['delta'], \
+            row['m_int'], row['m_rand'], row['eff'], isur, row['mt'], jdayp, ic, row['Survey'], \
+            row['h_rand'], ierr = \
+            SurveySubsF95.Surveysub.detos1(o_m,
+                                           epoch,
+                                           H,
+                                           colors,
+                                           gb,
+                                           phase,
+                                           period,
+                                           amplitude,
+                                           self.characterization_directory,
+                                           seed)
+        if ierr != 0:
+            raise IOError("SSim failed with error code: {ierr}")
 
-            row['flag'], row['RA'], row['DEC'], row['d_ra'], row['d_dec'], row['r'], row['delta'], \
-                row['m_int'], row['m_rand'], row['eff'], isur, row['M'], jdayp, ic, row['Survey'], \
-                row['h_rand'], ierr = \
-                SurveySubsF95.Surveysub.detos1(o_m,
-                                               epoch,
-                                               row['H'].to(u.mag).value,
-                                               colors,
-                                               row['gb'],
-                                               row['phase'],
-                                               row['period'].to(u.hour).value,
-                                               row['amplitude'].to(u.mag).value,
-                                               self.characterization_directory,
-                                               seed)
-            if ierr != 0:
-                raise IOError("SSim failed with error code: {ierr}")
+        row['delta'] *= u.au
+        row['r'] *= u.au
+        row['m_int'] *= u.mag
+        row['m_rand'] *= u.mag
+        row['h_rand'] *= u.mag
+        # ic gives the filter that the object was 'detected' in,
+        # this allows us to determine the color of target
+        row['color'] = colors[ic - 1] * u.mag
+        row['q'] = row['a'] * (1 - row['e'])
+        row['mt'] *= u.rad
+        row['RA'] *= u.rad
+        row['DEC'] *= u.rad
+        row['Survey'] = row['Survey'].decode('utf-8')
 
-            # record model objects that are detected include flag if 'tracked'
-            if row['flag'] > 0:
-                # ic gives the filter that the object was 'detected' in, this allows us to determine the color
-                row['color'] = colors[ic - 1]
-                row['q'] = row['a'] * (1 - row['e'])
-                row['M'] *= u.rad
-                row['RA'] *= u.rad
-                row['DEC'] *= u.rad
-                row['Survey'] = row['Survey'].decode('utf-8')
-                # m_int and h are in "x" band (filter of object creation)
-                # m_rand and h_rand are in discovery filter
-                n_hits += 1
-                detect_file.write_row(row)
-                if (row['flag'] > 2) and (np.mod(row['flag'], 2) == 0):
-                    n_track += 1
-
-            # stop the loop when maximum/desired detections have occurred if ntrack==0 then go to end of model file.
-            if (0 < ntrack <= n_track) | (0 < -ntrack <= n_iter):
-                break
-        detect_file.write_footer(n_iter=n_iter, n_hits=n_hits, n_track=n_track)
+        # m_int and h are in "x" band (filter of object creation)
+        # m_rand and h_rand are in discovery filter
+        return row
