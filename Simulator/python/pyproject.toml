@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ossssim"
+version = "0.0.1"
+dependencies = [
+    "astropy",
+    "numpy",
+]
+
+[tools.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["test"]  # empty by default
+

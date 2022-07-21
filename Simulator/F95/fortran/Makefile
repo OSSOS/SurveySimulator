@@ -81,4 +81,8 @@ _$(SSIM).so: $(FPPU) $(OBJU) Makefile
 	f2py-f90wrap --fcompiler=$(FC) -c -m _$(SSIM) $(OBJU) f90wrap_*.f90 1>f2py_SurveySubs.log 2>&1
 	\rm f90wrap_*.f90
 	\rm *.fpp *.mod *.o
-	mv _$(SSIM)*.so _$(SSIM).so
+	sed -e 's/import _$(SSIM)/from . import _$(SSIM)/' -i .bck $(SSIM).py
+	rm $(SSIM).py.bck
+	rm .f2py_f2cmap
+	mv _$(SSIM)*.so ../../python/ossssim/lib/_$(SSIM).so
+	mv $(SSIM).py ../../python/ossssim/lib/

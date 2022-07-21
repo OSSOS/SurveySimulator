@@ -1,5 +1,5 @@
 import unittest
-from osssim.files import SSimModelFile
+from ossssim.models import ModelFile
 from astropy import units
 
 
@@ -22,7 +22,7 @@ class SSimModelFileTest(unittest.TestCase):
                     'comp': 'resonant',
                     'j':     5,
                     'k':     1}
-        self.model = SSimModelFile('data/test_model.dat')
+        self.model = ModelFile('data/test_model.dat')
 
     def test_epoch(self):
         self.assertAlmostEqual(self.epoch, self.model.epoch)

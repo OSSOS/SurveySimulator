@@ -4,3 +4,4 @@ build
 OSSOSv11/
 OSSOSv11.tgz
 .DS_Store
+*.log

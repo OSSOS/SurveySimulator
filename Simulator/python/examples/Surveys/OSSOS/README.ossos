@@ -1,0 +1,26 @@
+
+--------------------------------------------------------------------------------
+
+This directory contains the pointing history, efficiency functions for each
+block of OSSOS, and the list of detected objects in two files (OSSOS.detections
+and OSSOS.CDS).
+
+The content of this directory is:
+
+OSSOS
+   \--------- README.ossos (this file)  Describes the content of the directory
+    \--------- README.format            Describes format of a survey "block"
+     \-------- pointings.list           List of pointings and times of the
+      \                                 survey, often grouped into chunks.
+       \------ 201ySn.eff               Efficiency functions for blocks,
+        \                               where y gives the year (201y), S (a
+         \                              single letter) semester, and n the
+          \                             block name (eg, E, O, L, H)
+           \- OSSOS_v11.detections      List of objects really detected in
+           |                            OSSOS, with their dynamical class if
+           |                            known, magnitude at detection, rate
+	   |                            of motion, H mag, and more.
+            \- OSSOS_v11.CDS            Same as OSSOS_v11.detections, in CDS
+                                        format.
+
+--------------------------------------------------------------------------------
