@@ -13,8 +13,9 @@ T_ORB_M_UNITS = {'a': u.au,
                  'e': u.dimensionless_unscaled,
                  'inc': u.radian,
                  'node': u.radian,
+                 'Node': u.radian,
                  'peri': u.radian,
-                 'm': u.radian,
+                 'M': u.radian,
                  'epoch': u.day
                  }
 
@@ -101,12 +102,12 @@ class OSSSSim:
         o_m = SurveySubsF95.datadec.t_orb_m()
         row = dict(row)
         for colname in row:
-            if hasattr(o_m, colname):
+            if hasattr(o_m, colname.lower()):
                 if isinstance(row[colname], Quantity):
                     value = row[colname].to(T_ORB_M_UNITS[colname]).value
                 else:
                     value = row[colname]
-                setattr(o_m, colname, value)
+                setattr(o_m, colname.lower(), value)
 
         # attempt to detect this object
         # colors = self.colors
@@ -127,7 +128,7 @@ class OSSSSim:
         H = 'H' in row.keys() and row['H'].to(u.mag).value or ('h' in row.keys() and row['h'].to(u.mag).value or 0.0)
 
         row['flag'], row['RA'], row['DEC'], row['d_ra'], row['d_dec'], row['r'], row['delta'], \
-            row['m_int'], row['m_rand'], row['eff'], isur, row['mt'], jdayp, ic, row['Survey'], \
+            row['m_int'], row['m_rand'], row['eff'], isur, row['Mt'], jdayp, ic, row['Survey'], \
             row['h_rand'], ierr = \
             SurveySubsF95.Surveysub.detos1(o_m,
                                            epoch,
@@ -151,7 +152,7 @@ class OSSSSim:
         # this allows us to determine the color of target
         row['color'] = colors[ic - 1] * u.mag
         row['q'] = row['a'] * (1 - row['e'])
-        row['mt'] *= u.rad
+        row['Mt'] *= u.rad
         row['RA'] *= u.rad
         row['DEC'] *= u.rad
         row['Survey'] = row['Survey'].decode('utf-8')

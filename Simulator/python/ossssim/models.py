@@ -55,7 +55,7 @@ class ResultsFile:
         self._colnames = None
         self._colors = None
         self._epoch = None
-        self._lambda_neptune = None
+        self._longitude_neptune = None
         self._seed = None
         self.header_lines = []
         self.file_location = None
@@ -77,25 +77,27 @@ class ResultsFile:
         """
         if isinstance(value, Time):
             self._epoch = value
-        elif isinstance(value, float) or isinstance(value, int) or isinstance(value, Quantity):
+        elif isinstance(value, float) or isinstance(value, int):
             self._epoch = Time(value, format='jd')
+        elif isinstance(value, Quantity):
+            self._epoch = Time(value.to('day').value, format='jd')
         else:
             raise ValueError(f"Don't know how to set epoch using: {value}")
 
     @property
-    def lambda_neptune(self):
+    def longitude_neptune(self):
         """
         Longitude of Neptune at epoch
         """
-        if self._lambda_neptune is None:
-            raise ValueError(f"lambda_neptune has not been set.")
-        return self._lambda_neptune
+        if self._longitude_neptune is None:
+            raise ValueError(f"longitude_neptune has not been set.")
+        return self._longitude_neptune
 
-    @lambda_neptune.setter
-    def lambda_neptune(self, value):
+    @longitude_neptune.setter
+    def longitude_neptune(self, value):
         if not isinstance(value, Quantity) and value is not None:
-            raise ValueError(f"lambda_neptune must be set to a Quantity with units")
-        self._lambda_neptune = value
+            raise ValueError(f"longitude_neptune must be set to a Quantity with units")
+        self._longitude_neptune = value
 
     @property
     def colors(self):
@@ -139,7 +141,7 @@ class ResultsFile:
         with open(self.filename, 'w') as f_detect:
             f_detect.write(f"# Seed = {seed:10d}\n")
             f_detect.write(f"# Epoch of elements: JD = {self.epoch}\n")
-            f_detect.write(f"# Longitude of Neptune: lambdaN = {self.lambda_neptune}\n")
+            f_detect.write(f"# Longitude of Neptune: longitude_neptune = {self.longitude_neptune}\n")
             if self.colors is not None:
                 color_str = [f"{c.to(units.mag).value:5.2f} " for c in self.colors]
                 f_detect.write(f"# Colors = {color_str}\n")
@@ -166,12 +168,21 @@ class ResultsFile:
             f_detect.write('# Number of tracked objects: {:7d}\n'.format(n_track))
 
 
+class ModelOutputFile(ResultsFile):
+    """
+    Output format used to store the input model, used when model is parametric and you want to keep a record of input for diagnostics
+    """
+
+    colnames = ['a', 'e', 'inc', 'node', 'peri', 'M', 'H', 'q',
+                'color', 'comp', 'j', 'k']
+
+
 class DetectFile(ResultsFile):
     """
     Detected object output file structure.
     """
-    colnames = ['a', 'e', 'inc', 'node', 'peri', 'M', 'H', 'q', 'r', 'mt', 'm_rand', 'h_rand', 'color', 'flag',
-                'delta', 'm_int', 'eff', 'RA', 'DEC', 'Survey', 'comp', 'j', 'k']
+    colnames = ['a', 'e', 'inc', 'node', 'peri', 'M', 'H', 'q', 'r', 'Mt', 'm_rand', 'h_rand', 'color', 'flag',
+                'delta', 'm_int', 'eff', 'RA', 'DEC', 'comp', 'j', 'k']
 
 
 class TrackFile(ResultsFile):
@@ -179,14 +190,14 @@ class TrackFile(ResultsFile):
     Tracked object output file structure.
     """
     colnames = ['a', 'e', 'inc', 'node', 'peri', 'M', 'H', 'q', 'r',
-                'mt', 'm_rand', 'H_rand', 'color', 'Survey', 'comp', 'j', 'k']
+                'Mt', 'm_rand', 'H_rand', 'color', 'Survey', 'comp', 'j', 'k']
 
 
 class ModelFile(Iterable):
     """
     A class to drive the SSim using a standard model file.
 
-    ModelFile opens file and reads the header for the epoch, seed, lambda_neptune and colors
+    ModelFile opens file and reads the header for the epoch, seed, longitude_neptune and colors
     and then loops over or randomly offsets into the file to read model objects.
     """
 
@@ -374,7 +385,7 @@ class ModelFile(Iterable):
 
     @property
     def f(self):
-        """True anomaly of the orbit.  If the mean anomaly at detection (mt) exists than use that
+        """True anomaly of the orbit.  If the mean anomaly at detection (Mt) exists than use that
         else use the mean anomaly at model epoch
 
         Returns:
@@ -382,10 +393,12 @@ class ModelFile(Iterable):
         """
         if self._f is None:
             e = self.targets['e']
-            if 'mt' not in self.targets.colnames:
-                m = self.targets['m']
+            if 'M' not in self.targets.colnames:
+                ValueError("No mean anomaly (M) in model?")
+            if 'Mt' in self.targets.colnames:
+                m = self.targets['Mt']
             else:
-                m = self.targets['mt']
+                m = self.targets['M']
             big_e = m - self.targets['e'] * numpy.sin(m) * units.rad
             converged = numpy.zeros(len(self.targets)) > 0
             f1 = numpy.zeros(len(self.targets)) * units.rad
@@ -480,10 +493,10 @@ class Parametric(ABC):
     def __init__(self,
                  size: int = 1000000,
                  seed: int = 123456789,
-                 epoch: Quantity = 2456293.5 * units.day,
+                 epoch: Quantity = 2456839.5 * units.day,
                  j: int = 0,
                  k: int = 0,
-                 longitude_neptune: Quantity = 333.5078 * units.deg,
+                 longitude_neptune: Quantity = 5.876 * units.rad,
                  **kwargs) -> None:
         """
         Setup the boundaries of the simulation.  size and seed are used to initialize a dist_utils.Distribution class.
@@ -554,7 +567,7 @@ class Parametric(ABC):
         Return uniformly distributed nodes.
         """
         if self._node is None:
-            self._node = self.distributions.uniform(0, 2*numpy.pi) * units.rad
+            self._node = self.distributions.uniform(0, 2 * numpy.pi) * units.rad
         return self._node
 
     @property
@@ -592,7 +605,21 @@ class Parametric(ABC):
 
     @epoch.setter
     def epoch(self, value):
-        self._epoch = self.distributions.constant(value.to('day').value) * units.day
+        if isinstance(value, Quantity):
+            value = value.to('day').value
+        if isinstance(value, Time):
+            value = value.jd
+        self._epoch = value * units.day
+        # self._epoch = self.distributions.constant(value.to('day').value) * units.day
+
+    @property
+    def phi(self):
+        """
+        Returns the centre of libration for resonances.. 0 otherwise.
+        """
+        if self._phi is None:
+            self._phi = self.distributions.constant(0.0) * units.deg
+        return self._phi
 
     @property
     def resamp(self):
@@ -600,7 +627,7 @@ class Parametric(ABC):
         Returns resamp a 0.0 as this is not a resonant orbit.
         """
         if self._resamp is None:
-            self._resamp = self.distributions.uniform(0.0)
+            self._resamp = self.distributions.constant(0.0) * units.deg
         return self._resamp
 
     @property
@@ -725,12 +752,12 @@ class Parametric(ABC):
         self._H = self._lc_gb = self._lc_phase = self._lc_period = self._lc_amplitude = None
         self._resamp = self._colors = None
 
-        return QTable([self.a, self.e, self.inc, self.node, self.peri, self.M, self.epoch,
+        return QTable([self.a, self.e, self.inc, self.node, self.peri, self.M, [self.epoch,]*len(self.M),
                        self.H, self.lc_gb, self.lc_phase, self.lc_period, self.lc_amplitude,
-                       self.resamp, self.colors, self.comp, self.j, self.k],
+                       self.resamp, self.colors, self.comp, self.j, self.k, self.phi],
                       names=['a', 'e', 'inc', 'node', 'peri', 'M', 'epoch',
                              'H', 'lc_gb', 'lc_phase', 'lc_period', 'lc_amplitude',
-                             'resamp', 'colors', 'comp', 'j', 'k'])
+                             'resamp', 'colors', 'comp', 'j', 'k', 'phi'])
 
     @property
     def targets(self):
@@ -796,8 +823,8 @@ class Resonant(Parametric):
                  size=10**6,
                  seed=123456789,
                  component='Res',
-                 longitude_neptune=333.5078 * units.deg,
-                 epoch=2456293.5 * units.day,
+                 longitude_neptune=5.876 * units.rad,
+                 epoch=2456839.5 * units.day,
                  j=0,
                  k=0,
                  res_amp_low=0*units.deg,
@@ -807,7 +834,7 @@ class Resonant(Parametric):
         """
         Setup the boundaries of the simulation.  size and seed are used to initialize a dist_utils.Distribution class.
 
-        _longitude_neptune and epoch_neptune are stored in self._longitude_neptune and self.epoch_neptune for use in
+        longitude_neptune and epoch are stored in self,longitude_neptune and self.epoch for use in
         self._generate_targets.
 
         See examples/models.py for an example implementation.
@@ -815,8 +842,18 @@ class Resonant(Parametric):
         Args:
             size (int): Determines size of the arrays to be generated (default=10^6).
             seed (int): Initialize distributions with this seed to enable reproducible models.
+            component (str): Name of this component, stored in output files.
             longitude_neptune (Quantity): The ecliptic longitude of Neptune at epoch_neptune of elements.
-            epoch_neptune (Quantity): The epoch_neptune of the given longitude of Neptune.
+            epoch (Quantity): The epoch_neptune of the given longitude of Neptune.
+            j (int): the j/k MMR with Neptune, set to 0 if not a resonant orbit.
+            k (int): the j/k MMR with Neptune, set to 0 if not a resonant orbit.
+            res_centre (Quantity): centre of the resonance phi libration.
+            res_amp_low (Quantity): low end of amplitude of phi oscillation
+            res_amp_mid (Quantity): middle of the amplitude of phi oscillation
+            res_amp_high (Quantity): top end of phi oscillation
+
+            For resonant amplitude is drawn from a distribution that starts at res_amp_low,
+            peaks at res_amp_mid and back to 0 at res_amp_high.  Generally uses distributions.Distribution.triangle
 
         """
         super().__init__(size=size, seed=seed, epoch=epoch, longitude_neptune=longitude_neptune,
@@ -824,11 +861,48 @@ class Resonant(Parametric):
 
         if j is None or k is None:
             ValueError(f"Resonance j/k are not None for Resonant Model objects")
+        self._res_amp_low = self._res_amp_high = self._res_amp_mid = self._res_centre = None
         self.res_amp_low = res_amp_low
         self.res_amp_high = res_amp_high
         self.res_amp_mid = res_amp_mid
         self.res_centre = res_centre
         self.comp = component.replace(" ", "_")
+
+    @property
+    def res_amp_low(self):
+        """Low end of resonance amplitude"""
+        return self._res_amp_low
+
+    @res_amp_low.setter
+    def res_amp_low(self, value):
+        self._res_amp_low = value
+
+    @property
+    def res_amp_mid(self):
+        """Low end of resonance amplitude"""
+        return self._res_amp_mid
+
+    @res_amp_mid.setter
+    def res_amp_mid(self, value):
+        self._res_amp_mid = value
+
+    @property
+    def res_amp_high(self):
+        """Low end of resonance amplitude"""
+        return self._res_amp_high
+
+    @res_amp_high.setter
+    def res_amp_high(self, value):
+        self._res_amp_high = value
+
+    @property
+    def res_centre(self):
+        """Low end of resonance amplitude"""
+        return self._res_centre
+
+    @res_centre.setter
+    def res_centre(self, value):
+        self._res_centre = value
 
     @property
     def a(self):
@@ -843,6 +917,7 @@ class Resonant(Parametric):
                                                  a_max.to('au').value) * units.au
         return self._a
 
+
     @property
     def e(self):
         """
@@ -850,9 +925,7 @@ class Resonant(Parametric):
         range of e.
         """
         if self._e is None:
-            e_max = (1 - self.a_neptune / self.a)
-            e_min = 0.02
-            self._e = self.distributions.uniform(e_min, e_max)
+            self._e = self.distributions.uniform(0.05, 0.25)
         return self._e
 
     @property
@@ -872,8 +945,13 @@ class Resonant(Parametric):
         """
         Distribute peri centre to obey the phi/M/_longitude_neptune constraints.
         """
+        """
+        From Volk/Chen code.
+        phi52 = (libc + 2*resamp*(ran3(seed) - 0.5))
+        peri = phi52 - 2.0d0*m + longitude_neptune  - node
+        """
         if self._peri is None:
-            self._peri = (1 / 1 * (self.phi - 2 * self.M) - self.node + self.longitude_neptune) % ((2 * numpy.pi) * units.rad)
+            self._peri = (self.phi / self.k - self.j * self.M / self.k + self.longitude_neptune - self.node) % (360 * units.deg)
         return self._peri
 
     @property
@@ -882,7 +960,8 @@ class Resonant(Parametric):
         Compute the phi, libration centre from the resonance centre and sampling the resonance amplitude via sin() weighting.
         """
         if self._phi is None:
-            self._phi = self.res_centre + numpy.sin(self.distributions.uniform(0, 2*numpy.pi))*self.resamp
+            amplitudes = numpy.sin(self.distributions.uniform(0, 2*numpy.pi))
+            self._phi = self.res_centre + amplitudes*self.resamp
         return self._phi
 
     @property
@@ -891,7 +970,7 @@ class Resonant(Parametric):
         amplitude of the distribution of resonance centres around libration centre, used in self.phi
         """
         if self._resamp is None:
-            self._resamp = self.distributions.linear_peak(self.res_amp_low,
-                                                          self.res_amp_mid,
-                                                          self.res_amp_high)
+            self._resamp = self.distributions.triangle(self.res_amp_low.to('rad').value,
+                                                       self.res_amp_mid.to('rad').value,
+                                                       self.res_amp_high.to('rad').value) * units.rad
         return self._resamp

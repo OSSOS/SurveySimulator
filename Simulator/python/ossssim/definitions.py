@@ -39,11 +39,10 @@ colunits = {'a': units.au,
             'inc': units.degree,
             'q': units.au,
             'r': units.au,
-            'm': units.degree,
             'M': units.degree,
             'node': units.degree,
             'peri': units.degree,
-            'mt': units.degree,
+            'Mt': units.degree,
             'm_rand': units.mag,
             'h_rand': units.mag,
             'color': units.mag,
@@ -59,7 +58,13 @@ colunits = {'a': units.au,
             'comp': None,
             'dist': units.au,
             'j': None,
-            'k': None
+            'k': None,
+            'phi': units.deg,
+            'resamp': units.deg,
+            'Name': None,
+            'n': None,
+            'Q': units.au,
+            'P': units.year
             }
 
 COLUMN_WIDTH = 10

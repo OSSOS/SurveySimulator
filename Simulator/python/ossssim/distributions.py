@@ -250,7 +250,7 @@ class Distributions:
         # density, by interpolating between the given points.
         return numpy.interp(interpolator, xp, fp)
 
-    def linear_peak(self, minimum, mid, maximum):
+    def triangle(self, minimum, mid, maximum):
         """
         Generate an array corresponding to a probability density that rises linearly from zero at a
         given minimum bound to a maximum probability at a given mid value, before dropping linearly back to zero at a
@@ -267,26 +267,20 @@ class Distributions:
             numpy.array: resulting random samples.
 
         """
+        return self.rnd_gen.triangular(minimum, mid, maximum, self.size)
 
-        # Create an array, of size num, evenly spaced values from minimum to maximum including the maximum value.
-        fp = numpy.linspace(minimum, maximum, num=100)
 
-        # The desired probability density is evaluated over the desired range of values given in the array fp.
-        # This creates a new array which is summed over using the cumulative sum function.
-        # This array functions as our cumulative distribution function (cdf).
-        cdf1 = (1. / (mid - minimum) * fp[fp < mid] - minimum / (mid - minimum))
-        cdf2 = (-1. / (maximum - mid) * fp[fp >= mid] + maximum / (maximum - mid))
-        # Combines the two non-continuous halves of our distribution.
-        cdf = numpy.concatenate([cdf1, cdf2]).cumsum()
-        xp = cdf / max(cdf)  # Normalizes the cdf
-
-        # Generates an array (of a size given in our instance initialization) of uniformly distributed random values
-        # ranging from the minimum value of of our normalized cdf (xp[0] which is >=0) to the maximum value (1).
-        interpolator = self.rnd_gen.uniform(xp[0], 1, self.size)
-
-        # Calls the interpolation function to generate a randomized array, corresponding to the probability
-        # density, by interpolating between the given points.
-        return numpy.interp(interpolator, xp, fp)
+    def linear(self, min, max):
+        """
+        Returns a set of random values that have max probability at 0 droping to min probabilty at 1
+        """
+        x = numpy.arange(0, 1, 0.001)
+        y = max - (max-min) * x
+        i = y.argsort()
+        y = y[i]
+        x = x[i]
+        f = lambda l: numpy.interp(l, y.cumsum() / y.sum(), x)
+        return f(self.rnd_gen.random(self.size))
 
     def power_knee_divot(self, alpha_bright, h_max, h_min=1., h_break=None, alpha_faint=None, contrast_ratio=1.):
         """

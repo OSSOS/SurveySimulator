@@ -2876,7 +2876,7 @@ class Surveysub(f90wrap.runtime.FortranModule):
     @staticmethod
     def detos1(self, jday, hx, color, gb, ph, period, amp, surnam, seed):
         """
-        flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, jdayp, ic, \
+        flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, Mt, jdayp, ic, \
             surna, h_rand, ierr = detos1(self, jday, hx, color, gb, ph, period, amp, \
             surnam, seed)
         
@@ -2909,7 +2909,7 @@ class Surveysub(f90wrap.runtime.FortranModule):
         m_rand : float
         eff : float
         isur : int
-        mt : float
+        Mt : float
         jdayp : float
         ic : int
         surna : str
@@ -2917,11 +2917,11 @@ class Surveysub(f90wrap.runtime.FortranModule):
         ierr : int
         
         """
-        flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, jdayp, ic, \
+        flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, Mt, jdayp, ic, \
             surna, h_rand, ierr = _SurveySubsF95.f90wrap_detos1(o_m=self._handle, \
             jday=jday, hx=hx, color=color, gb=gb, ph=ph, period=period, amp=amp, \
             surnam=surnam, seed=seed)
-        return flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, \
+        return flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, Mt, \
             jdayp, ic, surna, h_rand, ierr
     
     _dt_array_initialisers = []
