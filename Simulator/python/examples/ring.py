@@ -67,13 +67,13 @@ def run(model_filename,
 
     model_file = DetectFile(model_filename)
     model_file.epoch = model.epoch
-    model_file.lambda_neptune =model.longitude_neptune
+    model_file.longitude_neptune =model.longitude_neptune
     model_file.colors = definitions.COLORS.values()
     model_file.write_header(seed)
 
     detect_file = DetectFile(detect_filename)
     detect_file.epoch = model.epoch
-    detect_file.lambda_neptune = model.longitude_neptune
+    detect_file.longitude_neptune = model.longitude_neptune
     detect_file.colors = definitions.COLORS.values()
     detect_file.write_header(seed)
 

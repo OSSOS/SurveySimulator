@@ -30,10 +30,9 @@ def run(model_filename: str = default_model_filename,
     ssim = ossssim.OSSSSim(characterization_dir)
 
     # create a detection output file and fill header with circumstance values that match the input model.
-
     detect_file = ossssim.DetectFile(output)
     detect_file.epoch = model.epoch
-    detect_file.lambda_neptune = model.longitude_neptune
+    detect_file.longitude_neptune = model.longitude_neptune
     detect_file.colors = model.colors
     detect_file.write_header(seed)
 
