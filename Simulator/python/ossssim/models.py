@@ -6,7 +6,8 @@ import os
 import re
 import time
 from abc import ABC, abstractmethod
-from collections import OrderedDict, Iterable
+from collections import OrderedDict
+from collections.abc import Iterable
 
 import numpy
 from astropy import units
