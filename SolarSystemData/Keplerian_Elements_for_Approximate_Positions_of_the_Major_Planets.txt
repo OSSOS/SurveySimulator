@@ -1,0 +1,126 @@
+Skip Page Navigation <#content>
+NASA Logo - Jet Propulsion Laboratory 				+ View the NASA Portal
+<https://www.nasa.gov/>
++ Center for Near-Earth Object Studies <https://cneos.jpl.nasa.gov/> 			
+JPL Home <https://www.jpl.nasa.gov/> 	Earth
+<https://www.jpl.nasa.gov/earth/> 	Solar System
+<https://www.jpl.nasa.gov/solar_system/> 	Stars & Galaxies
+<https://www.jpl.nasa.gov/stars_galaxies/> 	Technology
+<https://www.jpl.nasa.gov/technology/>
+
+JPL Solar System Dynamics <https://ssd.jpl.nasa.gov/>
+BODIES <https://ssd.jpl.nasa.gov/?bodies> 		ORBITS
+<https://ssd.jpl.nasa.gov/?orbits> 		EPHEMERIDES
+<https://ssd.jpl.nasa.gov/?ephemerides> 		TOOLS
+<https://ssd.jpl.nasa.gov/?tools> 		PHYSICAL DATA
+<https://ssd.jpl.nasa.gov/?phys_data> 		DISCOVERY
+<https://ssd.jpl.nasa.gov/?discovery> 		FAQ
+<https://ssd.jpl.nasa.gov/?faq> 		SITE MAP
+<https://ssd.jpl.nasa.gov/?site_map>
+
+*IMPORTANT:* The SSD Announcement email list is now available. Major
+changes are coming in the near future, including possible hostname
+and/or URL changes. To be notified of such changes, subscribe to this
+email list.
+
+Please visit this page <https://ssd.jpl.nasa.gov/?email_list> for more
+details.
+
+
+Don't show this message again
+ Quick Links 
+Errors <#errors>
+Formulae <#formulae>
+Elements <#elem>
+		
+Keplerian Elements for Approximate Positions of the Major Planets
+
+This page contains sufficient information and data to allow computation
+of approximate positions for the planets. Formulae are provided in a PDF
+document <https://ssd.jpl.nasa.gov/txt/aprx_pos_planets.pdf> due to the
+inability of HTML to effectively format mathematical expressions. Tables
+containing the required Keplerian elements are provided in plain ASCII
+text format to allow for both human and machine readability.
+
+You are reminded that these formulae and data provide /approximate/
+positions for the planets. They should /not/ be used unless the errors
+(tabulated below) are acceptable for your application. High precision
+ephemerides for the planets are available via our HORIZONS
+<https://ssd.jpl.nasa.gov/?horizons> system.
+
+
+      Approximate Errors
+
+Approximate errors, in right ascension
+<https://ssd.jpl.nasa.gov/?glossary&term=ra>, *RA*,declination
+<https://ssd.jpl.nasa.gov/?glossary&term=dec>, *Dec.*, and in distance,
+*r*, from the Keplerian formulation described in the links below.
+
+  	1800 -- 2050 	3000 BC to 3000 AD
+  	*RA*
+(arcsec) 	*Dec.*
+(arcsec) 	*r*
+(1000 km) 	*RA*
+(arcsec) 	*Dec.*
+(arcsec) 	*r*
+(1000 km)
+*Mercury* 	15	1	1 	20	15	1
+*Venus* 	20	1	4 	40	30	8
+*Earth-Moon
+Barycenter* 	20	8	6 	40	15	15
+*Mars* 	40	2	25 	100	40	30
+*Jupiter* 	400	10	600 	600	100	1000
+*Saturn* 	600	25	1500 	1000	100	4000
+*Uranus* 	50	2	1000 	2000	30	8000
+*Neptune* 	10	1	200 	400	15	4000
+*Pluto* 	5	2	300 	400	100	2500
+
+
+      Formulae for Computing Approximate Planetary Positions
+
+Lower accuracy formulae for planetary positions have a number of
+important applications when one doesn't need the full accuracy of an
+integrated ephemeris. They are often used in observation scheduling,
+telescope pointing, and prediction of certain phenomena as well as in
+the planning and design of spacecraft missions.
+
+Approximate positions of the major planets and Pluto may be found by
+using Keplerian formulae with their associated elements and rates. Such
+elements are not intended to represent any sort of mean; they are simply
+the result of being adjusted for a best fit. As such, it must be noted
+that the elements are not valid outside the given time-interval over
+which they were fit.
+
+Since the combination of HTML with the large number of web browsers
+currently available do not render mathematical expressions reliably, the
+document <https://ssd.jpl.nasa.gov/txt/aprx_pos_planets.pdf> containing
+the formulae and data required to compute approximate planetary
+positions is formatted as a PDF document
+<https://ssd.jpl.nasa.gov/txt/aprx_pos_planets.pdf>.
+
+
+      Keplerian Elements
+
+The data required for use in these formulae are available both in the
+above referenced PDF document
+<https://ssd.jpl.nasa.gov/txt/aprx_pos_planets.pdf> and as ASCII plain
+text files (see below). There are two ASCII tables containing the
+Keplerian mean elements appropriate for specified time spans:
+
+  * Keplerian elements for 1800 AD to 2050 AD
+    <https://ssd.jpl.nasa.gov/txt/p_elem_t1.txt>
+  * Keplerian elements for 3000 BC to 3000 AD
+    <https://ssd.jpl.nasa.gov/txt/p_elem_t2.txt> 
+
+ABOUT SSD <https://ssd.jpl.nasa.gov/?about> 		CREDITS/AWARDS
+<https://ssd.jpl.nasa.gov/?credits> 		PRIVACY/COPYRIGHT
+<http://www.jpl.nasa.gov/copyrights.cfm> 		GLOSSARY
+<https://ssd.jpl.nasa.gov/?glossary> 		LINKS
+<https://ssd.jpl.nasa.gov/?links>
+
+FirstGov <http://www.firstgov.gov/> 	2019-Jan-15 10:15 UT 
+(server date/time)   	NASA Home Page <https://www.nasa.gov/> 	
+Site Manager:  	 Ryan S. Park
+Webmaster <mailto:webmaster@ssd.jpl.nasa.gov>:  	 Alan B. Chamberlin
+Last Updated:  	 2018-Jul-17
+
