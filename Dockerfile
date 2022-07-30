@@ -34,15 +34,14 @@ RUN pip3 install matplotlib
 RUN pip3 install f90wrap
 
 # Build the SSim
-WORKDIR /opt/
-RUN mkdir SSim
-COPY ./F95 SSim/
-WORKDIR SSim/F95
+RUN mkdir /opt/SSim
+COPY Surveys /opt/SSim/Surveys
+COPY Models /opt/SSim/Models
+COPY F95 /opt/SSim/F95
+COPY python /opt/SSim/python
+WORKDIR /opt/SSim/F95
 RUN make clean && make Driver GIMEOBJ=ReadModelFromFile
 RUN cp Driver /usr/local/bin/SSim
-RUN make Modules
-WORKDIR /opt/SSim
-COPY python ./
 WORKDIR /opt/SSim/python
 RUN pip install .
 
@@ -54,5 +53,5 @@ RUN groupadd -g 1001 testuser
 RUN useradd -u 1001 -g 1001 -s /bin/bash -d /arc/home/testuser -m testuser
 USER testuser
 WORKDIR /arc/home/testuser
-COPY ReadModelFromFile.in ./
+COPY etc/ReadModelFromFile.in ./
 ENTRYPOINT ["/skaha/startup.sh"]

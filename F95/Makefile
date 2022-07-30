@@ -84,5 +84,4 @@ _$(SSIM).so: $(FPPU) $(OBJU) Makefile
 	sed -e 's/import _$(SSIM)/from . import _$(SSIM)/' -i.bck $(SSIM).py
 	rm $(SSIM).py.bck
 	rm .f2py_f2cmap
-	mv _$(SSIM)*.so ../../python/ossssim/lib/_$(SSIM).so
-	mv $(SSIM).py ../../python/ossssim/lib/
+	mv _$(SSIM)*.so _$(SSIM).so
