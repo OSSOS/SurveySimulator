@@ -6,7 +6,6 @@ import os
 from astropy.table import Table
 from astropy.time import Time
 
-SURVEYS_DIR = '/arc/projects/classy/Surveys'
 
 
 def face_down_plot() -> None:
@@ -23,19 +22,18 @@ def face_down_plot() -> None:
     plot.add_model(distant_kbos, mc='r', ms=10)
 
     # add pointing wedges from the OSSOS++ surveys
-    plot.add_pointings(os.path.join(SURVEYS_DIR, 'ObsSummary/All_Surveys/pointings.list'))
+    plot.add_pointings(os.path.join('OSSOSv11/ObsSummary/All_Surveys/pointings.list'))
 
     # Add the classy pointing plan.
-    classy_pointings_list = os.path.join(SURVEYS_DIR, 'ObsSummary/CLASSY/pointings.list')
+    classy_pointings_list = os.path.join('OSSOSv11/ObsSummary/CLASSY/pointings.list')
     plot.add_pointings(classy_pointings_list, color='g', alpha=0.7, label=True)
 
     # Add the Deep pointing plan.
-    deep_pointings_list = os.path.join(SURVEYS_DIR, 'ObsSummary/DEEP/pointings.list')
+    deep_pointings_list = os.path.join('OSSOS/v11/ObsSummary/DEEP/pointings.list')
     plot.add_pointings(deep_pointings_list, color='r', alpha=0.3)
 
     # Add some objects to the plot, this files is in SSim CDS format.
-    detection_table = Table.read(os.path.join(SURVEYS_DIR,
-                                              'ObsSummary/All_Surveys/All_Surveys_v11.CDS'),
+    detection_table = Table.read(os.path.join('OSSOSv11/ObsSummary/All_Surveys/All_Surveys_v11.CDS'),
                                  format='cds')
     plot.add_detections(detection_table)
 

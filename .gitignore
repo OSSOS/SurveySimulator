@@ -5,3 +5,6 @@ OSSOSv11/
 OSSOSv11.tgz
 .DS_Store
 *.log
+ossssim.egg-info
+SurveySubsF95.py
+*.so

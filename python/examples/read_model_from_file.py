@@ -3,11 +3,11 @@ Simulation to expose L7 model to CFEPS observation characterization
 """
 import argparse
 import sys
-
+import os
 import ossssim
 
-default_model_filename = '../../Models/L7model-3.0-0.0'
-default_characterization_dir = '../../Surveys/CFEPS'
+default_model_filename = 'L7model-3.0-0.0'
+default_characterization_dir = 'CFEPS'
 
 
 def run(model_filename: str = default_model_filename,

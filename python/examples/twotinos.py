@@ -16,7 +16,6 @@ import ossssim
 from ossssim.models import Resonant
 import os
 
-SURVEYS_DIR = '/arc/projects/classy/Surveys'
 
 class TwoTinoSymmetric(Resonant):
     """
@@ -239,14 +238,14 @@ if __name__ == '__main__':
     # Goal is to model the OSSOS 2:1 detections.  First we load all the OSSOS detections from the
     # summary file and determine how many 2:1 objects there were.
 
-    data = Table.read(os.path.join(SURVEYS_DIR,'OSSOSv11/ObsSummary/OSSOS/OSSOS.CDS')
+    data = Table.read(os.path.join('OSSOSv11/ObsSummary/OSSOS.CDS')
                       , format='cds')
     cond = (data['cl'] == 'res') & (data['j'] == 2) & (data['k'] == 1)
 
     # now run a survey simulation.
     run('TwotinoModel.dat',
         'TwotinoDetect.dat',
-        os.path.join(SURVEYS_DIR,'OSSOSv11/ObsSummary/OSSOS'),
+        os.path.join('OSSOSv11/ObsSummary/OSSOS'),
         123456789,
         55)
 
