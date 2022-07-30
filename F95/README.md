@@ -1,36 +1,35 @@
+# Survey Simulator F95 based source
 
---------------------------------------------------------------------------------
+### Requirements
 
-This directory contains the source code for a GiMeObj routine that generates
-objects according to some parametric presciption of the outer Solar System
-population being modeled, along with a Makefile to generate the executable 
-and an example subdirectory.
+- gfortran
+- make
 
-The contents of this directory is:
+### Install
 
-parametric ----- README.parametric (this file)  Describes "GiMeObj" routine
- \         \---- InnerHotModel.f                Example "GiMeObj" routine to
- |          \                                   generate objects via parametric
- |           \                                  prescription of inner belt
- |            \- Makefile                       Simplistic Makefile to build
- |                                              executable
- |
- \----example                                   Contains files to run an
-                                                example and check validity of
-                                                results
+e.g. `make Driver GEMIOBJ=InnerBeltModel` 
 
---------------------------------------------------------------------------------
+links InnerBeltModel.f95 to GeMeObj.f95 and then build Driver.
 
-COMPILING
-  The simplest way to create the executable for the survey simulator is 
-  to type the following command at the prompt:
 
-    make
+To run the simulator we use make to build `Driver` linked to a particular `GeMeObj` module. 
 
-  This will create an executable file called "SurveySimulator".  If you do
-  not have the gfortran compiler installed you will need to replace the
-  compiler command in the Makefile with the fortran compiler you use.
+Users build `GeMeObj` subroutines and link them when building `Driver` then the simulator
+will use that subroutine to get orbital elements and H magntidues for use in the simulation.
 
+If you write MyGeMeObj.f95 model the build Driver as (leave off the .f95):
+
+`make Driver GEMEOBJ=MyGeMeObj`
+
+README.md (this file)  Describes "GiMeObj" routine
+InnerHotModel.f                Example "GiMeObj" routine to
+                               generate objects via parametric
+                               prescription of inner belt
+Makefile                       Makefile to build executable
+example                        Contains files to run an example
+
+
+### COMPILING
   One can compile the program directly. Because Driver.f 'includes' a
   file 'GiMeObj.f' containing the model definition, one must first create 
   a symbolic link pointing to the actual file "InnerHotModel.f":
@@ -38,12 +37,9 @@ COMPILING
     ln -s InnerHotModel.f GiMeObj.f
     gfortran -O3 -o SurveySimulator Driver.f
 
-  Note: Driver.f SurveySubs.f in this directory are symbolically linked 
-  to the actual source codes in the src subdirectory.
 
-RUNNING
-  The driver program provided with this package reads six parameters from the
-  standard input:
+### RUNNING
+  `Driver` reads six parameters from the standard input:
 
   - the seed for the random number generator (integer)
   - a number <n> to control how long we run:
@@ -58,36 +54,34 @@ RUNNING
     listed
 
 
-  An easy way of feeding these values into the driver is to write
-  them in a file, say "Driver.in", one line for each value, and execute the
-  program with redirection of standard input:
+  Normally one creates a file (e.g. `Driver.in`) with one line for each value, 
+  and executes `Driver` like so:
 
-    SurveySimulator < Driver.in
+    Driver < Driver.in
 
-  An example of this Driver.in file is in the parametric/example subdirectory.
+  An example of `Driver.in` can be found in the example subdirectory.
 
   Execution generates two output files with the user specified names:
-  - The first (called SimulDetect.dat in the example cases given) contains all
+  - The first (`SimulDetect.dat` in the example `Driver.in`) contains all
     detected objects. The meaning of the values is given in the header of the 
     file. At the end of the file there is also the number of objects tested, the
     number of objects detected, and the number of objects tracked.
-  - The second (called SimulTrack.dat in the examples) contains all the tracked
+  - The second (`SimulTrack.dat` in the example `Driver.in`) contains all the tracked
     objects. The meaning of the values is given in the header of the file.
 
-    The parameters of the survey blocks determine which (small) fraction of
+    The parameters of the survey blocks determine which of the 
     the detected objects are NOT tracked, based on the properties of the 
-    non-tracked objects in the true survey.
+    non-tracked objects in the survey characterization used as input.
 
     NOTE: in both files, the color is <mag in survey filter> - <mag in
     reference "x" filter>, and the magnitude <mag> is given in the reference
     "x" filter.
 
---------------------------------------------------------------------------------
+---
 
-IMPLEMENTING YOUR OWN MODEL
+## IMPLEMENTING YOUR OWN MODEL
 
-  As described in ../src/README.src, the workflow of the survey simulator
-  driver is as follows:
+  The workflow of the survey simulator driver is as follows:
 
     Loop (until told not to):
            call GiMeObj(arg_list_1)
@@ -104,19 +98,20 @@ IMPLEMENTING YOUR OWN MODEL
   lightcurve parameters (period, peak-to-peak amplitude and phase at epoch). 
   GiMeObj must accept a file name as input that tells the routine where to 
   find the needed parameters (if any) and also a random number generator seed. 
-  The package provides two different implementations of the GiMeObj. 
-   -The one in InnerHotModel.f shows an example of an analytical model that 
+  The package provides two different implementations of the GiMeObj.
+  
+- The one in `InnerBeltModel.f95` shows an example of an analytical model that 
     reads its parameters from a file and then generates objects as requested.
-   -The one in FromFileModel.f will read objects from a file, return them 
+- The one in `ReadModelFromFile.f95` will read objects from a file, return them 
     one at a time and signal when it has reach the end of the file. 
 
-  One can easily create one's own GiMeObj routine to replace the ones provided
-  with the package. The Driver.f program uses an 'include' for the file
-  'GiMeObj.f' containing the model definition. The suggested way to use
+  One can creates one's own GiMeObj routine to replace the one provided
+  with the package. The `Driver.f95` program uses an 'include' for the file
+  `GiMeObj.f95` containing the model definition. The suggested way to use
   this feature with one's own code is to have one's GiMeObj routine in a file
   <whatever.f> and create a symobolic link:
 
-    ln -s <whatever.f> GiMeObj.f
+    `ln -s <whatever.f> GiMeObj.f95`
 
   The model subroutines GiMeObj can access files using Fortran logical unit
   numbers from 20 upward. This range in reseved for them and won't be used by
@@ -133,7 +128,9 @@ IMPLEMENTING YOUR OWN MODEL
   ecliptic reference frame, so the model must provides them in that reference
   frame.
 
---------------------------------------------------------------------------------
+---
+
+### API
 
 The API (list of arguments, arg_list_1 above) for GiMeObj is
 
@@ -142,12 +139,12 @@ The API (list of arguments, arg_list_1 above) for GiMeObj is
 
 with:
 
-INPUT
+#### INPUT
     filena: name of the file to be read in by GiMeObj the first time it
             is called (CH)
     seed  : Random number generator seed (I4)
 
-OUTPUT
+#### OUTPUT
     a           : semimajor axis (R8)
     e           : eccentricity (R8)
     inc         : Inclination with respect to J2000 ecliptic [rad] (R8)
@@ -184,5 +181,3 @@ OUTPUT
                    -10 : could not get all orbital elements, skip object
                    -20 : something went grossly wrong, should quit
 
-
---------------------------------------------------------------------------------
