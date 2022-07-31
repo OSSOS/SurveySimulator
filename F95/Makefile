@@ -31,7 +31,8 @@ CPPFLAGS =
 
 SUBDIRS := example
 TOPTARGETS := clean test
-GIMEOBJ ?= InnerBeltModel
+# use the GIMEOBJ from the command line or the default value of InnerHotModel
+GIMEOBJ ?= InnerHotModel
 
 $(TOPTARGETS): $(SUBDIRS)
 

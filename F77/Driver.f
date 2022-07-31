@@ -32,8 +32,7 @@ c SurveySubs.f and should not be used by GiMeObj or any other routine
 c that you may add to the driver. Please use logical unit numbers
 c starting from 20.
 c
-c For more information, please refer to ../README.first, ./README.src
-c and ./README.surveysubs.
+c For more information, please refer to README files for details.
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 

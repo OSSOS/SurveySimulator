@@ -40,8 +40,7 @@ program Driver
 !
 !     ln -s <whatever.f> GiMeObj.f
 !
-! For more information, please refer to ../README.first, ./README.src
-! and ./README.surveysubs.
+! For more information, please refer to README files in the source directory.
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 

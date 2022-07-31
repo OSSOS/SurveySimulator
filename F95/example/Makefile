@@ -1,4 +1,4 @@
-MODELS = InnerBeltModel ReadModelFromFile
+MODELS = InnerHotModel ReadModelFromFile
 
 %: %.sh
 

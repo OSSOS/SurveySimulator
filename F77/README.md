@@ -1,47 +1,59 @@
 
---------------------------------------------------------------------------------
+----
+## The F77 version of the SurveySimulator
+
+### Requirements
+- `gfortran`
+- `make`
+
+### Directory Structure
 
 This directory contains the source code for a GiMeObj routine that generates
-objects according to some parametric presciption of the outer Solar System
+objects according to some parametric prescription of the outer Solar System
 population being modeled, along with a Makefile to generate the executable 
 and an example subdirectory.
 
-The contents of this directory is:
+- README.md : (this file)  Describes "GiMeObj" routine
+- InnerHotModel.f : Example "GiMeObj" routine to generate objects via parametric prescription of inner belt
+- ReadModelFromFile.f        Defines "GiMeObj" routine to read a model from an input file.
+- _see README_surveysub.txt_ for descriptions of the other subroutines._
+- Makefile : Makefile to build the executable and link to the correct GeMeObj
+- \example : Contains files to run an example and check validity of results
 
-parametric ----- README.parametric (this file)  Describes "GiMeObj" routine
- \         \---- InnerHotModel.f                Example "GiMeObj" routine to
- |          \                                   generate objects via parametric
- |           \                                  prescription of inner belt
- |            \- Makefile                       Simplistic Makefile to build
- |                                              executable
- |
- \----example                                   Contains files to run an
-                                                example and check validity of
-                                                results
+---
 
---------------------------------------------------------------------------------
+### COMPILING
 
-COMPILING
+#### Makefile
   The simplest way to create the executable for the survey simulator is 
-  to type the following command at the prompt:
+  to type the following command at the prompt, to build the InnerHotModel:
 
-    make
+    make Driver GIMEOBJ=InnerHotModel
 
-  This will create an executable file called "SurveySimulator".  If you do
-  not have the gfortran compiler installed you will need to replace the
-  compiler command in the Makefile with the fortran compiler you use.
+  Or to build the ReadModelFromFile version:
 
-  One can compile the program directly. Because Driver.f 'includes' a
-  file 'GiMeObj.f' containing the model definition, one must first create 
-  a symbolic link pointing to the actual file "InnerHotModel.f":
+    make Driver GIMEOBJ=ReadModelFromFile
+
+  Make will create an executable file called `Driver` but first link to `InnerHotModel.f` or `ReadModelFromFile.f` to `GiMeOb.f` 
+  so that the `Driver` has the behaviour of the given model generator.
+
+#### Command line
+  One can compile the program directly because `Driver.f` uses the 'include' 
+  statement to bring in the file `GiMeObj.f` containing the model definition, 
+  one must first create a symbolic link pointing to the actual file `InnerHotModel.f`:
 
     ln -s InnerHotModel.f GiMeObj.f
     gfortran -O3 -o SurveySimulator Driver.f
 
-  Note: Driver.f SurveySubs.f in this directory are symbolically linked 
-  to the actual source codes in the src subdirectory.
+  or 
 
-RUNNING
+    ln -s ReadModelFromFile.f GiMeObj.f
+    gfortran -O3 -o SurveySimulator Driver.f
+
+
+
+### RUNNING
+
   The driver program provided with this package reads six parameters from the
   standard input:
 
@@ -64,7 +76,7 @@ RUNNING
 
     SurveySimulator < Driver.in
 
-  An example of this Driver.in file is in the parametric/example subdirectory.
+  See the `example` subdirectory for an example of Driver.in
 
   Execution generates two output files with the user specified names:
   - The first (called SimulDetect.dat in the example cases given) contains all
@@ -82,12 +94,11 @@ RUNNING
     reference "x" filter>, and the magnitude <mag> is given in the reference
     "x" filter.
 
---------------------------------------------------------------------------------
+---
 
-IMPLEMENTING YOUR OWN MODEL
-
-  As described in ../src/README.src, the workflow of the survey simulator
-  driver is as follows:
+## IMPLEMENTING YOUR OWN MODEL
+ 
+The basic execution structure of the Survey Simulator is:
 
     Loop (until told not to):
            call GiMeObj(arg_list_1)
@@ -97,44 +108,43 @@ IMPLEMENTING YOUR OWN MODEL
            Check for exit conditions
     Go back and loop
 
-  The GiMeObj routine is in charge of providing a single new object at each
+  The GiMeObj (see README_GiMeObj.md for additional details) routine is in charge of providing a single new object at each
   call, an object being defined by (see below) its orbital elements, the 
-  absolute magnitude of the object in some band filter "x", the colors of the 
+  absolute magnitude of the object in some band/filter "x", the colors of the 
   object, the opposition surge effect parameter (G in Bowell's formalism) and 
-  lightcurve parameters (period, peak-to-peak amplitude and phase at epoch). 
+  lightcurve parameters (period, peak-to-peak amplitude and the phase at the given epoch). 
   GiMeObj must accept a file name as input that tells the routine where to 
   find the needed parameters (if any) and also a random number generator seed. 
-  The package provides two different implementations of the GiMeObj. 
-   -The one in InnerHotModel.f shows an example of an analytical model that 
-    reads its parameters from a file and then generates objects as requested.
-   -The one in FromFileModel.f will read objects from a file, return them 
-    one at a time and signal when it has reach the end of the file. 
+  The package provides two different implementations of the GiMeObj.
 
-  One can easily create one's own GiMeObj routine to replace the ones provided
-  with the package. The Driver.f program uses an 'include' for the file
-  'GiMeObj.f' containing the model definition. The suggested way to use
-  this feature with one's own code is to have one's GiMeObj routine in a file
-  <whatever.f> and create a symobolic link:
+- The one in InnerHotModel.f shows an example of an analytical model that reads its parameters from a file and then generates objects as requested.
+- The one in ReadModelFromFile.f will read objects from a file, return them one at a time and signal when it has reach the end of the file. 
+
+One creates one's own GiMeObj routine to replace the ones provided with the package. 
+The `Driver.f` program contains an 'include' for the file
+`GiMeObj.f` containing the model definition. The suggested way to use 
+this feature with one's own code is to have one's GiMeObj routine in a file
+<whatever.f> and create a symobolic link:
 
     ln -s <whatever.f> GiMeObj.f
 
-  The model subroutines GiMeObj can access files using Fortran logical unit
-  numbers from 20 upward. This range in reseved for them and won't be used by
-  the drivers nor SurveySubs routines.
+The model subroutines GiMeObj can access files using Fortran logical unit
+numbers from 20 upward. This range in reseved for them and won't be used by
+the drivers nor SurveySubs routines.
 
-  It is good practice that when first started, the GiMeObj routine writes a
-  file describing the model used, the version and the date of the routine.
+It is good practice that when first started, the GiMeObj routine writes a
+file describing the model used, the version and the date of the routine.
 
-  Since this routine is called once for every object created, it needs to get
-  all the required parameters once when it is called the first time, then save
-  these values for future use.
+Since this routine is called once for every object created, it needs to get
+all the required parameters once when it is called the first time, then save
+these values for future use.
 
-  The survey simulator expects orbital elements with respect to barycentric
-  ecliptic reference frame, so the model must provides them in that reference
-  frame.
+The survey simulator expects orbital elements with respect to barycentric
+ecliptic reference frame, so the model must provides them in that reference
+frame.
 
---------------------------------------------------------------------------------
-
+---
+### API
 The API (list of arguments, arg_list_1 above) for GiMeObj is
 
     (filena, seed, a, e, inc, node, peri, M, epoch, h, color,
@@ -142,12 +152,12 @@ The API (list of arguments, arg_list_1 above) for GiMeObj is
 
 with:
 
-INPUT
+#### INPUT
     filena: name of the file to be read in by GiMeObj the first time it
             is called (CH)
     seed  : Random number generator seed (I4)
 
-OUTPUT
+#### OUTPUT
     a           : semimajor axis (R8)
     e           : eccentricity (R8)
     inc         : Inclination with respect to J2000 ecliptic [rad] (R8)
@@ -185,4 +195,4 @@ OUTPUT
                    -20 : something went grossly wrong, should quit
 
 
---------------------------------------------------------------------------------
+---

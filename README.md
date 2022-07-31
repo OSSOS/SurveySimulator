@@ -1,5 +1,16 @@
-
 ## Survey Simulator 2.0  Documentation
+
+
+The Survey Simulator (sometimes compiled as `Driver` or `SSim` or `SurveySimulator`) takes a model of 
+the orbits and physical parameters of objects in the outer solar system and determines which model objects a 
+particular survey would detect and track. 
+
+The user provides the model and files that describe the characterization of the survey of interest.
+For a description of the how to generate a model see the `F95` or `F77` or `python` subdirectoris, 
+depending on your preferred language.  Each of these contains and `example` subdirectory that 
+provides examples / clues have how to use the Survey Simulator in that language.
+
+For descriptions of the formats of the characterization files see the `Surveys` sub-directory.
 
 ---
 ### Licence
@@ -20,7 +31,7 @@ The primary contact for the Survey Simulator code is:
   
 
 Cite **Petit, J.-M., et al., AJ, Vol 142 ID 131 (2011)** if you make 
-use of the SurveySimulator or the CFEPS L7SyntheticModel-v09 Kuiper belt model.
+use of the SurveySimulator, or the CFEPS L7SyntheticModel-v09 Kuiper belt model.
 
 If you make use of the Survey characterizations and detections please cite
 the appropriate survey paper:  
@@ -62,12 +73,12 @@ observational biases, the more accurate the results of the SurveySimulator
 will be. Characterizations include the observing dates and pointing
 locations of the discovery observations along with an accurate
 estimate of the detection efficiency as a function of apparent
-magnitude in the filter of the survey and an object's rate of motion
+magnitude in the filter of the survey, and an object's rate of motion
 on the sky at the time of each potentail observation.
 
 ### The Simulation Process
 The OSSOS SurveySimulator _draws_ objects from a _model_
-and computes if the model object would have been detected by the
+and computes if the _model_ object is detected by the
 survey(s) defined by the survey configuration files. 
 Using the survey configuration settings the Simulator computes 
 if the model object is inside one of the imaged fields, bright enough to be detected, 
@@ -96,7 +107,7 @@ characterization was used as input into the SurveySimulator.
 ## Package Contents  
 The SurveySimulator-2.0 release consists of a Driver program, subroutines that
 define trans-neptunian or other outer Solar System objects (either from a 
-parametric model or a lookup table), data that describe the CFEPS, OSSOS, MA and some other survey 
+parametric model, or a lookup table), data that describe the CFEPS, OSSOS, MA and some other survey 
 characterizations, and a list of the real classified objects discovered during 
 the CFEPS project (to be compared to the output of the Survey Simulator).
 
@@ -142,7 +153,7 @@ documentation for the `ossssim` package to details.
 
 ### Models/
 #### Models/L7model-3.0-9.0  
-Contains the CFEPS L7 model of the debiased Kuiper Belt) as an example input file for 
+Contains the CFEPS L7 model of the debiased Kuiper Belt as an example input file for 
 the survey simulator. See `ReadModelFromFile.f{95}` for example code that uses 
 this file as input.
 #### Models/InnerHot.in 
@@ -169,7 +180,7 @@ OSSOS, but SEE IMPORTANT INFORMATION in that subdir's README.allsurveys file
 about how care must be taking when combining the surveys.
 
 #### Surveys/All_r_Surveys
-Similar to _All_Surveys_ but restricted to objects detected with the
+Similar to _All_Surveys_ but restricted to those objects detected with the
 MegaPrime r filter (OSSOS, Alexandersen, HiLat and L3h block from CFEPS).
 
 ---

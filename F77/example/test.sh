@@ -24,7 +24,7 @@ ndo=`tail -3 ${cmd}-check.dat | head -1 | awk '{printf "%10d", $6}'`
 ndc=`tail -2 ${cmd}-check.dat | head -1 | awk '{print $5}'`
 ntc=`tail -1 ${cmd}-check.dat | awk '{print $6}'`
 
-if [ $a != $ac -o $s != $sc ]; then
+if [ $a != $ac ] || [ $s != $sc ]; then
     echo "Error: first detection doesn't match!"
     exit 1
 fi
@@ -32,11 +32,11 @@ if [ $no != $ndo ]; then
     echo "Error: wrong number of objects!"
     exit 1
 fi
-if [ $nd -gt $(($ndc + 10)) -o $nd -lt $(($ndc - 10)) ]; then
+if [ $nd -gt $(($ndc + 10)) ] || [ $nd -lt $(($ndc - 10)) ]; then
     echo "Error: wrong number of detections!"
     exit 1
 fi
-if [ $nt -gt $(($ntc + 10)) -o $nt -lt $(($ntc - 10)) ]; then
+if [ $nt -gt $(($ntc + 10)) ] || [ $nt -lt $(($ntc - 10)) ]; then
     echo "Error: wrong number of tracking!"
     exit 1
 fi
