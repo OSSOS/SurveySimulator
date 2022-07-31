@@ -4,15 +4,13 @@ To run the SSim on CANFAR we need to make a `docker` container.  There are `dev`
 
 
 ## Testing/Development build and run
-To build a development version of the container that you will run locally to ensure everything is working.  You can also use this conatiner to run LSST-Pipeline analysis locally.
+To build a development version of the container that you will run locally to ensure everything is working.  
+You can also use this conatiner to run SSim analysis locally.
 ```
-make dev [ VERSION=v11 ]
-# Any lsstsqre version tag will do, eg. d_latest, w_latest etc.
-docker run --user testuser --interactive --tty --ip 0.0.0.0 --rm --env DISPLAY=host.docker.internal:0 images.canfar.net/lsst/science_pipeline:o_latest xterm  -fg white -bg black -title science_pipeline:o_latest
+make dev
+docker run --user testuser --interactive --tty --ip 0.0.0.0 --rm --env DISPLAY=host.docker.internal:0 images.canfar.net/uvickbos/ssim:python xterm -fg white -bg black -title ssim:python
 ```
-This will launch an xterm running as testuser with access to the lsst pipeline environment. 
-
-The `testuser` account has copied to its home directory the `docker_test.sh` script.  Run this script to test your install. (Take a few minutes.) 
+This will launch an xterm running as testuser with access to the Survey Simulator.
 
 ### Note on macOS and X11  
 To use the above testuser on OS-X requires having X11 running. On OS-X do the following:
@@ -26,16 +24,14 @@ To use the above testuser on OS-X requires having X11 running. On OS-X do the fo
 This is the version we will load to `images.canfar.net`.  The `make` command builds the production versionof the container and pushes to `CANFAR` 
 You may need to do a `docker login` before running this build step, see https://github.com/opencadc/skaha/tree/master/skaha-containers#publishing
 
-To make a full suite of releases deploy each version seperately.
+To make a release to `canfar.net` run in deploy mode.
 
 ```
-make deploy VERSION=o_latest
-make deploy VERSION=w_latest
-make deploy VERSION=d_latest
-
+make deploy 
 ```
+
 ### Tag on images.canfar.net ###
-Once you have loaded the images log into image.canfar.net and tag them ask `desktop-app` images.
+Once you have loaded the images log into `images.canfar.net` and tagged them as `desktop-app` images.
 
 
 
