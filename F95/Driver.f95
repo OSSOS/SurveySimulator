@@ -93,7 +93,7 @@ program Driver
   open (unit=lun_h, file=det_outfile, status='new', err=9500)
   open (unit=lun_t, file=trk_outfile, status='new', err=9501)
 
-! copy header of model file into trk file
+! copy header of model file into trk and detect files
   open (unit=12, file=distri_file, status='old', err=9500)
 222 continue
   read (12, '(a)', err=9999) line
@@ -221,7 +221,7 @@ program Driver
 
   call exit (0)
 
-9000 format (f8.3,1x,f6.3,1x,10(f8.3,1x),i2,2(1x,f8.3), &
+9000 format (f8.3,1x,f6.3,1x,4(f8.3,1x),f8.2,1x,5(f8.3,1x),i2,2(1x,f8.3), &
           1x,f6.2,1x,f8.5,1x,f8.4,1x,a6,1x,a)
 9010 format (6(f9.4,1x),f5.2,1x,3(f9.4,1x),3(f5.2,1x),a)
 
