@@ -309,7 +309,7 @@ contains
     fp%f_ptr => onecomp
     call incdism (seed, nparam, param, incmin, incmax, o_m%inc, &
          7, ierr, fp)
-    commen = 'h inner'
+    commen = 'h-inner'
     nchar = 7
 !
 ! Rejects if inclination in the secular instability zone
