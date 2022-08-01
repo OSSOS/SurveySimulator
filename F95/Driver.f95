@@ -119,9 +119,9 @@ program Driver
   write (lun_h, '(''# Survey: name of the block'')')
   write (lun_h, '(''#'')')
   write (lun_h, '(a,a,a,a)') &
-       '#   a      e        i       node     peri      M     H_int ', &
+       '#   a      e        i       node     peri      M       H_int ', &
        '    q         r      delta', &
-       '    mrand  color   flag     m_int    H_rand     eff   RA(H)  ', &
+       '    mrand    color flag m_int    H_rand    eff   RA(H)  ', &
        '   DEC    Surv. Comments'
 
 
@@ -130,8 +130,8 @@ program Driver
        date(1:4)//'-'//date(5:6)//'-'//date(7:8)//'T'  &
        //time(1:2)//':'//time(3:4)//':'//time(5:10), zone
   write (lun_t, '(a,a)') &
-       '#   a      e        i      Node     peri       M       H_int     ', &
-       '    q      r    delta h_rand m_rand color Comments'
+       '#   a           e        i      Node     peri       M       H_int     ', &
+       '   q      r       delta  h_rand m_rand color Comments'
 
 ! Initialize counters
   n_hits = 0
