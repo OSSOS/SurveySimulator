@@ -1,5 +1,6 @@
 #!/bin/bash
 cmd=$1
+language=$2
 src_dir=$(dirname ${1})
 cmd=$(basename ${1})
 echo "Testing ${cmd}"
@@ -20,19 +21,22 @@ if [ $? != 0 ]; then
   exit ${status}
 fi
 
-a=`head -10 SimulDetect.dat | tail -1 | awk '{print $1}'`
-s=`head -10 SimulDetect.dat | tail -1 | awk '{print $15}'`
+first_detect_line=$(grep -v "^#" SimulDetect.dat | head -1)
+a=`echo ${first_detect_line} | awk '{print $1}'`
+s=`echo ${first_detect_line} | awk '{print $7}'`
 no=`tail -3 SimulDetect.dat | head -1 | awk '{printf "%10d", $6}'`
 nd=`tail -2 SimulDetect.dat | head -1 | awk '{print $5}'`
 nt=`tail -1 SimulDetect.dat | awk '{print $6}'`
-ac=`head -10 ${cmd}-check.dat | tail -1 | awk '{print $1}'`
-sc=`head -10 ${cmd}-check.dat | tail -1 | awk '{print $15}'`
-ndo=`tail -3 ${cmd}-check.dat | head -1 | awk '{printf "%10d", $6}'`
-ndc=`tail -2 ${cmd}-check.dat | head -1 | awk '{print $5}'`
-ntc=`tail -1 ${cmd}-check.dat | awk '{print $6}'`
+first_check_line=$(grep -v "^#" ${cmd}-check-${language}.dat | head -1)
+ac=`echo ${first_check_line} | awk '{print $1}'`
+sc=`echo ${first_check_line} | awk '{print $15}'`
+ndo=`tail -3 ${cmd}-check-${language}.dat | head -1 | awk '{printf "%10d", $6}'`
+ndc=`tail -2 ${cmd}-check-${language}.dat | head -1 | awk '{print $5}'`
+ntc=`tail -1 ${cmd}-check-${language}.dat | awk '{print $6}'`
 
 if [ $a != $ac -o $s != $sc ]; then
     echo "Error: first detection doesn't match!"
+    echo "$a != $ac, $s != $sc"
     exit 1
 fi
 if [ $no != $ndo ]; then

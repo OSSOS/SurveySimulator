@@ -1,4 +1,5 @@
 MODELS = InnerHotModel ReadModelFromFile
+LANGUAGE = F95
 
 %: %.sh
 
@@ -6,7 +7,7 @@ test: clean $(MODELS)
 
 $(MODELS):
 	$(MAKE) -C ../ Driver GIMEOBJ=$@
-	@./test.sh ../$@
+	@./test.sh ../$@ $(LANGUAGE)
 
 .PHONY: $(MODELS)
 
