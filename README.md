@@ -53,7 +53,7 @@ The Survey Simulator itself provides enables the 'biasing' of a model of
 the Kuiper Belt in a way that mimics the observational biases in a survey.
 
 ### Quick Start
-Look in `Simulator/F{77|95Z}/fortran/exmaple/README.parametric` for an example of how run Simulator.
+Look in `Simulator/F{77|95}/fortran/exmaple/README.parametric` for an example of how to run Simulator.
 
 ####  Survey Characterization
 The parameters that describe the observational biases are provided by the
