@@ -1,3 +1,4 @@
+
 ## Survey Simulator 2.0  Documentation
 
 
@@ -64,7 +65,7 @@ The Survey Simulator itself provides enables the 'biasing' of a model of
 the Kuiper Belt in a way that mimics the observational biases in a survey.
 
 ### Quick Start
-Look in `F{77|95Z}/exmaple/README.parametric` for an example of how run Simulator.
+Look in `Simulator/F{77|95}/fortran/exmaple/README.parametric` for an example of how to run Simulator.
 
 ####  Survey Characterization
 The parameters that describe the observational biases are provided by the
@@ -73,12 +74,12 @@ observational biases, the more accurate the results of the SurveySimulator
 will be. Characterizations include the observing dates and pointing
 locations of the discovery observations along with an accurate
 estimate of the detection efficiency as a function of apparent
-magnitude in the filter of the survey, and an object's rate of motion
+magnitude in the filter of the survey and an object's rate of motion
 on the sky at the time of each potentail observation.
 
 ### The Simulation Process
 The OSSOS SurveySimulator _draws_ objects from a _model_
-and computes if the _model_ object is detected by the
+and computes if the model object would have been detected by the
 survey(s) defined by the survey configuration files. 
 Using the survey configuration settings the Simulator computes 
 if the model object is inside one of the imaged fields, bright enough to be detected, 
@@ -107,12 +108,12 @@ characterization was used as input into the SurveySimulator.
 ## Package Contents  
 The SurveySimulator-2.0 release consists of a Driver program, subroutines that
 define trans-neptunian or other outer Solar System objects (either from a 
-parametric model, or a lookup table), data that describe the CFEPS, OSSOS, MA and some other survey 
+parametric model or a lookup table), data that describe the CFEPS, OSSOS, MA and some other survey 
 characterizations, and a list of the real classified objects discovered during 
 the CFEPS project (to be compared to the output of the Survey Simulator).
 
 The common source codes for the survey simulator, available as F77 or F95.
-The F77/ and F95/ directories contain the Fortran code that is the simulator.  
+The F77/fortan and F95/fortran directories contain the Fortran code that is the simulator.  
 There are also F77/python and F95/python that provide examples of building Python callable
 modules from the two fortran branches.
 The F95 and F77 versions are identitical, just different language implementation.
@@ -122,23 +123,23 @@ The architecture of the SurveySimulator is to provide a subroutine named GiMeObj
 (for examples see the `InnerHotModel.f{95}` or `ReadModelFromFile.f{95}` source code)
 when compiling the Driver program.  The simulator is run by calling *Driver*.
 
-See F95/example or F77/example for examples of how
+See Simulator/F95/fortran/example or Simulator/F77/fortan/example for examples of how
 to compile (e.g. `make InnerHotModel`) a survey simulator.
 
-### Simulator
-#### {F95|F77}/ReadModelFromFile.f 
+### Simulator/
+#### Simulator/{F95|F77}/fortran/ReadModelFromFile.f 
 This contains the source code for a "GiMeObj" routine that reads 
 an (orbital+size+colour+lightcurve) model from a file (lookup table).
 Use `make ReadModelFromFile` to build a `Driver` program that can be used 
 to run simulation of observing the Kuiper belt model described in `ReadModelFromFile.f`. 
-#### {F95|F77}/InnerHotModel.f 
+#### Simulator/{F95|F77}/fortran/InnerHotModel.f 
 Contains the source code for a GiMeObj routine that generates
 objects according to some parametric prescription. 
 Use `make InnerHotModel` to build a `Driver` program that can be used 
 to run simulation of observing the Kuiper belt model described in `InnerHotModel.f`. 
 See the `example` directories to understand how to use the Simulator.
 
-#### F{77|95}/example
+#### Simulator/F{77|95}/fortran/example
 Examples of how to run the Simulator.
 
 ### Simulator/{F95|F77}/python
@@ -146,14 +147,15 @@ Contains Makefiles that build a python module that can be used to Drive the
 survey simulator.  We provide a F77 and F95  module building capacity. 
 See `README.python` for details.
 
-### python
-This directory contains the python module that can be used to drive a
-simulation insetad of writing GeMeObj routines in fortran. See the 
-documentation for the `ossssim` package to details.
+### Python
+This directory contains the source code for a GiMeObj routine that generates
+objects according to some parametric presciption, along with a Makefile to
+generate the executable. This example uses the Driver.py Python program as
+driver instead of the usual Fortran program Driver.f.
 
 ### Models/
 #### Models/L7model-3.0-9.0  
-Contains the CFEPS L7 model of the debiased Kuiper Belt as an example input file for 
+Contains the CFEPS L7 model of the debiased Kuiper Belt) as an example input file for 
 the survey simulator. See `ReadModelFromFile.f{95}` for example code that uses 
 this file as input.
 #### Models/InnerHot.in 
@@ -180,7 +182,7 @@ OSSOS, but SEE IMPORTANT INFORMATION in that subdir's README.allsurveys file
 about how care must be taking when combining the surveys.
 
 #### Surveys/All_r_Surveys
-Similar to _All_Surveys_ but restricted to those objects detected with the
+Similar to _All_Surveys_ but restricted to objects detected with the
 MegaPrime r filter (OSSOS, Alexandersen, HiLat and L3h block from CFEPS).
 
 ---
