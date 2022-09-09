@@ -290,7 +290,7 @@ class RosePlot:
                          s=5,
                          c='c')
 
-    def add_scale_rings(self, radii: list = (10, 30, 50, 100)) -> None:
+    def add_scale_rings(self, radii: list = [10, 30, 50, 100]) -> None:
         """
         Add scale rings to the plot.
 
@@ -300,10 +300,10 @@ class RosePlot:
         theta = numpy.arange(0, 2*numpy.pi, 2*numpy.pi/1000)
         for guide_circle in radii:
             r = numpy.ones(len(theta))*guide_circle
-            self.ax1.plot(theta, r, ls=':', ec='b')
+            self.ax1.plot(theta, r, ls=':')
             self.ax1.annotate(f"{guide_circle} au", (0, guide_circle+1),
                               color='b', horizontalalignment='center',
-                              verticalalignment='centre_baseline')
+                              verticalalignment='center_baseline')
 
     def add_model(self, model: ModelFile, mc: str = 'k', ms: float = 1.,
                   sample_size: int = None, alpha: float = 1.0) -> None:

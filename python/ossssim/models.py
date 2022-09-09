@@ -19,7 +19,7 @@ from numpy import random
 from . import definitions
 from . import distributions
 
-RE_FLOAT = re.compile('\d+\.?\d*[de]?\d*')
+RE_FLOAT = re.compile('[+-]?\d+\.?\d*[de]?\d*')
 
 
 def get_floats_in_str(line):
@@ -144,7 +144,7 @@ class ResultsFile:
             f_detect.write(f"# Epoch of elements: JD = {self.epoch}\n")
             f_detect.write(f"# Longitude of Neptune: longitude_neptune = {self.longitude_neptune}\n")
             if self.colors is not None:
-                color_str = [f"{c.to(units.mag).value:5.2f} " for c in self.colors]
+                color_str = " ".join([f"{c.to(units.mag).value:5.2f} " for c in self.colors])
                 f_detect.write(f"# Colors = {color_str}\n")
             f_detect.write(f"#\n")
             date = time.strftime("%Y-%m-%dT%H:%M:%S.000  %z")
@@ -224,7 +224,7 @@ class ModelFile(Iterable):
         Epoch of coordinates of orbit read from model file header.
         """
         if self._epoch is None:
-            self._epoch = Time(float(self.header['JD'].replace('d', 'e')),
+            self._epoch = Time(float(self.header['JD'][0].replace('d', 'e')),
                                format='jd').jd * units.day
         return self._epoch
 
@@ -234,7 +234,7 @@ class ModelFile(Iterable):
         Longitude of Neptune at epoch
         """
         if self._longitude_neptune is None:
-            self._longitude_neptune = float(self.header['lambdaN'].replace('d', 'e')) * units.radian
+            self._longitude_neptune = float(self.header['lambdaN'][0].replace('d', 'e')) * units.radian
         return self._longitude_neptune
 
     @property
@@ -243,7 +243,9 @@ class ModelFile(Iterable):
         if self._colors is None:
             # pickup the
             self._colors = list(definitions.COLORS.values())
-            _header_colors = get_floats_in_str(self.header.get('colors', ""))
+            _header_colors = []
+            for color in self.header.get('Colors', ''):
+                _header_colors.append(get_floats_in_str(color)[0] * units.mag)
             for idx in range(len(_header_colors)):
                 self._colors[idx] = _header_colors[idx]
         return self._colors
@@ -286,7 +288,7 @@ class ModelFile(Iterable):
                         continue
                     if '=' in line:
                         keyword = line.split('=')[0].split()[-1]
-                        value = line.split('=')[1].strip().split()[0]
+                        value = line.split('=')[1].strip().split()
                         self._header[keyword] = value
                     previous_line = line
                     self.f_loc = f_obj.tell()
@@ -355,6 +357,9 @@ class ModelFile(Iterable):
             if definitions.colunits[colname] is not None:
                 value = value * definitions.colunits[colname]
             row[colname] = value
+
+        if 'colors' not in row:
+            row['colors'] = self.colors
         return row
 
     @property

@@ -6,9 +6,9 @@ import os
 
 logging.info("Building the F95 modules")
 make=shutil.which('make')
-F95_DIR="../F95"
+F95_DIR="../fortran/F95"
 LIB_DIR="ossssim/lib"
-subprocess.run([make, "Modules"], cwd=F95_DIR)
+subprocess.run([make, "-s", "Modules"], cwd=F95_DIR)
 
 for filename in [ "SurveySubsF95.py", "_SurveySubsF95.so"]:
      try:
@@ -20,4 +20,5 @@ for filename in [ "SurveySubsF95.py", "_SurveySubsF95.so"]:
 setup(name='ossssim',
       version='0.1',
       packages=find_packages(exclude=['test', 'examples']),
+      test_suite="tests",
       include_package_data=True )

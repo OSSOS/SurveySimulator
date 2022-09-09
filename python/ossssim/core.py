@@ -1,5 +1,6 @@
 """
 The OSSOS Survey Simulator module.  This is front-end for the OSSSim.  The primary OSSSim is writen in f95.
+The OSSOS Survey Simulator module.  This is front-end for the OSSSim.  The primary OSSSim is writen in f95.
 """
 import random
 from astropy import units as u
@@ -110,7 +111,6 @@ class OSSSSim:
                 setattr(o_m, colname.lower(), value)
 
         # attempt to detect this object
-        # colors = self.colors
         if 'colors' in row.keys():
             colors = [x.to(u.mag).value for x in row['colors']]
         else:
@@ -141,7 +141,7 @@ class OSSSSim:
                                            self.characterization_directory,
                                            seed)
         if ierr != 0:
-            raise IOError("SSim failed with error code: {ierr}")
+            raise IOError(f"SSim failed with error code: {ierr}")
 
         row['delta'] *= u.au
         row['r'] *= u.au

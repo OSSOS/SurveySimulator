@@ -1,5 +1,7 @@
 """
 Create a ring of objects representing theoretical populations of objects in the distant solar system.
+
+When run as a script, uses CFEPS survey characterization, runs until 28 sources have been detected in this ring and plots the result.
 """
 from ossssim.models import Parametric
 from ossssim import OSSSSim, DetectFile, ModelFile, definitions, plotter
@@ -22,6 +24,7 @@ class Ring(Parametric):
         self.ring_center = ring_centre
         self.ring_width = ring_width
 
+
     @property
     def a(self):
         """
@@ -29,6 +32,8 @@ class Ring(Parametric):
         """
         return self.distributions.normal(self.ring_center.to('au').value,
                                          self.ring_width.to('au').value) * units.au
+
+
 
     @property
     def e(self):
@@ -105,13 +110,13 @@ def face_down_plot(model_file: str, detect_file: str) -> None:
     plot = plotter.RosePlot(definitions.Neptune['Longitude'])
     plot.add_model(ModelFile(model_file), mc='k', ms=0.05, alpha=0.1)
     plot.add_model(ModelFile(detect_file), ms=5, mc='g')
-    plot.plot_rings()
+    plot.add_scale_rings()
     plot.show()
 
 
 if __name__ == '__main__':
     run('RingModel.dat', 'RingDetect.dat',
-        'Surveys/CFEPS',
+        '../tests/data/CFEPS',
         123456789,
         28)
     face_down_plot('RingModel.dat', 'RingDetect.dat')
