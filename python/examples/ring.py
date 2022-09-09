@@ -110,7 +110,7 @@ def face_down_plot(model_file: str, detect_file: str) -> None:
     plot = plotter.RosePlot(definitions.Neptune['Longitude'])
     plot.add_model(ModelFile(model_file), mc='k', ms=0.05, alpha=0.1)
     plot.add_model(ModelFile(detect_file), ms=5, mc='g')
-    plot.add_scale_rings()
+    # plot.add_scale_rings()
     plot.show()
 
 
