@@ -29,7 +29,6 @@ FFLAGP	= -O3
 CFLAGS  = 
 CPPFLAGS = 
 
-SUBDIRS := example
 TOPTARGETS := clean test
 # use the GIMEOBJ from the command line or the default value of InnerHotModel
 GIMEOBJ ?= InnerHotModel
@@ -42,6 +41,9 @@ $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
 all:	Driver $(SUBDIRS)
+
+test: 
+	$(MAKE) -s -C ../tests test LANGUAGE=F95
 
 %.fpp :	%.f95
 	$(FPP) $< -o $@

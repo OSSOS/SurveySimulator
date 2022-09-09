@@ -16,11 +16,11 @@ class OSSSIMTest(unittest.TestCase):
     def test_simulate(self):
         # loop over the model file until we have a detection and then compare the detected row values to the test row
         for row in self.model:
-            row = self.osssim.simulate(row, seed=self.seed, epoch=self.model.epoch)
-            if row['flag'] > 0:
-                for key in self.result_row:
-                    test_value = self.result_row[key]
-                    result_value = row[key]
+            result_row = self.osssim.simulate(row, seed=self.seed, epoch=self.model.epoch)
+            if result_row['flag'] > 0:
+                for key in row:
+                    test_value = row[key]
+                    result_value = result_row[key]
                     if isinstance(test_value, Quantity):
                         test_value = test_value.to(ossssim.definitions.colunits[key]).value
                         result_value = result_value.to(ossssim.definitions.colunits[key]).value

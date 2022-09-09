@@ -94,7 +94,7 @@ program Driver
   open (unit=lun_t, file=trk_outfile, status='new', err=9501)
 
 ! copy header of model file into trk and detect files
-  open (unit=12, file=distri_file, status='old', err=9500)
+  open (unit=12, file=distri_file, status='old', err=9503)
 222 continue
   read (12, '(a)', err=9999) line
   if ( line(1:1) .eq. '#' ) then
@@ -225,12 +225,16 @@ program Driver
           1x,f6.2,1x,f8.5,1x,f8.4,1x,a6,1x,a)
 9010 format (6(f9.4,1x),f5.2,1x,3(f9.4,1x),3(f5.2,1x),a)
 
+9503 continue
+  write (screen, *) 'File === "', distri_file, '" Does not exit?'
+  call exit(-1)
+
 9500 continue
-  write (screen, *) 'File "', det_outfile, '" already exists. '
+  write (screen, *) 'File --- "', det_outfile, '" already exists. '
   goto 9502
 
 9501 continue
-  write (screen, *) 'File "', trk_outfile, '" already exists. '
+  write (screen, *) 'File +++ "', trk_outfile, '" already exists. '
   goto 9502
 
 9502 continue

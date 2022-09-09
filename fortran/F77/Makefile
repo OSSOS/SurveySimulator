@@ -3,18 +3,15 @@
 ### also works with ifort and f77
 FC = gfortran
 
-SUBDIRS := example
-TOPTARGETS := all clean test
+TOPTARGETS := all clean test 
 GIMEOBJ ?= InnerHotModel
 
-#$(TOPTARGETS): $(SUBDIRS)
-
-$(SUBDIRS):
-	$(MAKE) -C $@ $(MAKECMDGOALS)
-
-.PHONY: $(TOPTARGETS) $(SUBDIRS)
+.PHONY: $(TOPTARGETS) 
 
 all: Driver
+
+test:
+	$(MAKE) -s -C ../tests test LANGUAGE=F77
 
 %.o : %.f
 	$(FC) $(FFLAGS) -c $<

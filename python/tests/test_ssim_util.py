@@ -10,13 +10,13 @@ class SSimModelFileTest(unittest.TestCase):
         self.longitude_neptune = 5.489 * units.radian
         self.colors = [float(x.replace("d","e")) for
                        x in "0.0d0 -0.70d0 -1.2d0 -1.7d0 0.8d0 0.5d0  0.1d0 -0.8d0 -1.2d0 0.0d0".split()] * units.mag
-        self.colnames = "  a      e     inc     node    peri    m       H      dist     comp      j  k".split()
+        self.colnames = "  a      e     inc     node    peri    M       H      dist     comp      j  k".split()
         self.row = {'a':     88.253*units.au,
                     'e':      0.564,
                     'inc':    8.807*units.degree,
                     'node': 316.126*units.degree,
                     'peri': 286.639*units.degree,
-                    'm':     60.537*units.degree,
+                    'M':     60.537*units.degree,
                     'H':      8.05*units.mag,
                     'dist':  90.70*units.au,
                     'comp': 'resonant',
