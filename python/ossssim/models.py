@@ -18,7 +18,9 @@ from numpy import random
 
 from . import definitions
 from . import distributions
-
+from .lib import SurveySubsF95
+from . import definitions
+T_ORB_M_UNITS = definitions.T_ORB_M_UNITS
 RE_FLOAT = re.compile('[+-]?\d+\.?\d*[de]?\d*')
 
 
@@ -354,7 +356,7 @@ class ModelFile(Iterable):
                     value = 0
                 else:
                     raise ex
-            if definitions.colunits[colname] is not None:
+            if definitions.colunits.get(colname, None) is not None:
                 value = value * definitions.colunits[colname]
             row[colname] = value
 
