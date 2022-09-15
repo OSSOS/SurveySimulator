@@ -12,4 +12,4 @@ The modeles modules contains classes to build models to pass to the Simulator, s
 """
 from .core import *
 from .models import DetectFile, ModelFile, ModelOutputFile
-from .plotter import RosePlot
+from .ephem import Ephem
