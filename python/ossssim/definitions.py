@@ -12,6 +12,22 @@ LIGHT_CURVE_PARAMS = {
     'amplitude': 0.0 * units.mag,
 }
 
+u = units
+
+
+# these are the units that the SurveySubF95 module (ie the fortran code) expects elements to be in.
+T_ORB_M_UNITS = {'a': u.au,
+                 'e': u.dimensionless_unscaled,
+                 'inc': u.radian,
+                 'node': u.radian,
+                 'Node': u.radian,
+                 'peri': u.radian,
+                 'M': u.radian,
+                 'epoch': u.day
+                 }
+
+
+
 # values here are from the CFEPS L4j block
 # 0.025 is the minimum unceratainty
 # 0.272 is the uncertainty at 24.3
@@ -64,7 +80,9 @@ colunits = {'a': units.au,
             'Name': None,
             'n': None,
             'Q': units.au,
-            'P': units.year
+            'P': units.year,
+            'epoch': units.day,
+            'Epoch': units.day,
             }
 
 COLUMN_WIDTH = 10
