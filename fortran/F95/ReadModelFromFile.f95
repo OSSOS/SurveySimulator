@@ -170,7 +170,7 @@ contains
          n_obj_max = 100,       &! Maximum number of objects we can read at once
          lun_d = 20,            &! Logical unit number for data file reading
          lun_ll = 21,           &! Logical unit number for logging
-         screen = 6              ! Logical unit number for screen writing
+         screen = 0              ! Logical unit number for screen writing
     real (kind=8), parameter :: &
          Pi = 3.141592653589793238d0, &! Pi
          TwoPi = 2.0d0*Pi,         &! 2*Pi
@@ -250,8 +250,14 @@ contains
              write (screen, *) 'Unable to open ', filena
           else if (ierr_d == 30) then
               write (screen, *) 'End of model file ', filena, ' reached'
-             end_of_file = .true.
-             goto 100
+              if ( n_obj <= 0 ) then
+                 write (0, *) 'No objects from last read of', filena
+                 ierr = 100
+                 return
+              else
+                 end_of_file = .true.
+                 goto 100
+              end if
           else
              write (screen, *) 'Unknown return code in read_obj:', ierr_d
           end if
