@@ -321,4 +321,66 @@ contains
 
     end function strip_comment
 
+    subroutine read_jpl_csv(iunit, jd, pos, vel, ierr)
+      ! lookup line in ephemeris file (pointed to by iunit) with data close to jd and then use velocity
+      ! to adjust the pos values to that requested.
+      
+      implicit none
+      
+      integer, intent(in) :: iunit
+      real(kind=8), intent(in) :: jd
+      type(t_v3d), intent(out) :: pos, vel
+      integer, intent(out) :: ierr
+      
+      character(len = 512) :: line
+      character(len = 30) :: date
+      real(kind=8) ejd
+      integer :: iend, header_offset, ferr, offset
+      logical :: read_header
+      
+      
+      ! only read the header the first time we are called
+      data read_header /.true./
+      data header_offset /0/
+      save read_header, header_offset
+      
+      
+      ierr = 0
+      if (read_header) then
+         do
+            read(iunit, '(A512)', end=999) line
+            iend = len_trim(line)
+            if ( line == '$$SOE' ) then
+               read_header = .false.
+               header_offset = FTELL(iunit)
+               exit
+            end if
+         end do
+      end if
+      
+      ! Loop through the ephemeris lines to get to the desired JD
+      ! starting from line after the header
+      offset = header_offset - FTELL(iunit) 
+      CALL FSEEK(iunit, offset, 1, ferr)
+      do
+         read(iunit, '(A512)', end=999) line
+         iend = len_trim(line)
+         if ( line == '$$EOE' ) then
+            write (0,*) "Date ", jd," outside range of JPL Ephemeris provided."
+            ierr = 10
+            return 
+         end if
+         read(line(1:iend), '(F17.8,2X,A30,6(2X,F22.16))', err=998) ejd,  date, pos%x, pos%y, pos%z, vel%x, vel%y, vel%z
+         if ( ejd > jd) then
+            pos%x = pos%x + vel%x*(jd-ejd)
+            pos%y = pos%y + vel%y*(jd-ejd)
+            pos%z = pos%z + vel%z*(jd-ejd)
+            return
+         end if
+      end do
+998   ierr = 10
+999   return
+    end subroutine read_jpl_csv
+
 end module ioutils
+

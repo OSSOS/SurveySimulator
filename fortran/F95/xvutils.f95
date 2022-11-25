@@ -2,6 +2,7 @@ module xvutils
 
   use elemutils
   use rot
+  use ioutils
 
 contains
   subroutine BaryXV (jday, pos, vel, ierr)
@@ -156,6 +157,7 @@ contains
 !              001 : GAIA
 !              002 : Geocentric, Mignard's code
 !              500 : Geocentric
+!              <0  : -ve of a file handle to read JPL state vectors from
 !     t     : Time of observation (Julian day, not MJD) (R8)
 !
 ! OUTPUT
@@ -191,8 +193,17 @@ contains
        ierr = 10
        return
     else if (code .eq. 2) then
+       ierr = 10
+       return 
+    else if (code .lt. 0) then
+! This is  a file handle, send to read_jpl_csv
+       call read_jpl_csv(-1*code, t, pos, vel, ierr)
+       if (ierr .ne. 0) then
+          write(0,*) "Failed while reading JPL Ephem for time ",t," using LUN: ",-1*code
+          return 
+       end if
     else
-
+       
 ! Get heliocentric position of Earth.
        call newcomb (t, v_pos)
        pos%x = -v_pos(1)
@@ -228,11 +239,10 @@ contains
           ierr = 10
           return
        end if
-
-! Finally, computes distance from observatory to Sun.
-       r = dsqrt((pos%x + pos_b%x)**2 + (pos%y + pos_b%y)**2 &
-            + (pos%z + pos_b%z)**2)
     end if
+! Finally, computes distance from observatory to Sun.
+    r = dsqrt((pos%x + pos_b%x)**2 + (pos%y + pos_b%y)**2 &
+         + (pos%z + pos_b%z)**2)
 
   end subroutine ObsPos
 

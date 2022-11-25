@@ -573,6 +573,56 @@ contains
 
   end subroutine read_eff
 
+  subroutine get_code(code_in, dirn, code_out)
+    !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    ! this routine checks to see if the observatory code actually references
+    ! a file that should then container a JPL state vector CSV file
+    ! when a LUN is returned its assigned values starting at 501
+    !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    !
+    ! JJ Kavelaars National Research Council of Canada
+    ! Version 1 : November 2022
+    !
+    !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    ! INPUT
+    !     code_in  : string from pointings file that holds the observatory code
+    !
+    ! OUTPUT
+    !     code_out : result integer code (can be observatory code or lun of open file)
+    !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    !f2py intent(in) code_in
+    !f2py intent(out) code_out
+    implicit none
+    character(*), intent(IN) :: code_in, dirn
+    integer, intent(OUT) :: code_out
+  
+    character(len=30) :: fmt, fname
+    integer :: ierr, j
+    integer :: vector_file_lun
+
+    data vector_file_lun /500/
+    save vector_file_lun
+    
+    j=len_trim(code_in)
+    write(fmt, '(Ai0A)') "(I",j,")"
+    read(code_in, fmt=fmt, iostat=ierr) code_out
+    if ( ierr .ne. 0 ) then
+       ! try and open 'code_in' as a file in dirn
+       write(fmt, '(AI0AI0A)') "(A",len_trim(dirn)+1,"A",len_trim(code_in),")"
+       write(fname, fmt=fmt) dirn//'/', code_in
+       vector_file_lun = vector_file_lun + 1
+       open(unit=vector_file_lun, file=fname, iostat=ierr, status='old')
+       if ( ierr .ne. 0 ) then
+          write(0, *) "Failed to open JPL Ephemeris at ",fname," error: ", ierr
+          code_out=0
+       else
+          code_out=-vector_file_lun
+       end if
+    end if
+    return 
+
+  end subroutine get_code
+
   subroutine read_sur (dirn, lun_in, point, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in the survey description file.
@@ -701,12 +751,14 @@ contains
     call check_polygon(point%poly)
     read (word(5), *, err=2000) point%o_pos(1)%jday
     read (word(6), *, err=2000) point%ff
-    read (word(7), *, err=2000) point%code
+    ! get the path to the 
+    call get_code(word(7), dirn, point%code)
+    !    read (word(7), *, err=2000) point%code
 
-! USE OF SLALIB: need to get longitude, latitude and elevation of
-! observatory. This is given by the sla_OBS routine. One then needs to
-! get the LST (see documentation on EXPLANATION AND EXAMPLES:
-! Ephemerides).
+    ! USE OF SLALIB: need to get longitude, latitude and elevation of
+    ! observatory. This is given by the sla_OBS routine. One then needs to
+    ! get the LST (see documentation on EXPLANATION AND EXAMPLES:
+    ! Ephemerides).
 
     point%efnam = word(8)
     call read_file_name (point%efnam, i3, i4, finished, len(point%efnam))
@@ -744,8 +796,9 @@ contains
 ! Computes observatory position at given jday, in ICRF
     call ObsPos (point%code, point%o_pos(1)%jday, point%o_pos(1)%pos, vel, &
          point%o_pos(1)%r, ierr_e)
+
     if (ierr_e .ne. 0) then
-       write (6, *) 'Error while computing observatory''s position.'
+       write (6, *) 'Error while computing observatory''s position. (one)'
        write (6, *) 'ierr = ', ierr_e
        goto 2000
     end if
@@ -755,7 +808,7 @@ contains
     call ObsPos (point%code, point%o_pos(2)%jday, point%o_pos(2)%pos, vel, &
          point%o_pos(2)%r, ierr_e)
     if (ierr_e .ne. 0) then
-       write (6, *) 'Error while computing observatory''s position.'
+       write (6, *) 'Error while computing observatory''s position. (two)'
        write (6, *) 'ierr = ', ierr_e
        goto 2000
     end if
