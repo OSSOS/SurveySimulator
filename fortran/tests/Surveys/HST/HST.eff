@@ -1,0 +1,28 @@
+# This is an efficiency file with analytic function
+#
+# All lines starting with '#' are ignored, so they are used for comments.
+#
+# The parameters are given using a "<key> = <value(s)> pair, one per line.
+# Some <keys> can only appear after a previous <key> had a specific value.
+#
+# See README.format and/or Template.eff for a description of the format of this
+# file.
+#
+rate_cut= 0.05     6.4    1.0    180.0
+#
+mag_error= 0.006 0.16 28.9 0.05 28.9 -0.04
+#
+phot_frac= 1.000 0.0 0.0
+#
+track_frac= 1.0 29.8 -0.25
+#
+filter= r
+#
+rates=  0.00 20.00                                                            
+# the "function= ..." line.
+function= double
+#
+double_param=    1.0      28.5       1.124860      0.2793053    
+#
+# Limiting magnitude of the block
+mag_lim= 29.50

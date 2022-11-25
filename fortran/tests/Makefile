@@ -1,5 +1,5 @@
-MODELS = InnerHotModel ReadModelFromFile
-LANGUAGE = F95 
+MODELS = InnerHotModel ReadModelFromFile HST
+LANGUAGE = F95
 
 %: %.sh
 

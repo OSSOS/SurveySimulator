@@ -1,0 +1,20 @@
+# This is a sample survey description file.
+#
+# All lines starting with '#' are ignored, so they are used for comments
+#
+# Each data line has the format:
+# <width> <height> <RA> <DEC> <epoch> <filling_factor> \
+#   <obs_code> <efficiency_file_name>
+#
+# <width>: width of FOV, in degree
+# <height>: height of FOV, in degree
+# <RA>: Right Ascension of pointing, decimal degree or HH:MM:SS[.ss...]
+# <DEC>: Declination of pointing, decimal degree or DD:MM:SS[.ss...]
+# <epoch>: epoch of pointing, in Julian day (decimal)
+# <filling_factor>: filling factor of that FOV
+# <obs_code>: observatory code
+# <efficiency_file_name>: name of efficiency file for that pointing
+#
+# Only one block in the HST search
+#
+0.11 0.17 14:07:53.33 -11:21:38.0 2452667.9305555 1 HST.csv HST.eff

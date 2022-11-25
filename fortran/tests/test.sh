@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "$@"
 cmd=$1
 language=$2
 src_dir=$(dirname ${1})
