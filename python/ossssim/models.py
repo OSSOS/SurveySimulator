@@ -188,6 +188,13 @@ class DetectFile(ResultsFile):
                 'delta', 'm_int', 'eff', 'RA', 'DEC', 'comp', 'j', 'k']
 
 
+class FakeFile(ResultsFile):
+    """
+    List of positions of artificial objects to add to the file.
+    """
+    colnames = ['a', 'e', 'inc', 'node', 'peri', 'M', 'H', 'mag', 'dra', 'ddec', 'RA', 'DEC']
+
+
 class TrackFile(ResultsFile):
     """
     Tracked object output file structure.
