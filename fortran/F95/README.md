@@ -7,7 +7,7 @@
 
 ### Install
 
-e.g. `make Driver GEMIOBJ=InnerHotModel` 
+e.g. `make Driver GIMEOBJ=InnerHotModel` 
 
 links `InnerHotModel.f95` to `GeMeObj.f95` and then compiles `Driver`.
 
@@ -18,7 +18,7 @@ will use that subroutine to get orbital elements and H magnitude for use in the 
 
 If you write MyGeMeObj.f95 model the build Driver as (leave off the .f95):
 
-`make Driver GEMEOBJ=MyGeMeObj`
+`make Driver GIMEOBJ=MyGeMeObj`
 
 README.md (this file)  Describes "GiMeObj" routine
 - InnerHotModel.f95 : Example "GiMeObj" routine to generate objects via parametric  prescription of inner belt

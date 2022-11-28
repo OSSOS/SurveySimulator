@@ -18,7 +18,9 @@ from numpy import random
 
 from . import definitions
 from . import distributions
-
+from .lib import SurveySubsF95
+from . import definitions
+T_ORB_M_UNITS = definitions.T_ORB_M_UNITS
 RE_FLOAT = re.compile('[+-]?\d+\.?\d*[de]?\d*')
 
 
@@ -184,6 +186,13 @@ class DetectFile(ResultsFile):
     """
     colnames = ['a', 'e', 'inc', 'node', 'peri', 'M', 'H', 'q', 'r', 'Mt', 'm_rand', 'h_rand', 'color', 'flag',
                 'delta', 'm_int', 'eff', 'RA', 'DEC', 'comp', 'j', 'k']
+
+
+class FakeFile(ResultsFile):
+    """
+    List of positions of artificial objects to add to the file.
+    """
+    colnames = ['a', 'e', 'inc', 'node', 'peri', 'M', 'H', 'mag', 'dra', 'ddec', 'RA', 'DEC']
 
 
 class TrackFile(ResultsFile):
@@ -354,7 +363,7 @@ class ModelFile(Iterable):
                     value = 0
                 else:
                     raise ex
-            if definitions.colunits[colname] is not None:
+            if definitions.colunits.get(colname, None) is not None:
                 value = value * definitions.colunits[colname]
             row[colname] = value
 

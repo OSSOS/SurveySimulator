@@ -9,17 +9,7 @@ from astropy.table import Row
 from .lib import SurveySubsF95
 from . import definitions
 
-# these are the units that the SurveySubF95 module (ie the fortran code) expects elements to be in.
-T_ORB_M_UNITS = {'a': u.au,
-                 'e': u.dimensionless_unscaled,
-                 'inc': u.radian,
-                 'node': u.radian,
-                 'Node': u.radian,
-                 'peri': u.radian,
-                 'M': u.radian,
-                 'epoch': u.day
-                 }
-
+T_ORB_M_UNITS = definitions.T_ORB_M_UNITS
 
 class OSSSSim:
     """
