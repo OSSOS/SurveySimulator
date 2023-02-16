@@ -273,9 +273,9 @@ contains
     logical, save :: first
 
     data first /.true./
-    data params /-2.465d0, 7.114d0, 0.666d0, 0.875d0/
+    data params /-2.465d0, 7.114d0, 0.666d0, 0.785d0/
     data h_min /-1.d0/
-    data sl1 /0.13d0/, sl2 /0.5d0/, sl3 /0.4d0/, c /1.d0/
+    data sl1 /0.13d0/, sl2 /0.6d0/, sl3 /0.4d0/, c /1.d0/
     data h1 /3.2d0/, h2 /6.d0/, h3 /8.5d0/, n1 /3.d0/
 
     if (first) then
@@ -357,9 +357,9 @@ contains
     logical, save :: first
 
     data first /.true./
-    data params /-2.465d0, 7.114d0, 0.666d0, 0.875d0/
+    data params /-2.465d0, 7.114d0, 0.666d0, 0.785d0/
     data h_min /-1.d0/
-    data sl1 /0.13d0/, sl2 /0.5d0/
+    data sl1 /0.13d0/, sl2 /0.6d0/
     data h1 /3.2d0/, h2 /6.d0/, n1 /3.d0/
 
     if (first) then
@@ -404,6 +404,95 @@ contains
 
     return
   end function H_dist_hot_2
+
+  real (kind=8) function H_dist_hot_3(seed, nparam, hparam)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! This routine draws randomly a number according to the hot belt H_r
+! distribution, represented by an exponentially tapered exponential,
+! with parameters fitted on the OSSOS cold belt data, then scaled to
+! hot.
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : August 2022 - From H_dist_hot_2 and H_dist_cold_2
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     seed  : Random number generator seed (I4)
+!     nparam: Number of parameters (I4)
+!     hparam: Parameters for asymptotic slope(s) (n*R8)
+!             hparam(1): start of asymptote
+!             hparam(2): contrast at start of asymptote
+!             hparam(3): slope of asymptote
+!             hparam(4): end of asymptote
+!
+! OUTPUT
+!     H_dist_hot_3 : Random value of H (R8)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in,out) seed
+    implicit none
+
+    integer (kind=4), parameter :: np = 16384
+    integer (kind=4), intent(inout) :: seed
+    integer (kind=4), intent(in) :: nparam
+    real (kind=8), intent(in) :: hparam(*)
+    integer (kind=4) :: i
+    real (kind=8) :: params(4), random, h_min, h_max
+    real (kind=8), save :: proba(0:np), htab(0:np)
+    real (kind=8) :: n1, n2, n3, sl1, sl2, sl3, c1, cb, c, h1, h2, h3, scale
+    logical, save :: first
+
+    data first /.true./
+    data params /-2.6d0, 8.1d0, 0.666d0, 0.42d0/
+    data h_min /-1.d0/
+    data sl1 /0.13d0/, sl2 /0.6d0/
+    data h1 /3.2d0/, h2 /6.d0/, n1 /3.d0/
+    data scale /2.0d0/
+
+    if (first) then
+       h_max = hparam(nparam)
+       htab(0) = h_min
+       proba(0) = 1.d-10
+       h3 = hparam(1)
+       n2 = scale*Variably_tapered(h2, params)
+       n3 = scale*Variably_tapered(h3, params)
+       c = hparam(2)
+       sl3 = hparam(3)
+! The normalisation is done with the exponentially tapered exponential,
+! as fitted on the OSSOS cold component, then scaled by 2. This
+! determines the normalisation of the exponential between H = h2
+! and H = h1
+! N(<H) = n2*10**(sl2*(H-h2))
+! Then, there is an excess divot at h1. See
+! [[file:///home/petit/Research/OSSOS/tes/OSSOSpapers/Papers/GlobalLuminosityFunction/CumDiffDistributions.org]]
+! for the appropriate formula.
+       cb = n1*sl1*log(10.d0)
+       c1 = (n2-n1)*sl2/(n1*sl1*(10.d0**(sl2*(h2-h1))-1.d0))
+       do i = 1, np
+          htab(i) = h_min + dfloat(i)*(h_max-h_min)/dfloat(np)
+          if (htab(i) .lt. h1) then
+             proba(i) = n1*10.d0**(sl1*(htab(i)-h1))
+          else if (htab(i) .lt. h2) then
+             proba(i) = n1 + c1*cb &
+                  *(10.d0**(sl2*(htab(i)-h1))-1.d0)/(sl2*log(10.d0))
+          else if (htab(i) .lt. h3) then
+             proba(i) = scale*Variably_tapered(htab(i), params)
+          else
+             proba(i) = n3 + n3*c*(10.d0**(sl3*(htab(i)-h3)) - 1.d0)
+          end if
+       end do
+       do i = 0, np
+          proba(i) = proba(i)/proba(np)
+       end do
+       first = .false.
+    end if
+
+    random = ran_3(seed)
+    H_dist_hot_3 = interp(proba, htab, random, np+1)
+
+    return
+  end function H_dist_hot_3
 
   real (kind=8) function offgau (nparam, param, inc)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
