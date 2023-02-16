@@ -240,7 +240,7 @@ contains
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine gives the osculating elements in heliocentric reference
 ! frame of a planet at a given time. From given elements and rates.
-! Valid roughly from 1900 to 2100.
+! Valid roughly from 1800 to 2050.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !
 ! J-M. Petit  Observatoire de Besancon

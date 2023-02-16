@@ -1,5 +1,5 @@
-123456789		                ! Random number generator seed
--20000			                ! Number of tracked detections
+123456789                       ! Random number generator seed
+-20000                          ! Number of tracked detections
 ../../../../Surveys/CFEPS       ! Survey description directory name
 ../../../../Models/InnerHot.in  ! Name of model parameter file
 ./SimulDetect.dat               ! Output file name for all simulated detections
