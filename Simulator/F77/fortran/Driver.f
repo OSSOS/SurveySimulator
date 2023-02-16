@@ -32,8 +32,7 @@ c SurveySubs.f and should not be used by GiMeObj or any other routine
 c that you may add to the driver. Please use logical unit numbers
 c starting from 20.
 c
-c For more information, please refer to ../README.first, ./README.src
-c and ./README.surveysubs.
+c For more information, please refer to README files for details.
 c
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -81,12 +80,16 @@ c Maximum number of detections (>0) or -maximum number of trials (<0)
       read (5, *, err=9999) n_track_max
 c Directory containing the characterization files
       read (5, '(a)', err=9999) survey_dir
+      call strip_comments(survey_dir)
 c File with model parameters
       read (5, '(a)', err=9999) distri_file
+      call strip_comments(distri_file)
 c Name for the detected objects outfile
       read (5, '(a)', err=9999) det_outfile
+      call strip_comments(det_outfile)
 c Name for the tracked objects outfile
       read (5, '(a)', err=9999) trk_outfile
+      call strip_comments(trk_outfile)
 
 c Open output files and write header
       open (unit=lun_h, file=det_outfile, status='new', err=9500)
@@ -243,3 +246,12 @@ c     end of the if( keep_going ) loop
       stop
 
       end  program pm
+
+      SUBROUTINE STRIP_COMMENTS (str)
+        character*80 str
+        integer idx
+        idx = INDEX(str, '!')
+        if (idx > 0) then
+           read(str(:idx-1), '(a)') str
+        endif
+      END
