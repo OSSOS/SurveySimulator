@@ -1,0 +1,6 @@
+123456789                                  ! Random number generator seed
+0                                              ! Number of tracked detections
+/opt/SSim/Surveys/CFEPS           ! Survey description directory name
+/opt/SSim/Models/L7model-3.0-9.0 ! Name of model parameter file
+./SimulDetect.dat                  ! Output file name for all simulated detections
+./SimulTrack.dat                   ! Output file name for characterized, tracked simulated detections

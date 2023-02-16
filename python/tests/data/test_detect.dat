@@ -1,0 +1,13 @@
+# Seed =  113715191
+# Epoch of elements: JD = 2453157.5
+# Longitude of Neptune: lambdaN = 5.489 rad
+# Colors = [' 0.00 ', '-0.70 ', '-1.20 ', '-1.70 ', ' 0.80 ', ' 0.50 ', ' 0.10 ', '-0.80 ', '-1.20 ', ' 0.00 ']
+#
+# Creation_time: 2022-07-12T11:16:09.000  -0700
+# flag: >0: detected; >2: characterized; 0 mod(2): tracked
+# Survey: name of the observing block where model object was detected
+#          a          e        inc       node       peri          M          H          q          r     Mt        m_rand     h_rand      color       flag      delta      m_int        eff         RA        DEC     Survey       comp          j          k
+     34.9760     0.1120     4.3770   261.8910     6.2910   163.5840     7.7300    31.0587    38.7528   163.5840    23.4533     7.5403     0.0000          4    37.7826    23.6430     0.7713   72.66907    23.0789 L3w-smooth resonant            5          4
+# Total number of objects:             0
+# Number of detections:            1
+# Number of tracked objects:       1

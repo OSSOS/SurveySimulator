@@ -1,6 +1,18 @@
 
 ## Survey Simulator 2.0  Documentation
 
+
+The Survey Simulator (sometimes compiled as `Driver` or `SSim` or `SurveySimulator`) takes a model of 
+the orbits and physical parameters of objects in the outer solar system and determines which model objects a 
+particular survey would detect and track. 
+
+The user provides the model and files that describe the characterization of the survey of interest.
+For a description of the how to generate a model see the `F95` or `F77` or `python` subdirectoris, 
+depending on your preferred language.  Each of these contains and `example` subdirectory that 
+provides examples / clues have how to use the Survey Simulator in that language.
+
+For descriptions of the formats of the characterization files see the `Surveys` sub-directory.
+
 ---
 ### Licence
 This software is released under the terms of the European Union Public
@@ -20,7 +32,7 @@ The primary contact for the Survey Simulator code is:
   
 
 Cite **Petit, J.-M., et al., AJ, Vol 142 ID 131 (2011)** if you make 
-use of the SurveySimulator or the CFEPS L7SyntheticModel-v09 Kuiper belt model.
+use of the SurveySimulator, or the CFEPS L7SyntheticModel-v09 Kuiper belt model.
 
 If you make use of the Survey characterizations and detections please cite
 the appropriate survey paper:  
@@ -53,7 +65,7 @@ The Survey Simulator itself provides enables the 'biasing' of a model of
 the Kuiper Belt in a way that mimics the observational biases in a survey.
 
 ### Quick Start
-Look in `Simulator/F{77|95Z}/fortran/exmaple/README.parametric` for an example of how run Simulator.
+Look in `Simulator/F{77|95}/fortran/exmaple/README.parametric` for an example of how to run Simulator.
 
 ####  Survey Characterization
 The parameters that describe the observational biases are provided by the

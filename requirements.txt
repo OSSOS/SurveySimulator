@@ -1,0 +1,8 @@
+ossssim~=1.0
+astropy~=5.0.4
+f90wrap~=0.2.7
+numpy~=1.23.1
+matplotlib~=3.3.4
+astroquery~=0.4.6
+ephem~=3.7.7.1
+setuptools>65.5.1
