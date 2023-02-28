@@ -2,6 +2,7 @@ MODULE DE_utils
 
 ! Defines obliquity and utc_to_tt functions
   USE rot
+  character (len=256) :: ephemfile
 
 contains
 
@@ -19,7 +20,7 @@ contains
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 
-  subroutine init_DE()
+  subroutine init_DE(ephfile)
 
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in the survey description file.
@@ -34,6 +35,9 @@ contains
 ! Version 2 : February 2023
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     ephfile: filename of ephemerides file (optional) (CH)
+!
 ! OUTPUT
 !     common block /de_const/
 !     masses: Mass of the Sun and the planets (10*R8)
@@ -57,11 +61,14 @@ contains
     USE DE_size
 
     implicit none
+    character (len=*), intent(in), optional :: ephfile
     integer (kind=4) :: nvs, i
-!    real (kind=8) :: obliquity
-!    external obliquity
 
     if (first) then
+       ephemfile = '_______'
+       if (present(ephfile)) then
+          ephemfile = ephfile
+       end if
        call const (CNAM, vals, ss, nvs)
        do i = 1, nvs
           if (CNAM(i)(1:4) .eq. 'GMS ') masses(1) = vals(i)
@@ -139,7 +146,11 @@ contains
 
 !     NAMFIL is the external name of the binary ephemeris file
 
-    NAMFIL='binEphem.DE' 
+    if (ephemfile(1:7) .eq. '_______') then
+       NAMFIL = 'binEphem.DE'
+    else
+       NAMFIL = trim(ephemfile)
+    end if
 
 !  *****************************************************************
 !  *****************************************************************
@@ -246,7 +257,12 @@ contains
 
 !     NAMFIL is the external name of the binary ephemeris file
 
-    NAMFIL = 'binEphem.DE'
+
+    if (ephemfile(1:7) .eq. '_______') then
+       NAMFIL = 'binEphem.DE'
+    else
+       NAMFIL = trim(ephemfile)
+    end if
 
 !  *****************************************************************
 
