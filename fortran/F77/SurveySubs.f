@@ -1065,48 +1065,6 @@ C     REAL mj,mk,ma(55)
       return
       END
 
-      subroutine zero2pi (var)
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-c This function resets variable 'var' to be between 0 and 2pi
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-c
-c B. Gladman  UBC
-c Version 1 : January 2007
-c
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-c INPUT/OUPUT
-c     var   : Variable to reset to be between 0 and 2*Pi (R8)
-c
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-c
-c Set of F2PY directives to create a Python module
-c
-Cf2py intent(in,out) var
-
-      implicit none
-
-c Calling arguments
-      real*8  var
-
-cSome values better set up as parameters
-      real*8
-     $  Pi,                     ! Pi
-     $  TwoPi                   ! 2*Pi
-c Set the values
-      parameter
-     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi)
-
-  771 if (var .gt. TwoPi) then
-             var = var - TwoPi
-             goto 771
-      endif
-  772 if (var .lt. 0.0d0) then
-             var = var + TwoPi
-             goto 772
-      endif
-      return
-      end
-
       subroutine cal2jul (iyyy, mm, dd, jul)
 c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 c This routine computes the Julian Day from time given in

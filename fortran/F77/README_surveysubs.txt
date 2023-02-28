@@ -188,7 +188,7 @@ OUTPUT
 
 --------------------------------------------------------------------------------
 
-      subroutine zero2pi (var)
+      subroutine ztopi (var)
 
 This function resets variable 'var' to be between 0 and 2pi
 

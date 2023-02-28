@@ -497,7 +497,7 @@ c     $     *15*drad*ran3(seed)
 c             Set argument of pericenter based on resonant angle
          peri = phi52 - 2.0d0*m + lambdaN  - node
          libcf = libc
-         call zero2pi(peri)
+         call ztopi(peri)
          goto 1999
 
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -531,7 +531,7 @@ c         phi52 = libampc*drad + sin(2.0d0*Pi*random)*resamp*drad
 c             Set argument of pericenter based on resonant angle
          peri = phi52 - 2.0d0*m + lambdaN  - node
          libcf = libampc
-         call zero2pi(peri)
+         call ztopi(peri)
 
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 

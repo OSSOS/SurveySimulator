@@ -4,7 +4,7 @@ module datadec
 
   ! define length of array parameters
   integer, parameter :: n_sur_max = 200, n_bin_max=30, n_r_max=10, &
-       nw_max = 10
+       nw_max = 10, nsites_max = 400
 
   ! define some useful constants
   real (kind=8), parameter :: Pi = 3.141592653589793238d0, drad = Pi/180.0D0, &
@@ -60,4 +60,19 @@ module datadec
      type(t_polygon) :: poly
      type(t_charact) :: c
   end type t_pointing
+
+  type t_site
+     integer (kind=4) :: code
+     real (kind=8) :: lon       ! observatory longitude in hours
+     real (kind=8) :: lat       ! observatory latitude in degrees
+     real (kind=8) ::altitude   ! observatory altitude in meters
+     character (len=80) :: name
+  end type t_site
+
+  type(t_site), dimension(nsites_max) :: sitelist
+  integer (kind=4) :: nsites
+  data nsites /-1/
+
+  character (len=256) :: obsfile
+
 end module datadec

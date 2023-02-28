@@ -477,7 +477,7 @@ ccccccccccccccccccccccc Now choose phi32
 
 c             Set argument of pericenter based on resonant angle
       peri = 0.5d0*(phi32 - 3.d0*m +2.d0*lambdaN)  - node
-      call zero2pi(peri)
+      call ztopi(peri)
 
       goto 1999
 
@@ -588,8 +588,8 @@ c try a triangle (JMP) based on Lykawka's histogram.
 
 c             Set node based on resonant angle
       node = 0.5d0*(phi32 - 3.d0*m) + lambdaN  - peri
-      call zero2pi(node)
-      call zero2pi(peri)
+      call ztopi(node)
+      call ztopi(peri)
 
       goto 1999
 
@@ -650,48 +650,6 @@ c Stores object if user requested
       ierr = -20
       return
 
-      end
-
-      subroutine zero2pi (var)
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-c This function resets variable 'var' to be between 0 and 2pi
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-c
-c B. Gladman  UBC
-c Version 1 : January 2007
-c
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-c INPUT/OUPUT
-c     var   : Variable to reset to be between 0 and 2*Pi (R8)
-c
-c-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-c
-c Set of F2PY directives to create a Python module
-c
-Cf2py intent(in,out) var
-
-      implicit none
-
-c Calling arguments
-      real*8  var
-
-cSome values better set up as parameters
-      real*8
-     $  Pi,                     ! Pi
-     $  TwoPi                   ! 2*Pi
-c Set the values
-      parameter
-     $  (Pi = 3.141592653589793238d0, TwoPi = 2.0d0*Pi)
-
-  771 if (var .gt. TwoPi) then
-             var = var - TwoPi
-             goto 771
-      endif
-  772 if (var .lt. 0.0d0) then
-             var = var + TwoPi
-             goto 772
-      endif
-      return
       end
 
 c--------------------------------------------

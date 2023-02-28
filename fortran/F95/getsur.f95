@@ -227,67 +227,6 @@ contains
     return
   end subroutine create_poly
 
-  subroutine  hms(str,val)
-!
-!...Crack String And Create Value
-!
-!f2py intent(in) str
-!f2py intent(out) val
-    implicit none
-    character(*), intent(in) :: str
-    real (kind=8), intent(out) :: val
-    character(1) :: c
-    real (kind=8) :: piece(3), dp, sgn, z
-    integer :: nstr, i, j, dpfind
-!
-!...Initialization
-!
-100 val = 0.0D00
-    piece = 0.0d0
-    j = 1
-    dpfind = 0
-    sgn = 1.0D00
-    nstr = LEN(str)
-    IF (nstr.le.0) RETURN
-!
-!...Loop Over The String
-!
-    DO i=1,nstr
-       c = str(i:i)
-!
-!...Parse
-!
-       IF ((c.eq.'-').or.(c.eq.'e').or.(c.eq.'E') &
-            .or.(c.eq.'s').or.(c.eq.'S')) THEN
-          sgn = -1.0D00
-       ELSEIF ((c.eq.'+').or.(c.eq.'w').or.(c.eq.'W') &
-            .or.(c.eq.'n').or.(c.eq.'N')) THEN
-          sgn = 1.0D00
-       ELSEIF ((c.eq.':').or.(c.eq.',').or.(c.eq.' ')) THEN
-          j = j+1
-          dpfind = 0
-          IF (j.gt.3) GO TO 110
-       ELSEIF (c.eq.'.') THEN
-          dpfind = 1
-          dp = 1.0D00
-       ELSEIF ((c.ge.'0').and.(c.le.'9')) THEN
-          z = ICHAR(c)-ICHAR('0')
-          IF (dpfind.eq.0) THEN
-             piece(j) = 10.0D00*piece(j) + z
-          ELSE
-             dp = 0.1D00*dp
-             piece(j) = piece(j) + dp*z
-          ENDIF
-       ENDIF
-    ENDDO
-!
-!...Return
-!
-110 val = piece(1) + piece(2)/60.0D00 + piece(3)/3600.0D00
-    val = val*sgn
-    RETURN
-  END subroutine hms
-
   subroutine read_eff (filen, lun_in, c, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in efficiency file.
@@ -574,24 +513,24 @@ contains
   end subroutine read_eff
 
   subroutine get_code(code_in, dirn, code_out)
-    !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-    ! this routine checks to see if the observatory code actually references
-    ! a file that should then container a JPL state vector CSV file
-    ! when a LUN is returned its assigned values starting at 501
-    !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-    !
-    ! JJ Kavelaars National Research Council of Canada
-    ! Version 1 : November 2022
-    !
-    !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-    ! INPUT
-    !     code_in  : string from pointings file that holds the observatory code
-    !
-    ! OUTPUT
-    !     code_out : result integer code (can be observatory code or lun of open file)
-    !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-    !f2py intent(in) code_in
-    !f2py intent(out) code_out
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! this routine checks to see if the observatory code actually references
+! a file that should then contain a JPL state vector CSV file
+! when a LUN is returned its assigned values starting at 501
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! JJ Kavelaars National Research Council of Canada
+! Version 1 : November 2022
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     code_in  : string from pointings file that holds the observatory code
+!
+! OUTPUT
+!     code_out : result integer code (can be observatory code or lun of open file)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) code_in
+!f2py intent(out) code_out
     implicit none
     character(*), intent(IN) :: code_in, dirn
     integer, intent(OUT) :: code_out
@@ -753,12 +692,12 @@ contains
     read (word(6), *, err=2000) point%ff
     ! get the path to the 
     call get_code(word(7), dirn, point%code)
-    !    read (word(7), *, err=2000) point%code
+!    read (word(7), *, err=2000) point%code
 
-    ! USE OF SLALIB: need to get longitude, latitude and elevation of
-    ! observatory. This is given by the sla_OBS routine. One then needs to
-    ! get the LST (see documentation on EXPLANATION AND EXAMPLES:
-    ! Ephemerides).
+! USE OF SLALIB: need to get longitude, latitude and elevation of
+! observatory. This is given by the sla_OBS routine. One then needs to
+! get the LST (see documentation on EXPLANATION AND EXAMPLES:
+! Ephemerides).
 
     point%efnam = word(8)
     call read_file_name (point%efnam, i3, i4, finished, len(point%efnam))

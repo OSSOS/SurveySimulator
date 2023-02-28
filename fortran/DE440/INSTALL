@@ -1,0 +1,60 @@
+#! /bin/bash
+
+\rm asc2eph
+#
+# Define the Fortran compiler variable
+if [ X"${FC}" == X ]; then
+    which gfortran > /dev/null 2>&1
+    gfortranexists=$?
+    if [ "$gfortranexists" -eq "0" ]; then
+	FC="`which gfortran` -fno-automatic -funroll-loops -malign-double"
+	export FC
+    else
+	which g77 > /dev/null 2>&1
+	g77exists=$?
+	if [ "$g77exists" -eq "0" ]; then
+            FC="`which g77` -fno-automatic -funroll-loops -malign-double"
+            export FC
+	else
+            which fort77 > /dev/null 2>&1
+            fort77exists=$?
+            if [ "$fort77exists" -eq "0" ]; then
+		FC="`which fort77` -O3"
+  		export FC
+            else
+		which ifort > /dev/null 2>&1
+		ifortexists=$?
+		if [ "$ifortexists" -eq "0" ]; then
+		    FC="`which ifort` -O3"
+		    export FC
+		else
+		    echo "You must define the environment variable FC to point to your Fortran compiler."
+		    echo "Please type in the Fortran compiler command (e.g. ifort) with any needed"
+		    echo "argument: "
+		    read FC
+		    export FC
+		fi
+            fi
+	fi
+    fi
+fi
+#
+# Create binary file
+$FC -o asc2eph asc2eph.f
+zcat header.* ascp* | ./asc2eph > asc2eph.log
+#
+# Test binary file
+$FC -o testeph1 testeph1.f
+zcat testpo.* | ./testeph1 > testeph1.log
+grep "*****  WARNING : next difference >= 1.D-13  *****" testeph1.log > /dev/null
+res=$?
+if [ $res == 0 ]; then
+    echo "FAILURE."
+    \rm -f JPLEPH
+else
+    echo "SUCCESS."
+    mv JPLEPH binEphem.DE
+fi
+\rm -f asc2eph testeph1 *.log
+
+exit

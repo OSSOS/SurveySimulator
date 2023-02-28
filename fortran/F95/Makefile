@@ -1,4 +1,4 @@
-U	= poly_dec poly_lib datadec ioutils effut elemutils rot xvutils getsur numutils surveysub
+U	= poly_dec poly_lib datadec ioutils effut elemutils rot DE_size DE_const DE_chrhdr DE_ephhdr DE_utils xvutils getsur numutils surveysub
 OBJU	= $(addsuffix .o,${U})
 SRCU	= $(addsuffix .f95,${U})
 FPPU	= $(addsuffix .fpp,${U})

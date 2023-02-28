@@ -820,6 +820,302 @@ contains
 
   end subroutine forced_plane_damp
 
+  real (kind=8) function obliquity(datjd)
+!******************************************************
+!
+!     Obliquity of the ecliptic at the JD date datjd
+!     unit  : degrees
+!     F. Mignard  August 2001
+!
+!     INPUT
+!        datjd     : date in julian days
+!
+!     OUTPUT
+!        obliquity : mean obliquity in degrees at datjd
+!******************************************************
+    implicit none
+    real (kind=8), intent(in) :: datjd
+    real (kind=8) :: t
+    real (kind=8), PARAMETER :: xjd2000 = 2451545d0, century = 36525d0
+
+! parameters  referered to J2000
+    t = (datjd - (xjd2000 )) / century
+! used for the GAIA Chebyshev
+    obliquity =  84381.4119d0/3600d0 -(46.80956*t + 0.000152*t*t+0.0019989*t*t*t)/3600d0
+ 
+    return
+  end function obliquity
+
+  real (kind=8) function utc_to_tt (jd)
+
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Ephemerides of DE405 are computed using TDB, while observing times are
+! given in UTC.
+! TDB is linked to TT by:
+!
+! TDB = TT + 0.001658 sin(g) + 0.000014 sin(2g) sec
+! with g = 357.53 + 0.9856003 (JD - 2451545.0) deg
+!
+! Since this last correction is periodic and never exceeds 0.002 sec, it
+! can be neglected. So we take TT as a proxy for TDB.
+!
+! TT derives from TAI by a simple translation, but relation to UTC
+! depends on the date through number of leap seconds between TAI and UTC.
+!
+! TT = TAI + 32.184 = UTC + (number of leap seconds) + 32.184
+!
+! RELATIONSHIP BETWEEN TAI AND UTC
+! 
+! ____________________________________________________________________________
+! 
+! Limits of validity (at 0h UTC) TAI-UTC (MJD = Modified Julian Day)
+! 
+! ____________________________________________________________________________
+! 
+! 1961  Jan.  1 - 1961  Aug.  1     1.422 818 0s + (MJD - 37 300) x 0.001 296s
+!       Aug.  1 - 1962  Jan.  1     1.372 818 0s +        ""
+! 1962  Jan.  1 - 1963  Nov.  1     1.845 858 0s + (MJD - 37 665) x 0.001 123 2s
+! 1963  Nov.  1 - 1964  Jan.  1     1.945 858 0s +        ""
+! 1964  Jan.  1 -       April 1     3.240 130 0s + (MJD - 38 761) x 0.001 296s
+!       April 1 -       Sept. 1     3.340 130 0s +        ""
+!       Sept. 1 - 1965  Jan.  1     3.440 130 0s +        ""
+! 1965  Jan.  1 -       March 1     3.540 130 0s +        ""
+!       March 1 -       Jul.  1     3.640 130 0s +        ""
+!       Jul.  1 -       Sept. 1     3.740 130 0s +        ""
+!       Sept. 1 - 1966  Jan.  1     3.840 130 0s +        ""
+! 1966  Jan.  1 - 1968  Feb.  1     4.313 170 0s + (MJD - 39 126) x 0.002 592s
+! 1968  Feb.  1 - 1972  Jan.  1     4.213 170 0s +        ""
+! 1972  Jan.  1 -       Jul.  1    10s            
+!       Jul.  1 - 1973  Jan.  1    11s    
+! 1973  Jan.  1 - 1974  Jan.  1    12s    
+! 1974  Jan.  1 - 1975  Jan.  1    13s    
+! 1975  Jan.  1 - 1976  Jan.  1    14s   
+! 1976  Jan.  1 - 1977  Jan.  1    15s   
+! 1977  Jan.  1 - 1978  Jan.  1    16s   
+! 1978  Jan.  1 - 1979  Jan.  1    17s
+! 1979  Jan.  1 - 1980  Jan.  1    18s
+! 1980  Jan.  1 - 1981  Jul.  1    19s   
+! 1981  Jul.  1 - 1982  Jul.  1    20s   
+! 1982  Jul.  1 - 1983  Jul.  1    21s    
+! 1983  Jul.  1 - 1985  Jul.  1    22s    
+! 1985  Jul.  1 - 1988  Jan.  1    23s
+! 1988  Jan.  1 - 1990  Jan.  1    24s 
+! 1990  Jan.  1 - 1991  Jan.  1    25s
+! 1991  Jan.  1 - 1992  Jul.  1    26s
+! 1992  Jul.  1 - 1993  Jul   1    27s
+! 1993  Jul.  1 - 1994  Jul.  1    28s
+! 1994  Jul.  1 - 1996  Jan.  1    29s
+! 1996  Jan.  1 - 1997  Jul.  1    30s
+! 1997  Jul.  1 - 1999  Jan   1    31s
+! 1999  Jan.  1 - 2006  Jan   1    32s
+! 2006  Jan.  1 - 2009  Jan   1    33s
+! 2009  Jan.  1 - 2012  Jul   1    34s
+! 2012  Jul.  1 - 2015  Jul   1    35s
+! 2015  Jul.  1 - 2017  Jan   1    36s
+! 2017  Jan.  1 -                  37s
+!
+! Predictions for future needed leap seconds:
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : January 2012
+! Version 2 : February 2023
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     jd    : JD in UTC, assimilated to UT1 (days) (R8)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    implicit none
+    real (KIND=8), intent(in) :: jd
+    real (kind=8) ::  mjd, mjd0
+    data mjd0 /2400000.5d0/
+
+! MJD
+    mjd = jd - mjd0
+! Offset between TT and TAI
+    utc_to_tt = 32.184d0
+! Now account for leap seconds
+    if (jd .gt. 2457754.5d0) then
+       utc_to_tt = utc_to_tt + 37.d0
+    else if (jd .gt. 2457204.5d0) then
+       utc_to_tt = utc_to_tt + 36.d0
+    else if (jd .gt. 2456109.5d0) then
+       utc_to_tt = utc_to_tt + 35.d0
+    else if (jd .gt. 2454832.5d0) then
+       utc_to_tt = utc_to_tt + 34.d0
+    else if (jd .gt. 2453736.5d0) then
+       utc_to_tt = utc_to_tt + 33.d0
+    else if (jd .gt. 2451179.5d0) then
+       utc_to_tt = utc_to_tt + 32.d0
+    else if (jd .gt. 2450630.5d0) then
+       utc_to_tt = utc_to_tt + 31.d0
+    else if (jd .gt. 2450083.5d0) then
+       utc_to_tt = utc_to_tt + 30.d0
+    else if (jd .gt. 2449534.5d0) then
+       utc_to_tt = utc_to_tt + 29.d0
+    else if (jd .gt. 2449169.5d0) then
+       utc_to_tt = utc_to_tt + 28.d0
+    else if (jd .gt. 2448804.5d0) then
+       utc_to_tt = utc_to_tt + 27.d0
+    else if (jd .gt. 2448257.5d0) then
+       utc_to_tt = utc_to_tt + 26.d0
+    else if (jd .gt. 2447892.5d0) then
+       utc_to_tt = utc_to_tt + 25.d0
+    else if (jd .gt. 2447161.5d0) then
+       utc_to_tt = utc_to_tt + 24.d0
+    else if (jd .gt. 2446247.5d0) then
+       utc_to_tt = utc_to_tt + 23.d0
+    else if (jd .gt. 2445516.5d0) then
+       utc_to_tt = utc_to_tt + 22.d0
+    else if (jd .gt. 2445151.5d0) then
+       utc_to_tt = utc_to_tt + 21.d0
+    else if (jd .gt. 2444786.5d0) then
+       utc_to_tt = utc_to_tt + 20.d0
+    else if (jd .gt. 2444239.5d0) then
+       utc_to_tt = utc_to_tt + 19.d0
+    else if (jd .gt. 2443874.5d0) then
+       utc_to_tt = utc_to_tt + 18.d0
+    else if (jd .gt. 2443509.5d0) then
+       utc_to_tt = utc_to_tt + 17.d0
+    else if (jd .gt. 2443144.5d0) then
+       utc_to_tt = utc_to_tt + 16.d0
+    else if (jd .gt. 2442778.5d0) then
+       utc_to_tt = utc_to_tt + 15.d0
+    else if (jd .gt. 2442413.5d0) then
+       utc_to_tt = utc_to_tt + 14.d0
+    else if (jd .gt. 2442048.5d0) then
+       utc_to_tt = utc_to_tt + 13.d0
+    else if (jd .gt. 2441683.5d0) then
+       utc_to_tt = utc_to_tt + 12.d0
+    else if (jd .gt. 2441499.5d0) then
+       utc_to_tt = utc_to_tt + 11.d0
+    else if (jd .gt. 2441317.5d0) then
+       utc_to_tt = utc_to_tt + 10.d0
+    else if (jd .gt. 2439887.5d0) then
+       utc_to_tt = utc_to_tt + 4.2131700d0 &
+            + (mjd - 39126d0) * 0.002592d0
+    else if (jd .gt. 2439126.5d0) then
+       utc_to_tt = utc_to_tt + 4.3131700d0 &
+            + (mjd - 39126d0) * 0.002592d0
+    else if (jd .gt. 2439004.5d0) then
+       utc_to_tt = utc_to_tt + 3.8401300d0 &
+            + (mjd - 38761d0) * 0.001296d0
+    else if (jd .gt. 2438942.5d0) then
+       utc_to_tt = utc_to_tt + 3.7401300d0 &
+            + (mjd - 38761d0) * 0.001296d0
+    else if (jd .gt. 2438820.5d0) then
+       utc_to_tt = utc_to_tt + 3.6401300d0 &
+            + (mjd - 38761d0) * 0.001296d0
+    else if (jd .gt. 2438761.5d0) then
+       utc_to_tt = utc_to_tt + 3.5401300d0 &
+            + (mjd - 38761d0) * 0.001296d0
+    else if (jd .gt. 2438639.5d0) then
+       utc_to_tt = utc_to_tt + 3.4401300d0 &
+            + (mjd - 38761d0) * 0.001296d0
+    else if (jd .gt. 2438486.5d0) then
+       utc_to_tt = utc_to_tt + 3.3401300d0 &
+            + (mjd - 38761d0) * 0.001296d0
+    else if (jd .gt. 2438395.5d0) then
+       utc_to_tt = utc_to_tt + 3.2401300d0 &
+            + (mjd - 38761d0) * 0.001296d0
+    else if (jd .gt. 2438334.5d0) then
+       utc_to_tt = utc_to_tt + 1.9458580d0 &
+            + (mjd - 37665d0) * 0.0011232d0
+    else if (jd .gt. 2437665.5d0) then
+       utc_to_tt = utc_to_tt + 1.8458580d0 &
+            + (mjd - 37665d0) * 0.0011232d0
+    else if (jd .gt. 2437512.5d0) then
+       utc_to_tt = utc_to_tt + 1.3728180d0 &
+            + (mjd - 37300d0) * 0.001296d0
+    else if (jd .gt. 2437300.5d0) then
+       utc_to_tt = utc_to_tt + 1.4228180d0 &
+            + (mjd - 37300d0) * 0.001296d0
+    else if (jd .gt. 2436934.5d0) then
+       utc_to_tt = utc_to_tt + 1.4178180d0 &
+            + (mjd - 37300d0) * 0.001296d0
+    end if
+! Ok, so far we have the difference in seconds. Here time is given in
+! days. Needs to return days.
+    utc_to_tt = utc_to_tt/86400.d0
+
+    return
+
+  end function utc_to_tt
+
+  real (kind=8) function lst (jd, longit)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! Returns the local MEAN sidereal time (dec hrs) at julian date jd
+! (UTC) at west longitude longit (decimal hours). Follows definition in
+! Capitaine /et al./ (2003), A&A, 406:1135, formula B.1 of Appendix B.
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : February 2023
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     jd    : JD in UTC, assimilated to UT1 (days) (R8)
+!     longit: West longitude of position (decimal degree) (R8)
+!
+! OUTPUT
+!     lst   : Local sidereal time (0-24h) (R8)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    implicit none
+
+    real (kind=8), intent(in) :: jd, longit
+
+    real (kind=8) :: j2000, sec_in_day, jul_cent
+    data j2000 /2451545.0d0/, sec_in_day /86400.0d0/
+    data jul_cent /36525.0d0/
+
+    real (kind=8) :: tt, tu, t, off, jdfrac, ut1
+
+! TT = TDB = UTC + utc_to_tt(UTC)
+    tt = jd + utc_to_tt(jd)
+! tu = UTC - J2000 (in Julian century)
+    tu = (jd - j2000)/jul_cent
+! t = TT - J2000 (in Julian century)
+    t = (tt - J2000)/jul_cent
+! jdfrac = jd - E[jd]
+    jdfrac = jd - dble(int(jd))
+! ut1 = jdfrac + 0.5
+    ut1 = jdfrac + 0.5d0
+
+! Offset OFF is in seconds; thus convert to days.
+    off = (24110.5493771d0 + 8640184.7945360d0*tu &
+         + 307.4771600d0*(t - tu) + 0.0931118d0*t**2 &
+         - 0.0000062d0*t**3 + 0.0000013d0*t**4)/sec_in_day
+    lst = ut1 + off
+    lst = lst - dble(int(lst))
+    lst = lst - longit/24.0d0
+    lst = (lst - dble(int(lst)))*24.0d0
+    if (lst .lt. 0.0d0) lst = lst + 24.0d0
+
+    return
+
+  end function lst
+
+! FILE OBLIQ.FTN
+!     DOUBLE PRECISION FUNCTION OBLIQ                        1986 Feb 18
+!     Computes mean obliquity of the ecliptic in radians
+
+!     Copyright (C) 1986 by David J. Tholen
+
+  real (kind=8) function OBLIQ(JED)
+    implicit none
+    real (kind=8) :: JED, T
+
+!     Compute time argument and mean obliquity of the ecliptic
+
+    T = (JED - 2415020.0d0)/36525.0d0
+    OBLIQ = (84428.26d0 - (46.845d0 + (5.9d-3 - 1.81d-3*T)*T)*T) &
+         *4.8481368110953599d-6
+    return
+  end function OBLIQ
+
   subroutine ztopi (var)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This subroutine resets var to be between 0 and 2Pi.

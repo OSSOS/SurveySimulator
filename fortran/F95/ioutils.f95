@@ -4,6 +4,67 @@ module ioutils
 
 contains
 
+  subroutine  hms(str,val)
+!
+!...Crack String And Create Value
+!
+!f2py intent(in) str
+!f2py intent(out) val
+    implicit none
+    character(*), intent(in) :: str
+    real (kind=8), intent(out) :: val
+    character(1) :: c
+    real (kind=8) :: piece(3), dp, sgn, z
+    integer :: nstr, i, j, dpfind
+!
+!...Initialization
+!
+100 val = 0.0D00
+    piece = 0.0d0
+    j = 1
+    dpfind = 0
+    sgn = 1.0D00
+    nstr = LEN(str)
+    IF (nstr.le.0) RETURN
+!
+!...Loop Over The String
+!
+    DO i=1,nstr
+       c = str(i:i)
+!
+!...Parse
+!
+       IF ((c.eq.'-').or.(c.eq.'e').or.(c.eq.'E') &
+            .or.(c.eq.'s').or.(c.eq.'S')) THEN
+          sgn = -1.0D00
+       ELSEIF ((c.eq.'+').or.(c.eq.'w').or.(c.eq.'W') &
+            .or.(c.eq.'n').or.(c.eq.'N')) THEN
+          sgn = 1.0D00
+       ELSEIF ((c.eq.':').or.(c.eq.',').or.(c.eq.' ')) THEN
+          j = j+1
+          dpfind = 0
+          IF (j.gt.3) GO TO 110
+       ELSEIF (c.eq.'.') THEN
+          dpfind = 1
+          dp = 1.0D00
+       ELSEIF ((c.ge.'0').and.(c.le.'9')) THEN
+          z = ICHAR(c)-ICHAR('0')
+          IF (dpfind.eq.0) THEN
+             piece(j) = 10.0D00*piece(j) + z
+          ELSE
+             dp = 0.1D00*dp
+             piece(j) = piece(j) + dp*z
+          ENDIF
+       ENDIF
+    ENDDO
+!
+!...Return
+!
+110 val = piece(1) + piece(2)/60.0D00 + piece(3)/3600.0D00
+    val = val*sgn
+    RETURN
+  END subroutine hms
+
   subroutine trim (base_name, i1, i2, finished, len)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine trims the input character string 'base_name' and returns
@@ -307,80 +368,167 @@ contains
     return
   end subroutine Format
 
-    character(100) function strip_comment(str)
-        character (*), intent(in) :: str
-        integer c_idx, i1, i2
-        logical finished
-        strip_comment = str
-        c_idx = index(strip_comment, '!')
-        if (c_idx /= 0) then
-            strip_comment = strip_comment(1:c_idx-1)
-        end if
-        call trim(strip_comment, i1, i2, finished, len(strip_comment))
-        strip_comment = strip_comment(i1:i2)
+  character(100) function strip_comment(str)
+    character (*), intent(in) :: str
+    integer c_idx, i1, i2
+    logical finished
+    strip_comment = str
+    c_idx = index(strip_comment, '!')
+    if (c_idx /= 0) then
+       strip_comment = strip_comment(1:c_idx-1)
+    end if
+    call trim(strip_comment, i1, i2, finished, len(strip_comment))
+    strip_comment = strip_comment(i1:i2)
 
-    end function strip_comment
+  end function strip_comment
 
-    subroutine read_jpl_csv(iunit, jd, pos, vel, ierr)
-      ! lookup line in ephemeris file (pointed to by iunit) with data close to jd and then use velocity
-      ! to adjust the pos values to that requested.
-      
-      implicit none
-      
-      integer, intent(in) :: iunit
-      real(kind=8), intent(in) :: jd
-      type(t_v3d), intent(out) :: pos, vel
-      integer, intent(out) :: ierr
-      
-      character(len = 512) :: line
-      character(len = 30) :: date
-      real(kind=8) ejd
-      integer :: iend, header_offset, ferr, offset
-      logical :: read_header
-      
-      
-      ! only read the header the first time we are called
-      data read_header /.true./
-      data header_offset /0/
-      save read_header, header_offset
-      
-      
-      ierr = 0
-      if (read_header) then
-         do
-            read(iunit, '(A512)', end=999) line
-            iend = len_trim(line)
-            if ( line == '$$SOE' ) then
-               read_header = .false.
-               header_offset = FTELL(iunit)
-               exit
-            end if
-         end do
-      end if
-      
-      ! Loop through the ephemeris lines to get to the desired JD
-      ! starting from line after the header
-      offset = header_offset - FTELL(iunit) 
-      CALL FSEEK(iunit, offset, 1, ferr)
-      do
-         read(iunit, '(A512)', end=999) line
-         iend = len_trim(line)
-         if ( line == '$$EOE' ) then
-            write (0,*) "Date ", jd," outside range of JPL Ephemeris provided."
-            ierr = 10
-            return 
-         end if
-         read(line(1:iend), '(F17.8,2X,A30,6(2X,F22.16))', err=998) ejd,  date, pos%x, pos%y, pos%z, vel%x, vel%y, vel%z
-         if ( ejd > jd) then
-            pos%x = pos%x + vel%x*(jd-ejd)
-            pos%y = pos%y + vel%y*(jd-ejd)
-            pos%z = pos%z + vel%z*(jd-ejd)
-            return
-         end if
-      end do
-998   ierr = 10
-999   return
-    end subroutine read_jpl_csv
+  subroutine read_observatories(filename)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! This routine reads in a file describing the observatories. Format is
+! the one derived from MPC, as used by BK2000:
+! <code (I)> <longitude (deg) (CH)> <latitude (deg) (CH)> ...
+!  ... <altitude (m) (R)> <name (CH)>
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : February 2023
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     filename: Name of file with observatory list (CH)
+!
+! OUTPUT
+!     sitelist: List of topographique informations for sites (n*t_site)
+!                 %lon: longitude (hour)
+!                 %lat: latitude (rd)
+!                 %altitude: altitude (m)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) filename
+    implicit none
+
+    character (len=*), intent(in) :: filename
+    character (len=80) :: word(nw_max)
+    character (len=256) :: line
+    integer (kind=4) :: lun_in, nw, lw(nw_max), i, j
+    data lun_in /15/
+
+    open(unit=lun_in, file=filename, status='old', err=1000)
+    nsites = 0
+
+150 continue
+    read (lun_in, '(a)', err=150, end=3000) line
+    if (line(1:1) .eq. '#') goto 150
+    call parse(line, nw_max, nw, word, lw)
+    nsites = nsites + 1
+    read(word(1), *, err=2000) sitelist(nsites)%code
+    call hms(word(2), sitelist(nsites)%lon)
+    sitelist(nsites)%lon = sitelist(nsites)%lon/15.0d0
+    call hms(word(3), sitelist(nsites)%lat)
+    sitelist(nsites)%lat = sitelist(nsites)%lat*drad
+    read(word(4), *, err=2000) sitelist(nsites)%altitude
+    j = 1
+    do i = 5, nw
+       sitelist(nsites)%name(j:j-1+lw(i)) = word(i)(:lw(i))
+       sitelist(nsites)%name(j+lw(i):j+lw(i)) = ' '
+       j = j + lw(i) + 1
+    end do
+    goto 150
+
+1000 continue
+    return
+
+2000 continue
+    nsites = 0
+
+3000 continue
+    close(lun_in)
+    return
+
+  end subroutine read_observatories
+
+  subroutine read_jpl_csv(iunit, jd, pos, vel, ierr)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! lookup line in ephemeris file (pointed to by iunit) with data close to
+! jd and then use velocity to adjust the pos values to that requested.
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! JJ Kavelaars National Research Council of Canada
+! Version 1 : November 2022
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     iunit : Logical unit number of CSV file (I4)
+!     jd    : Epoch of observation (Julian day) (R8)
+!
+! OUTPUT
+!     pos   : Position of spacecraft at epoch JD (AU) (3*R8)
+!     vel   : Velocity of spacecraft at epoch JD (AU/day) (3*R8)
+!     ierr  : Return code
+!                0: OK
+!               10: Error
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    implicit none
+
+    integer, intent(in) :: iunit
+    real(kind=8), intent(in) :: jd
+    type(t_v3d), intent(out) :: pos, vel
+    integer, intent(out) :: ierr
+
+    character(len = 512) :: line
+    character(len = 30) :: date
+    real(kind=8) ejd
+    integer :: iend, header_offset, ferr, offset
+    logical :: read_header
+
+! only read the header the first time we are called
+    data read_header /.true./
+    data header_offset /0/
+    save read_header, header_offset
+
+    ierr = 0
+    if (read_header) then
+       do
+          read(iunit, '(A512)', end=999) line
+          iend = len_trim(line)
+          if ( line == '$$SOE' ) then
+             read_header = .false.
+             header_offset = FTELL(iunit)
+             exit
+          end if
+       end do
+    end if
+
+! Loop through the ephemeris lines to get to the desired JD
+! starting from line after the header
+    offset = header_offset - FTELL(iunit) 
+    CALL FSEEK(iunit, offset, 1, ferr)
+    do
+       read(iunit, '(A512)', end=999) line
+       iend = len_trim(line)
+       if ( line == '$$EOE' ) then
+          write (0,*) "Date ", jd," outside range of JPL Ephemeris provided."
+          ierr = 10
+          return 
+       end if
+       read(line(1:iend), '(F17.8,2X,A30,6(2X,F22.16))', err=998) ejd,  date, &
+            pos%x, pos%y, pos%z, vel%x, vel%y, vel%z
+       if ( ejd > jd) then
+          pos%x = pos%x + vel%x*(jd-ejd)
+          pos%y = pos%y + vel%y*(jd-ejd)
+          pos%z = pos%z + vel%z*(jd-ejd)
+          return
+       end if
+    end do
+
+998 continue
+999 continue
+    ierr = 10
+
+    return
+
+  end subroutine read_jpl_csv
 
 end module ioutils
 
