@@ -11,7 +11,7 @@ contains
 
   subroutine Detos1 (o_m, jday, hx, color, gb, ph, period, amp, surnam, seed, &
        flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, &
-       jdayp, ic, surna, h_rand, ierr)
+       jdayp, ic, surna, h_rand, ierr, ephfile, obfile)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine determines if a given object is seen by the survey
 ! described in the directory \verb|surnam|.
@@ -30,6 +30,9 @@ contains
 !             statement to define array sizes (in include file).
 !             Continue looping on pointings until object is detected,
 !             characterized and tracked. Don't stop at first detection.
+! Version 5 : March 2023
+!             Added 2 optional arguments to define the ephemerides and
+!             observatories file names.
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
@@ -51,6 +54,8 @@ contains
 !     period: period of lightcurve [day] (R8)
 !     amp   : amplitude of lightcurve [mag] (R8)
 !     surnam: Survey directory name (CH)
+!     ephfile: Ephemerides file name (optional) (CH)
+!     obfile: Name of file with observatory list (optional) (CH)
 !
 ! OUTPUT
 !     seed  : Random number generator seed (I4)
@@ -116,8 +121,10 @@ contains
     real (kind=8), intent(in) :: jday, hx, color(:), gb, ph, period, amp
     real (kind=8), intent(out) :: ra, dec, d_ra, d_dec, r, delta, m_int, &
          m_rand, eff, mt, jdayp, h_rand
-    character(*), intent(in) :: surnam
-    character(10), intent(out) :: surna
+    character (len=*), intent(in) :: surnam
+    character (len=*), intent(in), optional :: ephfile
+    character (len=*), intent(in), optional :: obfile
+    character (len=10), intent(out) :: surna
 
     integer, parameter :: screen = 6, keybd = 5, verbose = 9, &
          lun_s = 13, lun_h = 6
@@ -152,7 +159,7 @@ contains
        first = .false.
 
 ! Opens and reads in survey definitions
-       call GetSurvey (surnam, lun_s, n_sur, points, sur_mmag, ierr)
+       call GetSurvey (surnam, lun_s, n_sur, points, sur_mmag, ierr, ephfile, obfile)
        if (ierr .ne. 0) then
           if (ierr .eq. 100) then
              write (screen, *) &

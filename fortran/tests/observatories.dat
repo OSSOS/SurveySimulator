@@ -1,0 +1,69 @@
+#	$Id: observatories.dat,v 2.0 2001/09/14 19:05:06 garyb Exp $	
+# File with data on observatories
+500    0:00:00     0:00:00    -6370000.  Geocenter
+010 +353:04:23.88 +43:33:24.26 1200 Caussols
+016 +354:00:38.52 +47:03:29.26 308 Besançon <http://www.obs-besancon.fr/Welcome_ang.html>
+020 +352:41:58.56 +43:31:45.65 375 Nice <http://www.oca.eu/accueil/english/>
+046  -14:17:17.2  48:51:47.8  1061.61 Klet Observatory, Ceske Budejovice
+130 +349:45:33.48 +45:28:26.55 1000 Lumezzane <http://www.astrofilibresciani.it/>
+204   -8:46:14.9  45:40:32.2  1000.00 Schiaparelli Observatory
+213   -2:23:07.4  41:19:43.6  1000.00 Observatorio Montcabre
+230  -12:00:47.9  47:30:44.9  1000.00 Mt. Wendelstein Observatory
+260  149:03:58.0 -31:16:36.7  1187    Siding Spring Observaotry
+261  116:51:50.4  33:21:21.6  1713.14 Palomar Mountain-DSS
+290  109:53:31.2  32:34:09.8  1000.0  Mt. Graham-VATT
+291  111:35:40.9  31:57:31.8  2058.4  LPL/Spacewatch II
+304   70:42:06.0  20:00:12.0  2282.0  Las Campanas Observatory
+309   70:24:11.5 -24:37:33.2  2631    Cerro Paranal Observatory
+333 +110:28:35.04 +31:47:23.95 1000 Desert Eagle Observatory <http://www.geocities.com/microplanet333/>
+360 -132:56:39.1  33:40:27.5  605.4   Kuma Kogen
+402 -136:18:28.1  35:12:30.1  218.649 Dynic Astronomical Observatory
+413 -149:03:58.0 -31:16:36.7  1187.2  Siding Spring Observatory
+461  -19:53:39.5  47:43:35.7  500.00  University of Szeged, Piszkéstető Stn.
+493    2:32:44.9  37:13:24.5  2172.62 Calar Alto
+540  -14:16:31.1  48:15:05.0  500.000 Linz
+561 +340:06:20.52 +47:43:35.69 1000   Piszkéstető Stn. (Konkoly)
+566  156:15:27.4  20:42:29.9  3040.45 Haleakela-NEAT
+568  155:28:19.9  19:49:33.9  4207.24 Mauna Kea
+566  156:15:28.8  20:42:29.9  3040.45 Haleakela-AMOS
+615 +353:05:35.88 +44:30:19.92 2900 St. Véran <http://www.bdl.fr/s2p/stveran/index_eng.html>
+608 +156:15:28.80 +20:34:53.25 3040 Haleakala-AMOS <http://neat.jpl.nasa.gov/>
+620 +357:02:53.88 +39:27:18.11 1000 Observatorio Astronómico de Mallorca <http://www.oam.es/>
+621   -7:29:08.9  51:05:15.6  325.023 Bergisch Gladbach
+644  116:51:35.2  33:10:51.1  1713.00 Palomar Mountain/NEAT <http://neat.jpl.nasa.gov/>
+645  105:49:14.1  32:36:20.3  2788.00 Apache Point-Sloan Digital Sky Survey <http://www.sdss.org/>
+662  121:38:43.8  37:09:17.0  1000.00 Lick Observatory, Mount Hamilton
+675  116:51:50.4  33:21:21.6  1713.14 Palomar Mountain
+684 +112:29:24.0 +34:19:59.6  1000 Prescott
+688  111:32:07.8  35:05:45.4  2212.09 Lowell Obs., Anderson Mesa Sta.
+689  111:44:23.6  35:11:02.1  2297.35 U.S. Naval Observatory, Flagstaff
+691  111:35:57.8  31:57:46.4  2040.61 Steward Obs., Kitt Peak-Spacewatch
+695  111:35:40.9  31:57:31.8  2058.4  Kitt Peak
+696  110:53:04.6  31:41:20.4  2622.58 Whipple Observatory, Mt. Hopkins
+697  111:36:56.9  31:57:00.4  1913.37 Kitt Peak, McGraw-Hill
+705  105:49:12.0  32:47:01.1  2674.42 Apache Point
+709  105:46:16.3  32:57:21.0  2496.35 W & B Observatory, Cloudcroft
+711  104:01:17.4  30:40:17.4  2103.73 McDonald Observatory, Fort Davis
+715 +106:43:26.76 +32:12:39.37 1000 Jornada Observatory, Las Cruces <http://www.cybermesa.com/~ddixon/>
+807   70:48:21.2 -30:10:08.8  2385.89 Cerro Tololo Observatory, La Serena
+809   70:43:46.6 -29:15:25.7  2391.82 European Southern Obs., La Silla
+829   69:18:07.6 -31:37:38.3  1000.00 Complejo Astronomico El Leoncito
+850 +85:55:11.28 +35:01:22.91 1000 Cordell-Lorenz Observatory, Sewanee <http://www.sewanee.edu/physics/OBSERVATORY/observatory.html>
+867 -134:07:19.9  35:20:20.1  386.665 Saji Observatory
+950   17:52:56.6  28:45:36.8  2324.09 La Palma
+954   16:29:48.1  28:17:30.3  2118.8  Teide Observatory
+1551 156:15:21.9  20:34:49.2  3040.00 Pan-STARRS 1, Haleakala
+1565 156:15:27.4  20:34:48.7  3040.00 Haleakala-Faulkes Telescope North
+1636   2:32:51.0  37:02:15.9  2170.00 Calar Alto-CASADO
+1637 111:25:21.0  34:33:51.6  2200.00 Lowell Observatory-Discovery Channel Telescope
+1645 106:21:51.7  33:33:43.1  2000.00 Space Surveillance Telescope, Atom Site
+1689 111:41:35.2  34:55:07.3  2200.00 Kachina Observatory, Flagstaff
+1696 110:47:19.4  32:18:58.2  2200.00 Mt. Lemmon Survey <http://www.lpl.arizona.edu/css/>
+1706 105:31:43.3  32:54:11.9  2225.00 iTelescope Observatory, Mayhill
+1811  70:44:11.6 -30:04:24.7  2000.00 Gemini South Observatory, Cerro Pachon
+1817 +75:40:40.58 +41:24:19.34 1000 Thomas G. Cupillari Observatory, Fleetville <http://www.keystone.edu/observatory/>
+3284  70:48:23.1 -30:00:09.79 2000 Cerro Tololo-DECam
+# For orbiting spacecraft:
+#code inclination  period  precess_P  jd0   ra0  name
+#       (deg)      (days)  (days)          (deg)
+4000  28.48       0.067125   56.     2452066.  255  Pseudo-HST

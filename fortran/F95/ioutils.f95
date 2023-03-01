@@ -382,7 +382,7 @@ contains
 
   end function strip_comment
 
-  subroutine read_observatories(filename)
+  subroutine read_observatories(obfile)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine reads in a file describing the observatories. Format is
 ! the one derived from MPC, as used by BK2000:
@@ -395,7 +395,7 @@ contains
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
-!     filename: Name of file with observatory list (CH)
+!     obfile: Name of file with observatory list (optional) (CH)
 !
 ! OUTPUT
 !     sitelist: List of topographique informations for sites (n*t_site)
@@ -406,13 +406,18 @@ contains
 !f2py intent(in) filename
     implicit none
 
-    character (len=*), intent(in) :: filename
+    character (len=*), intent(in), optional :: obfile
     character (len=80) :: word(nw_max)
     character (len=256) :: line
     integer (kind=4) :: lun_in, nw, lw(nw_max), i, j
     data lun_in /15/
 
-    open(unit=lun_in, file=filename, status='old', err=1000)
+    if (present(obfile)) then
+       line = obfile
+    else
+       line = obsfile
+    end if
+    open(unit=lun_in, file=line, status='old', err=1000)
     nsites = 0
 
 150 continue

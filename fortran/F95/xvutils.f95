@@ -68,7 +68,118 @@ contains
 
   end subroutine DistSunEcl
 
-  subroutine ObsPos (code, t, pos, vel, r, ierr)
+  subroutine topo (geolong, geolat, height, pos)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! This routine computes the geocentric coordinates from the geodetic
+! (standard map-type) longitude, latitude, and height. These are
+! assumed to be in radians, radians and meters respectively.
+! Notation generally follows 1992 Astr Almanac, p. K11
+! Returns the cartesian coordinates of the observatory.
+! Units : AU
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : February 2023
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     geolong: longitude of observatory (rd) (R8)
+!     geolat: latitude of observatory (rd) (R8)
+!     height: altitude of observatory above ground (m) (R8)
+!
+! OUTPUT
+!     pos   : Cartesian coordinates of observatory (AU) (3*R8)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) geolong
+!f2py intent(in) geolat
+!f2py intent(in) height
+!f2py intent(out) pos
+    implicit none
+
+    real (kind=8), intent(in) :: geolong, geolat, height
+    real (kind=8), dimension(3), intent(out) :: pos
+    real (kind=8) :: denom, C_geo, S_geo
+
+    denom = (1.0d0 - Flatten) * sin(geolat)
+    denom = cos(geolat)**2 + denom*denom
+    C_geo = 1.0d0 / sqrt(denom)
+    S_geo = (1.0d0 - Flatten)**2 * C_geo
+    C_geo = C_geo* Equat_Rad + height ! deviation from almanac notation -- include height here.
+    S_geo = S_geo* Equat_Rad + height
+    pos(1) = C_geo * cos(geolat) * cos(geolong)
+    pos(2) = C_geo * cos(geolat) * sin(geolong)
+    pos(3) = S_geo * sin(geolat);
+
+! convert to AU, keeping in mind that Horizons was km and this is m
+    pos(1) = pos(1)/(1000.0d0*km2AU)
+    pos(2) = pos(2)/(1000.0d0*km2AU)
+    pos(3) = pos(3)/(1000.0d0*km2AU)
+
+    return
+  end subroutine topo
+
+  subroutine observatory_geocenter (code, t, pos, obfile)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! This routine returns the cartesian coordinates of the observatory
+! with respect to the geocenter, at time t.
+! Returns cartisian coordiantes.
+! Reference frame : ICRF
+! Units : AU
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! J-M. Petit  Observatoire de Besancon
+! Version 1 : February 2023
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     code  : Observatory code (I4)
+!              000 : Solar System Barycenter
+!              001 : GAIA
+!              002 : Geocentric, Mignard's code
+!              500 : Geocentric
+!              <0  : -lun of a file handle to read JPL state vectors from
+!     t     : Time of observation (Julian day, not MJD) (R8)
+!     obfile: Name of file with observatory list (optional) (CH)
+!
+! OUTPUT
+!     pos   : Cartesian coordinates of observatory (AU) (3*R8)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) code
+!f2py intent(in) t
+!f2py intent(out) pos
+    implicit none
+
+    integer (kind=4), intent(in) :: code
+    real (kind=8), intent(in) :: t
+    character (len=*), intent(in), optional :: obfile
+    real (kind=8), dimension(3), intent(out) :: pos
+    integer (kind=4) :: i
+    real (kind=8) :: obslon, obslat, obsalt, obslmst
+
+    if (nsites .lt. 0) then
+       call read_observatories(obfile)
+    end if
+
+    i = 1
+    do while ((i .le. nsites) .and. (code .ne. sitelist(i)%code))
+       i = i + 1
+    end do
+    if (i .gt. nsites) then
+       print *, 'ERROR, unknown observatory code', code
+       stop 1
+    end if
+
+    obslon = sitelist(i)%lon
+    obslat = sitelist(i)%lat
+    obsalt = sitelist(i)%altitude
+
+    obslmst = lst(t, obslon)
+    call topo (obslmst/12.0d0*Pi, obslat, obsalt, pos)
+
+    return
+  end subroutine observatory_geocenter
+
+  subroutine ObsPos (code, t, pos, vel, r, ierr, ephfile, obfile)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine returns the cartesian coordinates of the observatory.
 ! Reference frame : ICRF
@@ -86,6 +197,8 @@ contains
 !              500 : Geocentric
 !              <0  : -ve of a file handle to read JPL state vectors from
 !     t     : Time of observation (Julian day, not MJD) (R8)
+!     ephfile: Ephemerides file name (optional) (CH)
+!     obfile: Name of file with observatory list (optional) (CH)
 !
 ! OUTPUT
 !     pos   : Cartesian coordinates of observatory (AU) *(R8)
@@ -107,20 +220,28 @@ contains
 
     type(t_v3d), intent(out) :: pos, vel
     integer, intent(in) :: code
+    character (len=*), intent(in), optional :: ephfile
+    character (len=*), intent(in), optional :: obfile
     integer, intent(out) :: ierr
     real (kind=8), intent(in) :: t
     real (kind=8), intent(out) :: r
     type(t_v3d) :: pos_s, vel_s
-    integer (kind=4) :: istat, ntar
+    integer (kind=4) :: istat, ntar, i1, i2
     data ntar /4/ ! Earth index in idtarg
     real (kind=8) :: v_pos(3), pv(6)
-    logical :: first_obspos
+    logical :: first_obspos, finished
     data first_obspos /.true./
     save first_obspos, ntar
 
     if (first_obspos) then
+! Set epehmerides file name, if need be
+       if (present(ephfile)) then
 ! Initialize ephemerides
-       call init_DE()
+          call init_DE(ephfile)
+       else
+! Initialize ephemerides
+          call init_DE()
+       end if
        first_obspos = .false.
     end if
 
@@ -166,7 +287,7 @@ contains
        vel%y = pv(5)
        vel%z = pv(6)
        if (code .ne. 500) then
-          call observatory_geocenter(code, t, v_pos)
+          call observatory_geocenter(code, t, v_pos, obfile)
           pos%x = pos%x + v_pos(1)
           pos%y = pos%y + v_pos(2)
           pos%z = pos%z + v_pos(3)

@@ -562,7 +562,7 @@ contains
 
   end subroutine get_code
 
-  subroutine read_sur (dirn, lun_in, point, ierr)
+  subroutine read_sur (dirn, lun_in, point, ierr, ephfile, obfile)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in the survey description file.
 ! Angles are returned in radian.
@@ -579,6 +579,8 @@ contains
 ! INPUT
 !     dirn  : Name of directory with survey definition (CH)
 !     lun_in: File unit (I4)
+!     ephfile: Ephemerides file name (optional) (CH)
+!     obfile: Name of file with observatory list (optional) (CH)
 !
 ! OUTPUT
 !     point : Pointing structure including all characterisation (pointing)
@@ -597,12 +599,14 @@ contains
     type(t_pointing), intent(out) :: point
     integer, intent(in) :: lun_in
     integer, intent(out) :: ierr
-    character(*), intent(in) :: dirn
+    character (len=*), intent(in) :: dirn
+    character (len=*), intent(in), optional :: ephfile
+    character (len=*), intent(in), optional :: obfile
     type(t_v3d) :: vel
     real (kind=8) :: w, h, ra, dec, r
-    integer :: j, nw, lw(nw_max), lun_e, ierr_e, i1, i2, i3, i4
-    character(100) :: line, fname
-    character(80) :: word(nw_max)
+    integer :: j, nw, lw(nw_max), lun_e, ierr_e, i1, i2, i3
+    character (len=100) :: line, fname
+    character (len=80) :: word(nw_max)
     logical, save :: opened, finished
 
     data opened /.false./
@@ -700,8 +704,6 @@ contains
 ! Ephemerides).
 
     point%efnam = word(8)
-    call read_file_name (point%efnam, i3, i4, finished, len(point%efnam))
-
 ! Open and read in efficiency function
     fname(1:i2-i1+2) = dirn(i1:i2)//'/'
     fname(i2-i1+3:) = point%efnam
@@ -720,21 +722,21 @@ contains
 1610 continue
 
 ! Get rid of unused bins at high magnitude for lookup tables
-    do i1 = 1, point%c%nr
-       if (point%c%eff_p(i1)%n .gt. 0) then
-          j = point%c%eff_p(i1)%n
+    do i3 = 1, point%c%nr
+       if (point%c%eff_p(i3)%n .gt. 0) then
+          j = point%c%eff_p(i3)%n
 1700      continue
-          if (point%c%eff_p(i1)%e(j) .le. 0.d0) then
+          if (point%c%eff_p(i3)%e(j) .le. 0.d0) then
              j = j - 1
              goto 1700
           end if
-          point%c%eff_p(i1)%n = amin0(j+1, point%c%eff_p(i1)%n)
+          point%c%eff_p(i3)%n = amin0(j+1, point%c%eff_p(i3)%n)
        end if
     end do
 
 ! Computes observatory position at given jday, in ICRF
     call ObsPos (point%code, point%o_pos(1)%jday, point%o_pos(1)%pos, vel, &
-         point%o_pos(1)%r, ierr_e)
+         point%o_pos(1)%r, ierr_e, ephfile, obfile)
 
     if (ierr_e .ne. 0) then
        write (6, *) 'Error while computing observatory''s position. (one)'
@@ -769,7 +771,7 @@ contains
 
   end subroutine read_sur
 
-  subroutine GetSurvey (survey, lun_s, n_sur, points, sur_mm, ierr)
+  subroutine GetSurvey (survey, lun_s, n_sur, points, sur_mm, ierr, ephfile, obfile)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine reads in a survey description.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -786,6 +788,8 @@ contains
 ! INPUT
 !     survey: Survey directory name (CH)
 !     lun_s : Logical unit for file (I4)
+!     ephfile: Ephemerides file name (optional) (CH)
+!     obfile: Name of file with observatory list (optional) (CH)
 !
 ! OUTPUT
 !     n_sur : Number of pointings read (I4)
@@ -807,17 +811,20 @@ contains
     integer, intent(in) :: lun_s
     integer, intent(out) :: n_sur, ierr
     real (kind=8), intent(out) :: sur_mm(n_sur_max)
-    character(*), intent(in) :: survey
+    character (len=*), intent(in) :: survey
+    character (len=*), intent(in), optional :: ephfile
+    character (len=*), intent(in), optional :: obfile
     type(t_pointing) :: point
     real (kind=8) :: rate, tmp, mag, eff
     integer :: nr, n, j, i, i1, i2
     logical :: finished
 
-! Open and read in survey definitions
     call read_file_name (survey, i1, i2, finished, len(survey))
+
+! Open and read in survey definitions
     n_sur = 0
 200 continue
-       call read_sur (survey(i1:i2), lun_s, point, ierr)
+       call read_sur (survey(i1:i2), lun_s, point, ierr, ephfile, obfile)
 
        if (ierr .ne. 0) then
           if (ierr .eq. 10) then
