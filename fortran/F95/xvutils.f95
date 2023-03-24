@@ -189,6 +189,13 @@ contains
     real (kind=8) :: v_pos(3)
 
     ierr = 0
+
+! Get barycenter position (ecliptic).
+    call BaryXV (t, pos_b, vel_b, istat)
+    if (ierr .ne. 0) then
+       write (6, *) 'Problem while getting barycenter position'
+    end if
+
     if (code .eq. 1) then
        ierr = 10
        return
@@ -213,12 +220,6 @@ contains
        vel%y = 0.d0
        vel%z = 0.d0
 
-! Now move to barycenter. First get barycenter position (ecliptic).
-       call BaryXV (t, pos_b, vel_b, istat)
-       if (ierr .ne. 0) then
-          write (6, *) 'Problem while getting barycenter position'
-       end if
-
 ! Convert barycenter position to Equatorial.
        call equat_ecl (-1, pos_b, pos_b, ierr)
        if (ierr .ne. 0) then
@@ -228,6 +229,8 @@ contains
        if (ierr .ne. 0) then
           write (6, *) 'Problem in conversion ecliptic -> equatorial'
        end if
+
+! Now move to barycenter.
        pos%x = pos%x - pos_b%x
        pos%y = pos%y - pos_b%y
        pos%z = pos%z - pos_b%z
@@ -250,7 +253,7 @@ contains
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine gives the osculating elements in heliocentric reference
 ! frame of a planet at a given time. From given elements and rates.
-! Valid roughly from 1900 to 2100.
+! Valid roughly from 1800 to 2050.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !
 ! J-M. Petit  Observatoire de Besancon
