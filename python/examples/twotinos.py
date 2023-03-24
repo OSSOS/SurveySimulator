@@ -14,7 +14,9 @@ from astropy.coordinates import SkyCoord
 from astropy.table import Table
 import ossssim
 from ossssim.models import Resonant
+from ossssim.plotter import RosePlot
 import os
+from matplotlib import pyplot as plt
 
 
 class TwoTinoSymmetric(Resonant):
@@ -52,7 +54,8 @@ class TwoTinoSymmetric(Resonant):
         Uniformly distributed across the width
         """
         if self._resamp is None:
-            self._resamp = self.distributions.uniform(140., 167.) * units.deg
+            # self._resamp = self.distributions.uniform(140., 167.) * units.deg
+            self._resamp = self.distributions.uniform(14., 16.) * units.deg
         return self._resamp
 
     @property
@@ -221,16 +224,16 @@ def face_down_plot(model_file: str, detect_file: str,
         detection_table: an astropy Table with helioentric x, y columns
     """
     detect_model = ossssim.ModelFile(detect_file)
-    plot = ossssim.RosePlot(detect_model.epoch)
+    plot = RosePlot(detect_model.epoch)
     plot.add_model(detect_model, ms=10, mc='g')
     # noinspection PyArgumentEqualDefault
     drawn_model = ossssim.ModelFile(model_file)
     plot.add_model(drawn_model, mc='k', ms=1, alpha=0.5, sample_size=5000)
-    plot.add_pointings('Surveys/OSSOS/pointings.list')
+    plot.add_pointings('OSSOSv11/ObsSummary/OSSOS/pointings.list')
     if detection_table is not None:
         plot.add_detections(detection_table)
     plot.add_galactic_plane()
-    plot.show()
+    plt.savefig('twotinos.pdf')
 
 
 if __name__ == '__main__':
@@ -238,16 +241,17 @@ if __name__ == '__main__':
     # Goal is to model the OSSOS 2:1 detections.  First we load all the OSSOS detections from the
     # summary file and determine how many 2:1 objects there were.
 
-    data = Table.read(os.path.join('OSSOSv11/ObsSummary/OSSOS.CDS')
+    data = Table.read(os.path.join('OSSOSv11/ObsSummary/OSSOS/OSSOS_v11.CDS')
                       , format='cds')
     cond = (data['cl'] == 'res') & (data['j'] == 2) & (data['k'] == 1)
 
     # now run a survey simulation.
-    run('TwotinoModel.dat',
-        'TwotinoDetect.dat',
-        os.path.join('OSSOSv11/ObsSummary/OSSOS'),
-        123456789,
-        55)
+    if not os.access('TwotinoModel.dat', os.F_OK):
+        run('TwotinoModel.dat',
+            'TwotinoDetect.dat',
+            os.path.join('OSSOSv11/ObsSummary/OSSOS'),
+            123456789,
+            55)
 
     # confirm this looks like the OSSOS detections using rose plot.
     face_down_plot('TwotinoModel.dat',
