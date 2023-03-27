@@ -5,4 +5,7 @@ numpy~=1.23.1
 matplotlib~=3.3.4
 astroquery~=0.4.6
 ephem~=3.7.7.1
-setuptools>65.5.1
+setuptools~=56.0.0
+
+rebound~=3.24.0
+scipy~=1.6.1
