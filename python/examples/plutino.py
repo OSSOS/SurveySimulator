@@ -54,6 +54,7 @@ def run(model_filename,
     detect_file.write_footer(n_iter=n_iter, n_hits=n_hits, n_track=n_tracked)
     model_file.write_footer(n_iter=n_iter, n_hits=n_hits, n_track=n_tracked)
 
+
 def face_down_plot(model_file: str, detect_file: str) -> None:
     """_
     Plot the detected objects in a face-down plot
@@ -63,7 +64,7 @@ def face_down_plot(model_file: str, detect_file: str) -> None:
     plot = plotter.RosePlot(definitions.Neptune['Longitude'])
     plot.add_model(ModelFile(model_file), mc='k', ms=0.05, alpha=0.1)
     plot.add_model(ModelFile(detect_file), ms=5, mc='g')
-    plot.plot_rings()
+    # plot.plot_rings()
     plot.show()
 
 
