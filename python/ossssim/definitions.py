@@ -23,7 +23,13 @@ T_ORB_M_UNITS = {'a': u.au,
                  'Node': u.radian,
                  'peri': u.radian,
                  'M': u.radian,
-                 'epoch': u.day
+                 'epoch': u.day,
+                 'x': u.au,
+                 'y': u.au,
+                 'z': u.au,
+                 'vx': u.au/u.year,
+                 'vy': u.au/u.year,
+                 'vz': u.au/u.year
                  }
 
 
@@ -83,6 +89,14 @@ colunits = {'a': units.au,
             'P': units.year,
             'epoch': units.day,
             'Epoch': units.day,
+            'x': u.au,
+            'y': u.au,
+            'z': u.au,
+            'vx': u.au/u.year,
+            'vy': u.au/u.year,
+            'vz': u.au/u.year,
+            'delta_v': u.meter/u.second,
+            'dt': u.year
             }
 
 COLUMN_WIDTH = 10
