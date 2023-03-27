@@ -310,8 +310,7 @@ class RosePlot:
         """
         Make a face-down plot of the solar system for this model.
         """
-        state = model.cartesian
-        coord = SkyCoord(state['x'], state['y'], state['z'], representation_type='cartesian',
+        coord = SkyCoord(model.targets['x'], model.targets['y'], model.targets['z'], representation_type='cartesian',
                          frame='heliocentrictrueecliptic', obstime='2000-01-01').transform_to(self.frame)
 
         if sample_size is None:
