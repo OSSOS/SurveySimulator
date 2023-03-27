@@ -10,16 +10,18 @@ from collections import OrderedDict
 from collections.abc import Iterable
 
 import numpy
+import rebound
 from astropy import units
 from astropy.table import QTable
 from astropy.time import Time
 from astropy.units import Quantity
 from numpy import random
 
+# from .lib import SurveySubsF95
 from . import definitions
+# from . import definitions
 from . import distributions
-from .lib import SurveySubsF95
-from . import definitions
+
 T_ORB_M_UNITS = definitions.T_ORB_M_UNITS
 RE_FLOAT = re.compile('[+-]?\d+\.?\d*[de]?\d*')
 
@@ -431,57 +433,6 @@ class ModelFile(Iterable):
             self._f = (2. * numpy.arctan(((1. + e) / (1. - e)) ** 0.5 * numpy.tan(big_e / 2.)))
         return self._f
 
-    @property
-    def cartesian(self):
-        """
-        provide the state vector of the orbits.
-
-        Returns:
-            (dict[ndarray, ndarray, ndarray, ndarray, ndarray, ndarray]): dictionary of x/y/z/vx/vy/vz
-        """
-
-        # compute the unit vector
-        f = self.f
-        capom = self.targets['node']
-        om = self.targets['peri']
-        inc = self.targets['inc']
-        a = self.targets['a']
-        e = self.targets['e']
-        u = om + f
-        np = numpy
-        x_hat = np.cos(u) * np.cos(capom) - np.cos(inc) * np.sin(capom) * np.sin(u)
-        y_hat = np.cos(u) * np.sin(capom) + np.cos(inc) * np.cos(capom) * np.sin(u)
-        z_hat = np.sin(inc) * np.sin(u)
-
-        # compute the angular momentum vector (unit vector)
-        hx = np.sin(capom) * np.sin(inc)
-        hy = -np.cos(capom) * np.sin(inc)
-        hz = np.cos(inc)
-
-        # assuming not parabolic, here the magnitudes of the vectors
-        r = a * (1.0 - e * e) / (1.0 + e * np.cos(f))
-        h = (a * (1.0 - e * e)) ** 0.5
-
-        # position vectors
-        x = r * x_hat
-        y = r * y_hat
-        z = r * z_hat
-
-        # compute components of vector theta hat
-        thx = hy * z_hat - hz * y_hat
-        thy = hz * x_hat - hx * z_hat
-        thz = hx * y_hat - hy * x_hat
-
-        # obtain the velocity vector's components and calculate v
-        theta_dot = h / (r * r)
-        r_dot = e * np.sin(f) / h
-
-        vx = r * theta_dot * thx + r_dot * x_hat
-        vy = r * theta_dot * thy + r_dot * y_hat
-        vz = r * theta_dot * thz + r_dot * z_hat
-
-        return {'x': x, 'y': y, 'z': z, 'vx': vx, 'vy': vy, 'vz': vz}
-
 
 class HDistribution:
     """
@@ -529,6 +480,7 @@ class Parametric(ABC):
         self._a = self._e = self._inc = self._node = self._peri = self._M = None
         self._H = self._lc_gb = self._lc_phase = self._lc_period = self._lc_amplitude = None
         self._phi = self._resamp = self._colors = self._comp = None
+        self._cartesian = self._targets = self._iter = self._sim = None
 
         if seed is None:
             seed = numpy.random.randint(1, 999999999)
@@ -547,10 +499,50 @@ class Parametric(ABC):
         self.a_neptune = 30.07 * units.au
         self.comp = "Cls"
         self.epoch = epoch
+        self.rebound_archive = f"Rebound_Archive_{self.seed}.bin"
 
-        # these are protected variables
-        self.iter = None  # holds an iterator based on the iterable QTable that holds element values
-        self.targets = None  # holds the value of the property target
+    @property
+    def sim(self):
+        """
+        A rebound Simulation object used to compute the cartesian locations of the particles in this model.
+        """
+        if self._sim is None:
+            if not os.access(self.rebound_archive, os.F_OK):
+                _sim = rebound.Simulation()
+                _sim.add("Sun")
+                _sim.add("Jupiter")
+                _sim.add("Saturn")
+                _sim.add("Uranus")
+                _sim.add("Neptune")
+                _sim.move_to_com()
+                _sim.simulationarchive_snapshot(self.rebound_archive)
+                del(_sim)
+            self._sim = rebound.SimulationArchive(self.rebound_archive)[0]
+        return self._sim
+
+    @property
+    def cartesian(self):
+        """
+        provide the state vector of the orbits.
+
+        Returns:
+            (dict[ndarray, ndarray, ndarray, ndarray, ndarray, ndarray]): dictionary of x/y/z/vx/vy/vz
+        """
+        if self._cartesian is None:
+            for i in range(self.size):
+                self.sim.add(a=self.a[i].to('au').value,
+                             e=self.e[i],
+                             inc=self.inc[i].to('rad').value,
+                             Omega=self.node[i].to('rad').value,
+                             omega=self.peri[i].to('rad').value,
+                             M=self.M[i].to('rad').value)
+            self._cartesian = {}
+            for s in ['x', 'y', 'z']:
+                self._cartesian[s] = [p.__getattribute__(s) for p in self.sim.particles[5:]] * units.au
+            for s in ['vx', 'vy', 'vz']:
+                self._cartesian[s] = [p.__getattribute__(s)*(2*numpy.pi) for p in self.sim.particles[5:]] * units.au/units.year
+
+        return self._cartesian
 
     @property
     @abstractmethod
@@ -558,6 +550,11 @@ class Parametric(ABC):
         """
         J2000 Heliocentric semi-major axis.
         """
+        pass
+
+    @property
+    @abstractmethod
+    def phi(self):
         pass
 
     @property
@@ -600,7 +597,7 @@ class Parametric(ABC):
         Return uniformly distributed mean anomalies
         """
         if self._M is None:
-            self._M = self.distributions.uniform(0, 2*numpy.pi) * units.rad
+            self._M = self.distributions.uniform(0, 2**5*numpy.pi) * units.rad
         return self._M
 
     @property
@@ -765,14 +762,21 @@ class Parametric(ABC):
         """
         self._a = self._e = self._inc = self._node = self._peri = self._M = None
         self._H = self._lc_gb = self._lc_phase = self._lc_period = self._lc_amplitude = None
-        self._resamp = self._colors = None
+        self._resamp = self._colors = self._cartesian = self._sim = None
 
-        return QTable([self.a, self.e, self.inc, self.node, self.peri, self.M, [self.epoch,]*len(self.M),
+        return QTable([self.a, self.e, self.inc, self.node, self.peri, self.M,
+                       self.j, self.k, self.phi, self.resamp,
+                       self.cartesian['x'], self.cartesian['y'], self.cartesian['z'],
+                       self.cartesian['vx'], self.cartesian['vy'], self.cartesian['vz'],
                        self.H, self.lc_gb, self.lc_phase, self.lc_period, self.lc_amplitude,
-                       self.resamp, self.colors, self.comp, self.j, self.k, self.phi],
-                      names=['a', 'e', 'inc', 'node', 'peri', 'M', 'epoch',
+                       self.colors, self.comp],
+                      names=['a', 'e', 'inc', 'node', 'peri', 'M',
+                             'j', 'k', 'phi', 'resamp',
+                             'x', 'y', 'z',
+                             'vx', 'vy', 'vz',
                              'H', 'lc_gb', 'lc_phase', 'lc_period', 'lc_amplitude',
-                             'resamp', 'colors', 'comp', 'j', 'k', 'phi'])
+                             'colors', 'comp',
+                             ])
 
     @property
     def targets(self):
@@ -876,7 +880,7 @@ class Resonant(Parametric):
 
         if j is None or k is None:
             ValueError(f"Resonance j/k are not None for Resonant Model objects")
-        self._res_amp_low = self._res_amp_high = self._res_amp_mid = self._res_centre = None
+        self._res_amp_low = self._res_amp_high = self._res_amp_mid = self._phi0 = None
         self.res_amp_low = res_amp_low
         self.res_amp_high = res_amp_high
         self.res_amp_mid = res_amp_mid
@@ -920,6 +924,11 @@ class Resonant(Parametric):
         self._res_centre = value
 
     @property
+    def phi0(self):
+        """Resonance centre"""
+        return self.res_centre
+
+    @property
     def a(self):
         """
         J2000 Heliocentric semi-major axis sampled as +/- 0.5 from the resonance semi-major axis value.
@@ -931,7 +940,6 @@ class Resonant(Parametric):
             self._a = self.distributions.uniform(a_min.to('au').value,
                                                  a_max.to('au').value) * units.au
         return self._a
-
 
     @property
     def e(self):
@@ -959,14 +967,16 @@ class Resonant(Parametric):
     def peri(self):
         """
         Distribute peri centre to obey the phi/M/_longitude_neptune constraints.
-        """
-        """
-        From Volk/Chen code.
-        phi52 = (libc + 2*resamp*(ran3(seed) - 0.5))
-        peri = phi52 - 2.0d0*m + longitude_neptune  - node
+
+        See Volk et al. 2016 for info on computing peri given a choice phi.
         """
         if self._peri is None:
-            self._peri = (self.phi / self.k - self.j * self.M / self.k + self.longitude_neptune - self.node) % (360 * units.deg)
+            # self._peri = (self.phi - p*self.M + q*self.longitude_neptune - q*self.node)/q
+            p = self.j
+            q = self.k
+            self._peri = ((self.phi - p*self.M + q*self.longitude_neptune - q*self.node)/q) % (360*units.deg)
+            # below is different algebra to get the same result
+            # self._peri = (self.phi / self.k - self.j * self.M / self.k + self.longitude_neptune - self.node) % (360 * units.deg)
         return self._peri
 
     @property
