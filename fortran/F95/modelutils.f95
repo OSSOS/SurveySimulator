@@ -448,7 +448,7 @@ contains
     data h_min /-1.d0/
     data sl1 /0.13d0/, sl2 /0.6d0/
     data h1 /3.2d0/, h2 /6.d0/, n1 /3.d0/
-    data scale /2.0d0/
+    data scale /2.2d0/
 
     if (first) then
        h_max = hparam(nparam)
