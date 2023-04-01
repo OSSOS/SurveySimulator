@@ -32,14 +32,16 @@ RUN pip3 install astropy
 RUN pip3 install astroquery
 RUN pip3 install matplotlib
 RUN pip3 install f90wrap
+RUN pip3 install rebound
+RUN pip3 install jupyter
+RUN pip3 install jupyterlab
 
 # Build the SSim
 RUN mkdir /opt/SSim
-COPY Surveys /opt/SSim/Surveys
-COPY Models /opt/SSim/Models
-COPY F95 /opt/SSim/F95
+RUN mkdir /opt/SSim/fortran
+COPY fortran/F95 /opt/SSim/fortran/F95
 COPY python /opt/SSim/python
-WORKDIR /opt/SSim/F95
+WORKDIR /opt/SSim/fortran/F95
 RUN make clean && make Driver GIMEOBJ=ReadModelFromFile
 RUN cp Driver /usr/local/bin/SSim
 WORKDIR /opt/SSim/python
