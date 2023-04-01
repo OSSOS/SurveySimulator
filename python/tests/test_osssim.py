@@ -11,7 +11,7 @@ class OSSSIMTest(unittest.TestCase):
         result = ossssim.ModelFile('data/test_detect.dat')
         self.result_row = next(iter(result))
         self.seed = int(result.header['Seed'])
-        self.osssim = ossssim.OSSSSim('data/CFEPS')
+        self.osssim = ossssim.OSSSSim('data/Surveys/CFEPS')
 
     def test_simulate(self):
         # loop over the model file until we have a detection and then compare the detected row values to the test row

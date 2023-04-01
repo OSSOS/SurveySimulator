@@ -23,19 +23,10 @@ def face_down_plot() -> None:
     plot.add_model(distant_kbos, mc='r', ms=10)
 
     # add pointing wedges from the OSSOS++ surveys
-    plot.add_pointings(os.path.join('/Users/kavelaarsj/Dropbox/Research/KuiperBelt/OSSOS/OSSOSv11/ObsSummary/All_Surveys/pointings.list'))
-
-    # Add the classy pointing plan.
-    # classy_pointings_list = os.path.join('OSSOSv11/ObsSummary/CLASSY/pointings.list')
-    # plot.add_pointings(classy_pointings_list, color='g', alpha=0.7, label=True)
-
-    # Add the Deep pointing plan.
-    # deep_pointings_list = os.path.join('OSSOS/v11/ObsSummary/DEEP/pointings.list')
-    # plot.add_pointings(deep_pointings_list, color='r', alpha=0.3)
+    plot.add_pointings(os.path.join('Surveys/CFEPS/pointings.list'))
 
     # Add some objects to the plot, this files is in SSim CDS format.
-    detection_table = Table.read(os.path.join('/Users/kavelaarsj/Dropbox/Research/KuiperBelt/OSSOS/OSSOSv11/ObsSummary/All_Surveys/All_Surveys_v11.CDS'),
-                                 format='cds')
+    detection_table = Table.read(os.path.join('Surveys/CFEPS/CFEPS.CDS'), format='cds')
     plot.add_detections(detection_table)
 
     # put a wedge where the galactic plane is obscuring detections.
