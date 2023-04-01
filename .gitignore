@@ -5,7 +5,9 @@ OSSOSv11/
 OSSOSv11.tgz
 .DS_Store
 *.log
+*.ipynb
 ossssim.egg-info
 SurveySubsF95.py
 *.so
 *.icloud
+dist
