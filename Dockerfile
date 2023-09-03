@@ -29,7 +29,7 @@ RUN pip3 install vos
 RUN pip3 install numpy
 RUN pip3 install scipy
 RUN pip3 install astropy
-RUN pip3 install astroquery
+RUN pip3 install --pre astroquery
 RUN pip3 install matplotlib
 RUN pip3 install f90wrap
 RUN pip3 install rebound
@@ -46,6 +46,8 @@ RUN make clean && make Driver GIMEOBJ=ReadModelFromFile
 RUN cp Driver /usr/local/bin/SSim
 WORKDIR /opt/SSim/python
 RUN pip install .
+
+RUN pip3 install astroplan
 
 # Two build sets, deploy and test
 FROM deploy as test
