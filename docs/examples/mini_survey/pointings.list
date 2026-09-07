@@ -1,0 +1,46 @@
+# This is the OSSOS survey description file.
+#
+# All lines starting with '#' are ignored, so they are used for comments
+#
+# Each data line has the format:
+# <width> <height> <RA> <DEC> <epoch> <filling_factor> <tracked_fraction> \
+#   <obs_code> <efficiency_file_name>
+#
+# <width>: width of FOV, in degree
+# <height>: height of FOV, in degree
+# <RA>: Right Ascension of pointing, decimal degree or HH:MM:SS[.ss...]
+# <DEC>: Declination of pointing, decimal degree or DD:MM:SS[.ss...]
+# <epoch>: epoch of pointing, in Julian day (decimal)
+# <filling_factor>: filling factor of that FOV
+# <obs_code>: observatory code
+# <efficiency_file_name>: name of efficiency file for that pointing
+#
+# For Megaprime, the 36 CCDs are 2048x4612 with pixels 0.18689x0.18689", so
+# assuming a total footprint of 1 sq.deg, the filling factor is 0.9164
+#
+# 2013A-E block
+#
+# From JJ's e-mail on Dec. 2nd, 2014, there were 7 chips out of 756 that had
+# a PSF problem, thus the pipeline did not run to the end. All other cases
+# had good trans.jmp files and completed correctly. So effective surface
+# area is 749/756 = 99.07%, so filling factor is 0.9907*0.9164=0.9079
+#
+poly 4 14:15:28.89 -12:32:28.5 2456391.86686 0.9079 500 2013AE.eff
+-3.5 -0.434889
+-3.5  2.565111
+ 3.5  0.473417
+ 3.5 -2.526583
+#
+# 2013A-O block
+#
+# From my own work and from JJ's e-mail from Nov. 30th, 2014, there were 9
+# chips out of 756 which had bad trans.jmp files. So the effective search area
+# was 747/756 = 98.81% of the total area, so the filling factor is
+# 0.9881*0.9164 = 0.9055
+#
+poly 4 15:58:01.35 -12:19:54.2 2456420.95956 0.9055 500 2013AO.eff
+-3.5 -0.862333
+-3.5  2.137667
+ 3.5  0.915750
+ 3.5 -2.084250
+#
