@@ -86,7 +86,8 @@ rates=   0.50 2.06
 # More specifically, we have:
 #
 # "linear_param= <eff_max> <start_drop> <end_drop>"
-# "single_param= <eff_max> <M_0> <sig>"
+# "single_param= <eff_max> <M_0> <sig> [<alpha_rate>]"
+# Optional <alpha_rate> (mag per "/hr): m0 = M_0 + alpha_rate * rate_asphr
 # "double_param= <eff_max> <M_0> <sig1> <sig2>"
 # "square_param= <eff_max> <c> <M_0> <sig>"
 #

@@ -99,9 +99,16 @@ function= <func_type>
 
 - Parameters for the efficiency function, depending on the functional form
 linear_param= <eff_max> <start_drop> <end_drop>
-single_param= <eff_max> <M_0> <sig>
+single_param= <eff_max> <M_0> <sig> [<alpha_rate>]
 double_param= <eff_max> <M_0> <sig1> <sig2>
 square_param= <eff_max> <c> <M_0> <sig>
+
+  For single_param, the optional <alpha_rate> (mag per "/hr) makes the
+  roll-off magnitude rate-dependent:
+    m0(rate) = M_0 + alpha_rate * rate
+  where rate is the total on-sky rate of motion in arcseconds per hour.
+  Omitting <alpha_rate>, or setting it to 0, recovers the legacy constant-M_0
+  single hyperbolic tangent.
 
 - For the look-up table, there will be as many lines as entries in the look-up
   table

@@ -189,6 +189,43 @@ class LinearParam(CharacterizationParameter):
     R_2: EffM0 = 26.0
 
 
+class SingleTanhParam(CharacterizationParameter):
+    """
+    Single hyperbolic-tangent efficiency curve.
+
+    eta = (A/2)*(1 - tanh((m - m0)/w)) with optional rate-dependent roll-off
+    m0 = M_0 + alpha_rate * rate, where rate is total on-sky rate in "/hr.
+    alpha_rate of 0 (or omitted in the .eff file) recovers the legacy
+    constant-m0 form.
+    """
+    name: ClassVar[str] = 'single_param'
+    A: EffMax = 1.0
+    M_0: EffM0 = 24.0
+    w: EffSig = 0.5
+    alpha_rate: float = 0.0
+
+    def __str__(self):
+        if abs(self.alpha_rate) < 1e-15:
+            return f"{self.name}= {self.A:.2f} {self.M_0:.2f} {self.w:.2f}"
+        return (f"{self.name}= {self.A:.2f} {self.M_0:.2f} "
+                f"{self.w:.2f} {self.alpha_rate:.6g}")
+
+    @classmethod
+    def from_string(cls, line: str) -> Self:
+        values = line.split('=')[1].strip().split()
+        if len(values) < 3:
+            raise ValueError(f"single_param needs at least 3 values, got: {line}")
+        kwargs = {'A': values[0], 'M_0': values[1], 'w': values[2]}
+        if len(values) >= 4:
+            kwargs['alpha_rate'] = values[3]
+        return cls(**kwargs)
+
+    def efficiency(self, mag: float, rate_asphr: float = 0.0) -> float:
+        """Evaluate eta at magnitude ``mag`` and rate ``rate_asphr`` ["/hr]."""
+        m0 = self.M_0 + self.alpha_rate * rate_asphr
+        return float(self.A / 2.0 * (1.0 - np.tanh((mag - m0) / self.w)))
+
+
 class DoubleTanhParam(CharacterizationParameter):
     """
     DoubleTanh class to define the parameters for the double tanh function

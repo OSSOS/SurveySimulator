@@ -430,8 +430,14 @@ contains
        end if
     else if (word(1)(1:lw(1)) .eq. 'single_param') then
        if (in_func .and. (c%eff_p(c%nr)%n .eq. -1)) then
+! Require the legacy three parameters (eta0, m0, w). Optional fourth
+! parameter is alpha_rate [mag/("/hr)] for m0(rate)=m0+alpha_rate*rate.
+          c%eff_p(c%nr)%e(4) = 0.d0
           read (line(eq_ind+1:), *, err=1500, end=1500) &
                (c%eff_p(c%nr)%e(i),i=1,3)
+          read (line(eq_ind+1:), *, err=1525, end=1525) &
+               (c%eff_p(c%nr)%e(i),i=1,4)
+1525      continue
           rate(c%nr) = .true.
 !          in_rates = .false.
           in_func = .false.

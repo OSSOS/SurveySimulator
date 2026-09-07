@@ -1,6 +1,7 @@
 module effut
 
   use datadec
+  use parameters
 
 contains
   real (kind=8) function eta_raw (eff_p, nr, mdum, rdum, maglim)
@@ -24,13 +25,16 @@ contains
 !             statement to define array sizes (in include file)
 ! Ver f95-1 : March 2017
 !             Identical to Version 5, but for F95
+! Version 6 : September 2026
+!             Optional linear rate dependence of m0 for single tanh:
+!             m0 = e(2) + e(4)*rate ["/hr]; e(4)=0 recovers legacy form
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
 !     eff_p : Set of efficiency functions for rate ranges (n*eff_r)
 !     nr    : Number of efficiency functions (I4)
 !     mdum  : magnitude (R8)
-!     rdum  : rate of motion (R8)
+!     rdum  : rate of motion (R8) [rad/day]
 !
 ! OUTPUT
 !     maglim: Limiting magnitude at given rate (R8)
@@ -47,7 +51,7 @@ contains
     real (kind=8), intent(in) :: mdum, rdum
     real (kind=8), intent(out) :: maglim
     integer :: ilo, ihi, i, ir
-    real (kind=8) :: m, x, mytanh, r
+    real (kind=8) :: m, x, mytanh, r, rate_asphr, m0
 
     mytanh(x) = (exp(x) - exp(-x))/(exp(x) + exp(-x))
 
@@ -106,9 +110,12 @@ contains
 ! \begin{equation}
 ! (A/2) * (1. - tanh((R-R_c)/d))
 ! \end{equation}
+! Optional e(4)=alpha_rate [mag/("/hr)]: R_c = e(2) + e(4)*rate_asphr
     else if (eff_p(ir)%n .eq. -1) then
+       rate_asphr = r/drad*3600.d0/24.d0
+       m0 = eff_p(ir)%e(2) + eff_p(ir)%e(4)*rate_asphr
        eta_raw = eff_p(ir)%e(1)/2.d0 * &
-            (1.d0 - mytanh((m - eff_p(ir)%e(2))/eff_p(ir)%e(3)))
+            (1.d0 - mytanh((m - m0)/eff_p(ir)%e(3)))
 
 ! This is a double hyperbolic tangent function.
 ! \begin{equation}
