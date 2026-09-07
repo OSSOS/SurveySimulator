@@ -1,2 +1,0 @@
-include ossssim/lib/_SurveySubsF95.so
-recursive-include ossssim/Characterizations *
