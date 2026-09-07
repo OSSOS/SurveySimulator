@@ -22,3 +22,7 @@ uv.lock
 bdir
 .vscode
 *.egg-info
+
+# Fortran local build products
+F95/libsrc.a
+F95/ossssimlib/

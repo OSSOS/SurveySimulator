@@ -1,6 +1,7 @@
 module poly_lib
 
   use poly_dec
+  use parameters
 
 contains
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -15,6 +16,10 @@ contains
 !     point_in_polygon (p, poly, n)
 ! which tells if the point "p" is inside, outside or touching the
 ! polygon "poly".
+!
+! Also provides:
+!     polygon_area (poly)
+! spherical area of a simple RA/Dec footprint, in square degrees.
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -178,6 +183,95 @@ contains
     return
 
   end function calc_walk_summand
+
+  real (kind=8) function polygon_area(poly)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Spherical area of a simple closed footprint on the sky.
+!
+! Vertices are RA (x) and Dec (y) in radians, as stored after read_sur.
+! The polygon is fan-triangulated from the first vertex; each spherical
+! triangle area uses the van Oosterom & Strackee formula on unit vectors.
+! Result is absolute area in square degrees.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!
+! Version 1 : September 2026
+!
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! INPUT
+!     poly  : Polygon structure (polygon), RA/Dec [rad]
+!
+! OUTPUT
+!     polygon_area : area in square degrees (R8)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) poly
+    implicit none
+
+    type(t_polygon), intent(in) :: poly
+    integer :: i, n
+    real (kind=8) :: area_sr, tri
+    real (kind=8) :: v1(3), v2(3), v3(3)
+
+    polygon_area = 0.d0
+    n = poly%n
+    if (n .lt. 3) return
+
+    call ra_dec_to_xyz(poly%x(1), poly%y(1), v1)
+    area_sr = 0.d0
+    do i = 2, n - 1
+       call ra_dec_to_xyz(poly%x(i), poly%y(i), v2)
+       call ra_dec_to_xyz(poly%x(i+1), poly%y(i+1), v3)
+       tri = spherical_triangle_area(v1, v2, v3)
+       area_sr = area_sr + tri
+    end do
+    polygon_area = dabs(area_sr)*(180.d0/Pi)**2
+    return
+  end function polygon_area
+
+  subroutine ra_dec_to_xyz(ra, dec, v)
+! Convert RA/Dec [rad] to a unit vector.
+!f2py intent(in) ra
+!f2py intent(in) dec
+!f2py intent(out) v
+    implicit none
+    real (kind=8), intent(in) :: ra, dec
+    real (kind=8), intent(out) :: v(3)
+    real (kind=8) :: cd
+
+    cd = dcos(dec)
+    v(1) = cd*dcos(ra)
+    v(2) = cd*dsin(ra)
+    v(3) = dsin(dec)
+    return
+  end subroutine ra_dec_to_xyz
+
+  real (kind=8) function spherical_triangle_area(a, b, c)
+! Signed spherical triangle area [sr] for unit vectors a,b,c.
+! van Oosterom & Strackee: 2*atan2(det, 1 + a·b + b·c + c·a)
+!f2py intent(in) a
+!f2py intent(in) b
+!f2py intent(in) c
+    implicit none
+    real (kind=8), intent(in) :: a(3), b(3), c(3)
+    real (kind=8) :: det, denom
+
+    det = a(1)*(b(2)*c(3) - b(3)*c(2)) &
+         + a(2)*(b(3)*c(1) - b(1)*c(3)) &
+         + a(3)*(b(1)*c(2) - b(2)*c(1))
+    denom = 1.d0 + dot3(a, b) + dot3(b, c) + dot3(c, a)
+    if ((det .eq. 0.d0) .and. (denom .eq. 0.d0)) then
+       spherical_triangle_area = 0.d0
+    else
+       spherical_triangle_area = 2.d0*datan2(det, denom)
+    end if
+    return
+  end function spherical_triangle_area
+
+  real (kind=8) function dot3(u, v)
+    implicit none
+    real (kind=8), intent(in) :: u(3), v(3)
+    dot3 = u(1)*v(1) + u(2)*v(2) + u(3)*v(3)
+    return
+  end function dot3
 
   subroutine check_polygon(poly)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-

@@ -10,6 +10,12 @@ module surveysub
   use getsur
   use ioutils
 
+  ! Saved survey characterization for library / Python access
+  logical, save :: survey_loaded = .false.
+  integer, save :: n_sur_loaded = 0
+  type(t_pointing), save, private :: points_loaded(n_sur_max)
+  real (kind=8), save, private :: sur_mm_loaded(n_sur_max)
+
 contains
 
 
@@ -501,6 +507,168 @@ contains
   subroutine reset_simulator()
           first = .true.
           iff = 0
+          survey_loaded = .false.
+          n_sur_loaded = 0
   end subroutine reset_simulator
+
+  subroutine survey_load(survey, lun_s, n_sur, ierr)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Load a survey directory into module storage for index-based queries.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) survey
+!f2py intent(in) lun_s
+!f2py intent(out) n_sur
+!f2py intent(out) ierr
+    implicit none
+    character(*), intent(in) :: survey
+    integer, intent(in) :: lun_s
+    integer, intent(out) :: n_sur, ierr
+
+    call GetSurvey(survey, lun_s, n_sur_loaded, points_loaded, &
+         sur_mm_loaded, ierr)
+    if (ierr .eq. 0) then
+       survey_loaded = .true.
+    else
+       survey_loaded = .false.
+       n_sur_loaded = 0
+    end if
+    n_sur = n_sur_loaded
+    return
+  end subroutine survey_load
+
+  subroutine pointing_geom(idx, area_deg2, fill)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Geometric spherical area [deg^2] and fill factor for pointing idx (1-based).
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) idx
+!f2py intent(out) area_deg2
+!f2py intent(out) fill
+    implicit none
+    integer, intent(in) :: idx
+    real (kind=8), intent(out) :: area_deg2, fill
+
+    area_deg2 = 0.d0
+    fill = 0.d0
+    if ((.not. survey_loaded) .or. (idx .lt. 1) .or. (idx .gt. n_sur_loaded)) &
+         return
+    area_deg2 = polygon_area(points_loaded(idx)%poly)
+    fill = points_loaded(idx)%ff
+    return
+  end subroutine pointing_geom
+
+  subroutine pointing_center(idx, ra, dec)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Approximate sky centre as the mean of polygon vertices [rad].
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) idx
+!f2py intent(out) ra
+!f2py intent(out) dec
+    implicit none
+    integer, intent(in) :: idx
+    real (kind=8), intent(out) :: ra, dec
+    integer :: i, n
+
+    ra = 0.d0
+    dec = 0.d0
+    if ((.not. survey_loaded) .or. (idx .lt. 1) .or. (idx .gt. n_sur_loaded)) &
+         return
+    n = points_loaded(idx)%poly%n
+    if (n .le. 0) return
+    do i = 1, n
+       ra = ra + points_loaded(idx)%poly%x(i)
+       dec = dec + points_loaded(idx)%poly%y(i)
+    end do
+    ra = ra/dble(n)
+    dec = dec/dble(n)
+    return
+  end subroutine pointing_center
+
+  subroutine pointing_meta(idx, efnam, epoch, code, mag_lim, rate_mid_asphr)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Metadata for pointing idx: efficiency filename, epoch [JD], obs code,
+! limiting magnitude, and midpoint rate_cut ["/hr].
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) idx
+!f2py intent(out) efnam
+!f2py intent(out) epoch
+!f2py intent(out) code
+!f2py intent(out) mag_lim
+!f2py intent(out) rate_mid_asphr
+    implicit none
+    integer, intent(in) :: idx
+    character(80), intent(out) :: efnam
+    real (kind=8), intent(out) :: epoch, mag_lim, rate_mid_asphr
+    integer, intent(out) :: code
+    real (kind=8) :: rmid
+
+    efnam = ' '
+    epoch = 0.d0
+    code = 0
+    mag_lim = 0.d0
+    rate_mid_asphr = 0.d0
+    if ((.not. survey_loaded) .or. (idx .lt. 1) .or. (idx .gt. n_sur_loaded)) &
+         return
+    efnam = points_loaded(idx)%efnam
+    epoch = points_loaded(idx)%o_pos(1)%jday
+    code = points_loaded(idx)%code
+    mag_lim = sur_mm_loaded(idx)
+    rmid = 0.5d0*(points_loaded(idx)%c%r_cut%min + &
+         points_loaded(idx)%c%r_cut%max)
+    rate_mid_asphr = rmid/drad*3600.d0/24.d0
+    return
+  end subroutine pointing_meta
+
+  real (kind=8) function pointing_eta(idx, mag, rate_asphr, maglim)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Detection efficiency at magnitude and on-sky rate ["/hr].
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) idx
+!f2py intent(in) mag
+!f2py intent(in) rate_asphr
+!f2py intent(out) maglim
+    implicit none
+    integer, intent(in) :: idx
+    real (kind=8), intent(in) :: mag, rate_asphr
+    real (kind=8), intent(out) :: maglim
+    real (kind=8) :: rate
+
+    pointing_eta = 0.d0
+    maglim = 0.d0
+    if ((.not. survey_loaded) .or. (idx .lt. 1) .or. (idx .gt. n_sur_loaded)) &
+         return
+    rate = rate_asphr*24.d0/3600.d0*drad
+    pointing_eta = eta(points_loaded(idx)%c%eff_p, points_loaded(idx)%c%nr, &
+         mag, rate, maglim)
+    return
+  end function pointing_eta
+
+  subroutine pointing_eta_grid(idx, mags, n, rate_asphr, etas)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Vectorized efficiency evaluation on a magnitude grid.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(in) idx
+!f2py intent(in) mags
+!f2py intent(hide) n
+!f2py intent(in) rate_asphr
+!f2py intent(out) etas
+!f2py depend(n) mags
+!f2py depend(n) etas
+    implicit none
+    integer, intent(in) :: idx, n
+    real (kind=8), intent(in) :: mags(n), rate_asphr
+    real (kind=8), intent(out) :: etas(n)
+    integer :: i
+    real (kind=8) :: maglim, rate
+
+    etas = 0.d0
+    if ((.not. survey_loaded) .or. (idx .lt. 1) .or. (idx .gt. n_sur_loaded)) &
+         return
+    rate = rate_asphr*24.d0/3600.d0*drad
+    do i = 1, n
+       etas(i) = eta(points_loaded(idx)%c%eff_p, points_loaded(idx)%c%nr, &
+            mags(i), rate, maglim)
+    end do
+    return
+  end subroutine pointing_eta_grid
 
 end module surveysub
