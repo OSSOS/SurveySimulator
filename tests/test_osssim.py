@@ -1,11 +1,13 @@
 import unittest
 from astropy.units import Quantity
 import ossssim
-from ossssim import Characterizations
 from tempfile import NamedTemporaryFile
 import pathlib
 
 script_directory = pathlib.Path(__file__).parent.resolve()
+# Small CFEPS fixture kept in-repo for tests (full surveys live in SurveySimulator-Data)
+CFEPS_DIR = script_directory / 'data' / 'Surveys' / 'CFEPS'
+
 
 class OSSSIMTest(unittest.TestCase):
     # def setUp(self):
@@ -16,7 +18,7 @@ class OSSSIMTest(unittest.TestCase):
         self.result_row = next(iter(result))
         result.close()
         self.seed = int(result.header['Seed'][0])
-        self.osssim = ossssim.OSSSSim(characterization_directory=Characterizations.surveys['CFEPS'], 
+        self.osssim = ossssim.OSSSSim(characterization_directory=str(CFEPS_DIR),
                                         seed=self.seed)
 
         with NamedTemporaryFile() as fobj:

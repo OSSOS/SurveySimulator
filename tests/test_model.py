@@ -5,13 +5,14 @@ When run as a script, uses CFEPS survey characterization, runs until 28 sources 
 """
 import ossssim
 from ossssim.models import Parametric, Resonant
-from ossssim import OSSSSim, DetectFile, PhotSpec, Characterizations
+from ossssim import OSSSSim, DetectFile, PhotSpec
 from astropy import units
 import unittest
 from tempfile import NamedTemporaryFile
 import pathlib
 
 script_directory = pathlib.Path(__file__).parent.resolve()
+CFEPS_DIR = script_directory / 'data' / 'Surveys' / 'CFEPS'
 
 
 class Plutino(Resonant):
@@ -60,7 +61,7 @@ class Ring(Parametric):
 class ConfirmResonantTest(unittest.TestCase):
 
     def setUp(self):
-        self.characterization_directory = Characterizations.surveys['CFEPS']
+        self.characterization_directory = str(CFEPS_DIR)
         print(self.characterization_directory)
         self.model = Plutino(size=10000)
         self.sim = OSSSSim(characterization_directory=self.characterization_directory, seed=123456789)
@@ -72,7 +73,7 @@ class ConfirmResonantTest(unittest.TestCase):
 
 class CreateModelFileTest(unittest.TestCase):
     def setUp(self):
-        self.characterization_directory = Characterizations.surveys['CFEPS']
+        self.characterization_directory = str(CFEPS_DIR)
         self.ssim = OSSSSim(characterization_directory=self.characterization_directory,  seed=123456789)
         self.model = Ring(45*units.au, 1*units.au, component='Ring', size=1, H_max=9)
         self.model_filename = NamedTemporaryFile().name
