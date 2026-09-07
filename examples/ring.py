@@ -117,9 +117,14 @@ def delete_file_if_exists(filename):
 
 
 if __name__ == '__main__':
-    from ossssim import Characterizations
+    import pathlib
     seed = 123456789
     n_track = 10
+    # Prefer sibling SurveySimulator-Data; fall back to in-repo CFEPS test fixture
+    repo_root = pathlib.Path(__file__).resolve().parents[1]
+    cfeps = repo_root.parent / 'SurveySimulator-Data' / 'Characterizations' / 'CFEPS'
+    if not cfeps.is_dir():
+        cfeps = repo_root / 'F95' / 'tests' / 'Surveys' / 'CFEPS'
     for i in range(2):
         file_format='ecsv'
         model_filename = f'RingModel_{i}.{file_format}'
@@ -127,7 +132,7 @@ if __name__ == '__main__':
         delete_file_if_exists(model_filename)
         delete_file_if_exists(detect_filename)
         run(model_filename, detect_filename,
-            Characterizations.surveys['CFEPS'],
+            str(cfeps),
             seed,
             n_track)
         print(f"iter  : {i}")

@@ -105,9 +105,9 @@ class OSSSSim:
     def __init__(self, characterization_directory, seed):
         """
         Args:
-            characterization_directory (str): the path to survey characterization to be used.
-
-        Format of the characterization_directory is described at https://github.com/OSSOS/SurveySimulator/tree/master/Surveys
+            characterization_directory (str): path to a survey characterization directory.
+                Full surveys are distributed separately in SurveySimulator-Data;
+                format docs are under docs/; small fixtures live in F95/tests/Surveys/.
 
         """
 
