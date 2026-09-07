@@ -20,6 +20,7 @@ dist
 Rebound_Archive*.bin
 .python-version
 uv.lock
+ossssimlib
 bdir
 .vscode
 *.egg-info
