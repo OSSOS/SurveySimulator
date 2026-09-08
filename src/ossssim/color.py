@@ -22,7 +22,7 @@ class PhotSpec:
                 colors(10) : w-x
 
     """
-    OLD_BAND_ORDER = ['g', 'r', 'i', 'z', 'u', 'V', 'B', 'R', 'I']
+    OLD_BAND_ORDER = ['g', 'r', 'i', 'z', 'u', 'V', 'B', 'R', 'I', 'w']
 
     COLORS = dict([(
         'default', dict([('g-g', 0.0 * units.mag),
@@ -110,29 +110,31 @@ class PhotSpec:
         is ascii code of the first character of the band-ratio of the color.
 
         This is used to create the list of colors that is passed into the Fortran component of SSim.
+        Layout matches Fortran ``filter_to_index``: Python index ``ord(L)-ord('A')`` is Fortran
+        index ``IACHAR(L)-IACHAR('A')+1`` when the list is passed through f2py.
         """
         spec_phot_list = numpy.zeros(ord('z')-ord('A')+1) * units.mag
         colors = self.transform_spectral_group_to_model_band(self.orbital_to_spectral_group(orbital_group), model_band)
         for band_ratio in colors:
             bandpass = band_ratio.split('-')[0]
-            if not 0 <= ord(bandpass) < 128:
-                raise ValueError(f"Bandpass {bandpass} is out of range a-z, A-Z, 0-9")
+            if len(bandpass) != 1 or not ('A' <= bandpass <= 'z'):
+                raise ValueError(f"Bandpass {bandpass!r} is out of range A-z for the color array")
             spec_phot_list[ord(bandpass) - ord('A')] = colors[band_ratio]
         return list(spec_phot_list.to('mag').value)
 
     @classmethod
     def from_list(cls, colors_list: numpy.array, model_band: str):
         """
-        Return the dictionary of colors for the given list of colors.  In previous versions of SSim files we stared the
-        list of colours rather than the dictionary.  This method is used to convert the list of colors to the dictionary
+        Rebuild a PhotSpec from a sparse ASCII-indexed color list (as produced by ``colors_list``).
 
-        the list index is the ascii code of the first character of the band-ratio of the color.
+        List index ``i`` corresponds to bandpass ``chr(i + ord('A'))``; non-zero entries become
+        ``{band}-{model_band}`` color terms.
         """
         spec_phot = {}
         for idx, color in enumerate(colors_list):
             if color != 0:
-                band_ratio = f"{chr(idx-1)}-{model_band}"
-                spec_phot[band_ratio] = color
+                band_ratio = f"{chr(idx + ord('A'))}-{model_band}"
+                spec_phot[band_ratio] = color * units.mag if not hasattr(color, 'unit') else color
         return cls(colors={'default': spec_phot})
 
     @classmethod

@@ -40,6 +40,7 @@ or to read a model from an input file:
     ln -s ReadModelFromFile.f9 GiMeObj.f9
     gfortran -O3 -o SurveySimulator Driver.f9
 
+
 ### RUNNING
 
   `Driver` reads six parameters from the standard input:
@@ -51,6 +52,10 @@ or to read a model from an input file:
                GiMeObj)
       <n> = 0: run until the 'model' decides to stop
   - the name of the directory containing the characterized survey blocks
+    (see [`../docs/`](../docs/) for characterization formats and a mini example;
+    full survey packages are distributed in the sibling
+    [`SurveySimulator-Data`](../../SurveySimulator-Data/) tree;
+    Driver test fixtures are under `tests/Surveys/`)
   - the name of the model input file (a file GiMeObj will read in)
   - the name of the output file where the detected objects will be listed
   - the name of the output file where the detected and tracked objects will be
@@ -138,48 +143,63 @@ with
            Check for exit conditions
     Go back and loop
 
-  The GiMeObj routine (see README_GiMeObj.md in the `F77` subdirectory) is in charge of providing a single new object at each
-  call, an object being defined by (see below) its orbital elements, the 
-  absolute magnitude of the object in some band/filter "x", the colors of the 
-  object, the opposition surge effect parameter (G in Bowell's formalism) and 
-  lightcurve parameters (period, peak-to-peak amplitude and phase at the given epoch). 
-  GiMeObj must accept a file name as input that tells the routine where to 
-  find the needed parameters (if any) and also a random number generator seed. 
-  The package provides two different implementations of the GiMeObj.
-  
-- The one in `InnerNotModel.f95` shows an example of an analytical model that 
-    reads its parameters from a file and then generates objects as requested.
-- The one in `ReadModelFromFile.f95` will read objects from a file, return them 
-    one at a time and signal when it has reach the end of the file. 
+  `GiMeObj` is the critical routine that contains the model of the outer Solar
+  System population(s) exposed to the Survey Simulator (and ultimately compared
+  to real detections). On each call it must return one object, defined by the
+  orbit, photometry, and lightcurve parameters described below (see also
+  [API](#api)). It must accept a file name that tells the routine where to find
+  needed parameters (if any) and a random number generator seed.
 
-  One creates one's own GiMeObj routine to replace the one provided
-  with the package. The `Driver.f95` program uses an 'include' for the file
-  `GiMeObj.f95` containing the model definition. The suggested way to use
-  this feature with one's own code is to have one's GiMeObj routine in a file
-  <whatever.f> and create a symbolic link:
+  When the driver calls `GiMeObj`, it expects one outer Solar System object
+  defined by:
 
-    `ln -s <whatever.f> GiMeObj.f95`
+  1. An osculating **barycentric ecliptic J2000** orbit.
+     The element set `(a, e, i, long_node, arg_peri, M, JD)` must be used, where
+     the mean anomaly `M` is given at epoch `JD`. Propagation of the object
+     position in `Detos1` is an unperturbed barycentric two-body problem.
 
-  The model subroutines GiMeObj can access files using Fortran logical unit
-  numbers from 20 upward. This range in reserved for them and is not be used by
-  the Driver nor SurveySubs routines.
+  2. An absolute H magnitude and a set of colours in the major filters.
+     H may be specified in any filter (here called `x`). Apparent magnitudes
+     use the Bowell HG formalism, so Bowell's `G` is also supplied as `gb`.
+     The colour array must at least cover every filter used by the survey
+     blocks in the simulation. For example, if all blocks are in `g` and H is
+     also in `g` (`x = g`), all colour terms may be zero. If imaging is in
+     `g` or `r` only, one can supply `H_g` with `g-g = 0` (`color(1)`) and
+     `r-g = -0.7` (`color(2)`). The band `x` need not be one of the nine
+     predefined bands. `Detos1` returns magnitudes in the user-chosen `x` band.
 
-  It is good practice that when first started, the GiMeObj routine writes a
-  file describing the model used, the version and the date of the routine.
+  3. A lightcurve amplitude, period, and phase.
+     Turn the lightcurve off by setting the amplitude to zero (the period must
+     **not** be zero). Phase is the rotational phase at the orbital-element
+     epoch (the JD at which `M` is given). Amplitude is peak-to-peak.
 
-  Since this routine is called once for every object created, it needs to get
-  all the required parameters once when it is called the first time, then save
-  these values for future use.
+  The package provides two implementations of `GiMeObj`:
 
-  The survey simulator expects orbital elements with respect to barycentric
-  ecliptic reference frame, so the model must provides them in that reference
-  frame.
+  - `InnerHotModel.f95` — analytical model that reads parameters from a file
+    and generates objects as requested
+  - `ReadModelFromFile.f95` — reads objects from a file, returns them one at a
+    time, and signals when it reaches end of file
+
+  To use your own model, put the routine in a file and create a symbolic link
+  (or use `make Driver GIMEOBJ=MyGiMeObj`). `Driver.f95` includes `GiMeObj.f95`:
+
+    `ln -s <whatever.f95> GiMeObj.f95`
+
+  Fortran logical unit numbers **7 to 19** are reserved for `Driver` and
+  `SurveySubs` and must not be used by `GiMeObj` or any routine you add to the
+  driver. Use unit numbers from **20** upward.
+
+  It is good practice that when first started, `GiMeObj` writes a file
+  describing the model used, the version, and the date of the routine.
+
+  Since this routine is called once for every object created, it should read
+  required parameters on the first call and save them for later calls.
 
 ---
 
 ### API
 
-The API (list of arguments, arg_list_1 above) for GiMeObj is
+The API (list of arguments, `arg_list_1` above) for `GiMeObj` is
 
     (filena, seed, a, e, inc, node, peri, M, epoch, h, color,
      gb, ph, period, amp, comment, nchar, ierr)
@@ -200,7 +220,7 @@ with:
     M           : Mean anomaly [rad] (R8)
     epoch       : epoch for M (and rotational phase below), in Julian Day (R8)
     h           : absolute magnitude of object in band filter "x" (R8)
-    color       :varray of colors "y-x", where the index of "y" is as
+    color       : array of colors "y-x", where the index of "y" is as
                  described in detos1 (10*R8)
                    colors(1) : g-x
                    colors(2) : r-x
@@ -216,10 +236,10 @@ with:
     period      : period of lightcurve [day] (R8)   CANNOT SET TO ZERO
     amp         : peak-to-peak amplitude of lightcurve [mag] (R8)
                   CAN  SET TO ZERO
-    comment  	: user specified string containing whatever the user wants
-		  (CHAR*100); can be empty.
-    nchar	: number of characters in the comment string that should be
-    		  printed out in output files if the object is detected;
+    comment     : user specified string containing whatever the user wants
+                  (CHAR*100); can be empty.
+    nchar       : number of characters in the comment string that should be
+                  printed out in output files if the object is detected;
                   maximum of 100 (I4)
     ierr        : return code
                      0 : GiMeObj does not diagnose any errors, normal return
@@ -227,4 +247,76 @@ with:
                    100 : end of model, exit after checking this object
                    -10 : could not get all orbital elements, skip object
                    -20 : something went grossly wrong, should quit
+
+  Normally the Driver terminates the simulator (enough tracked detections), but
+  these return codes also let `GiMeObj` tell the driver when to stop.
+
+---
+
+### Detos1
+
+  Attempt to DETect 1 Outer Solar-system object. After `GiMeObj` returns an
+  object, the driver asks `Detos1`: given the detection efficiencies and
+  pointing history of all survey blocks, and allowing for probabilistic
+  detection (especially for faint objects), is this object in the field
+  coverage and detected by any block? If so, where and when, how bright, and
+  was it tracked to a high-precision orbit?
+
+  The list of arguments (`arg_list_2` above) for `Detos1` is
+
+    (a, e, inc, node, peri, mt0, jday, hx, color, gb, ph, period, amp, surnam,
+     seed, flag, ra, dec, d_ra, d_dec, r, delta, mi_int, m_rand, eff, isur, mt,
+     jdayp, ic, surna, h_rand)
+
+#### INPUT (from GiMeObj)
+    a     : Semi-major axis [AU] (R8)
+    e     : Eccentricity (R8)
+    inc   : Inclination [rad] (R8)
+    node  : Longitude of node [rad] (R8)
+    peri  : Argument of perihelion [rad] (R8)
+    mt0   : Mean anomaly [rad] (R8)
+    jday  : Reference time of the orbital elements [JD] (R8)
+    hx    : Absolute magnitude of the object in the user's specified 'x' band
+            (R8)
+    color : Array of colors (10*R8)
+               colors(1) : g-x
+               colors(2) : r-x
+               colors(3) : i-x
+               colors(4) : z-x
+               colors(5) : u-x
+               colors(6) : V-x
+               colors(7) : B-x
+               colors(8) : R-x
+               colors(9) : I-x
+    gb    : opposition surge factor G, Bowell formalism (R8)
+    ph    : phase of lightcurve at epoch jday [rad] (R8)
+    period: period of lightcurve [day] (R8)
+    amp   : peak-to-peak amplitude of lightcurve [mag] (R8)
+    surnam: Survey directory name (CH10)
+
+#### OUTPUT
+    seed  : Random number generator seed (I4)
+    flag  : Return flag (I4):
+                0: not found
+                1: found, but not tracked
+                2: found and tracked
+    ra    : Right ascension at detection [rad] (R8)
+    dec   : Declination at detection [rad] (R8)
+    d_ra  : Right ascension rate [rad/day] (R8)
+    d_dec : Declination rate [rad/day] (R8)
+    r     : Sun-object distance [AU] (R8)
+    delta : Earth-object distance [AU] (R8)
+    m_int : Intrinsic apparent magnitude, in x-band (R8); from absolute
+            magnitude, Sun/Earth distance, and phase angle (Bowell formalism);
+            returned in the user-defined 'x' filter
+    m_rand: Averaged randomized magnitude, in x-band (R8); from the intrinsic
+            magnitude plus Gaussian noise from `<mag_error>` in the efficiency
+            files; returned in the user-defined 'x' filter
+    eff   : Efficiency of detection of object (function of mag and survey) (R8)
+    isur  : Identification number of the survey block the object was in (I4)
+    mt    : Mean anomaly at discovery [rad] (R8)
+    jdayp : Time of discovery [JD] (R8)
+    ic    : Index of color used for survey (I4)
+    surna : Detection survey name, for information (CH10)
+    h_rand: Absolute randomized magnitude (R8)
 

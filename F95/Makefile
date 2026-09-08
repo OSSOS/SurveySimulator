@@ -21,8 +21,7 @@ SRCA	= $(addsuffix .f95,${A})
 FPPA	= $(addsuffix .fpp,${A})
 MODA	= $(addsuffix .mod,${A})
 
-# SSIM	= SurveySubsF95
-MODULE	?= SurveySubs
+MODULE	?= ossssimlib
 GOBJ	= GiMeObjF95
 
 

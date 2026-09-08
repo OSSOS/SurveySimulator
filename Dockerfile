@@ -8,7 +8,8 @@ FROM condaforge/miniforge3:latest as base
 RUN apt -y -q update 
 RUN apt -y -q install curl wget man man-db git build-essential zip unzip xdg-utils less emacs nano xterm vim rsync tree gfortran
 RUN apt -y install python3-numpy
-RUN apt -y -q install meson ninja-build
+# Python package build uses setuptools + f90wrap (pip install . → setup.py → make -C F95).
+# meson/ninja are not required for the SurveySimulator build.
 
 
 

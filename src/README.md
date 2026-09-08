@@ -1,27 +1,30 @@
 ## The python version of the Survey Simulator
 
-The python implementation creates a `module` using the `F95` source code and then build a set of 
-python classes to interact with the simulator via the `F95` compiled module `ossssim.SurveySubsF95`
+The python implementation builds an `ossssimlib` extension from the `F95`
+sources (via f90wrap) and wraps it with Python classes in `ossssim`
+(`OSSSSim`, model helpers, etc.).
 
-The python code is documented and `pydoc` provides some details on how to use the classes.
+See `pydoc ossssim` and the top-level [`examples/`](../examples/) directory.
 
-See `examples` for some implementations of various solar sysytem models being passed through the Survey Simulator
+Survey characterization formats and a mini example are documented in
+[`../docs/`](../docs/). Full survey characterizations and model files are
+distributed separately as [`SurveySimulator-Data`](../../SurveySimulator-Data/)
+(DOI / web download; not shipped inside this Python package). In-repo test
+fixtures live under `../F95/tests/Surveys/` and `../F95/tests/Models/`.
 
 ### Installation
 
-The python process install the package in your system or home area, depending on how you instal the package.  
-The basic process is:
+```bash
+pip install .
+```
 
-`pip install  .`
-
-the `pydoc ossssim` for details or look in the `examples` directory.
+(from the repository root). Requires gfortran, make, and f90wrap. The build
+runs `make -C F95 MODULE=ossssimlib` and installs `_ossssimlib` plus the
+`ossssimlib` Python package alongside `ossssim`.
 
 ### Contents
 
-- ossssim : The python module 
-- ossssim/lib : The compiled fortran module will be here after you build
-- test : A set of unit tests
-- examples : Some examples of using the python implementation of the Survey Simulator.
-- Manifest.in : data files that should be installed with `ossssim`
-- setup.py : standard python installation script using `setuptools`
-
+- `ossssim` — Python API
+- `ossssimlib` / `_ossssimlib` — f90wrap Fortran extension (built at install)
+- `../tests` — unit tests
+- `../examples` — usage examples

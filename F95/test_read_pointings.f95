@@ -10,7 +10,7 @@ program test_read_pointings
   real (kind=8) :: sur_mm(n_sur_max)
   type(t_pointing) :: points(n_sur_max)
 
-  survey = './SS_Input_Formats'
+  survey = '../docs/examples/mini_survey'
   call GetSurvey (survey, lun_s, n_sur, points, sur_mm, ierr)
 
   stop

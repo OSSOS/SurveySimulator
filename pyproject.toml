@@ -1,11 +1,10 @@
 [build-system]
-requires = ["meson-python", "setuptools>=68", "wheel", "f90wrap", "setuptools-scm>=8" ]
+requires = ["setuptools>=68", "wheel", "f90wrap", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "OSSSurveySimulator"
 dynamic = ["version"]
-# version = "2.0"
 description = "Outer Solar System Survey Simulation written in F95 with Python bindings."
 readme = "README.md"
 authors = [
@@ -35,12 +34,12 @@ keywords = [
 [project.urls]
 homepage = "https://www.ossos-survey.org/simulator.html"
 
-[tools.setuptools]
+# Extension is built by setup.py (make -C F95 MODULE=ossssimlib → _ossssimlib + ossssimlib/).
+# Legacy name SurveySubsF95 / _SurveySubsF95.so is no longer used.
+[tool.setuptools]
 packages = ["ossssim"]
 package-dir = {"" = "src"}
 include-package-data = true
-
-[tool.setuptools]
 ext-modules = [
   {name = "ossssimlib", sources = []}
 ]
