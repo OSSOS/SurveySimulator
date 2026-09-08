@@ -841,7 +841,7 @@ class Parametric(OSSSSimFile):
         If dictionary then each dictionary key should point to a list of length self.size.
 
         All values stored as Quantity objects to allow conversion to desired units
-        before passing to the SurveySubsF95.detos1
+        before passing to the ossssimlib.surveysub.detos1
 
         Must define at least {'a': [], 'e': [], 'inc': [], 'node': [], 'peri': [], 'M': [], 'H': []}
         see sim for full list of keys that can be returned.

@@ -20,7 +20,7 @@ WARNING: The simulator draws MANY random numbers; a usual failure mode
 
 --------------------------------------------------------------------------------
 
-In case one want to write her own driver, the API (list of arguments,
+In case one wants to write thier own driver, the API (list of arguments,
 arg_list_2 above) for Detos1 is
 
     (a, e, inc, node, peri, mt0, jday, hx, color, gb, ph, period, amp, surnam,
