@@ -229,12 +229,12 @@ class OSSSSim:
         row['m_int'] *= u.mag
         row['m_rand'] *= u.mag
         row['h_rand'] *= u.mag
-        # ic gives the filter that the object was 'detected' in,
-        # this allows us to determine the color of target
+        # ic is the 1-based Fortran filter_to_index of the discovery bandpass.
+        # Convert to band letter and look up the matching 0-based colors_list slot.
         if ic > 0:
-            ic = ic + ord('A') - 1
-            row['band'] = chr(ic)
-            row['color'] = color_offset_array[ic-ord('A')+1] * u.mag
+            band = chr(ic + ord('A') - 1)
+            row['band'] = band
+            row['color'] = color_offset_array[ord(band) - ord('A')] * u.mag
         else:
             row['band'] = ''
             row['color'] = 0*u.mag
