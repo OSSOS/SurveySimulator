@@ -15,6 +15,8 @@ MOSAIC_AREA_DEG2 = 0.05
 MOSAIC_SIDE_DEG = math.sqrt(MOSAIC_AREA_DEG2)
 FILL_FACTOR = 1.0
 OBLIQUITY_J2000_DEG = 23.4392911
+# rot.f95 equat_ecl; used when matching Detos1 / RADECeclXV
+F95_OBLIQUITY_ARCSEC = 84381.41
 FIELD_RA_DEG = 209.3875
 FIELD_DEC_DEG = -10.865278
 
@@ -133,13 +135,96 @@ def aimed_at_field(ra_deg: float = FIELD_RA_DEG, dec_deg: float = FIELD_DEC_DEG
                    ) -> tuple[float, float, float, float]:
     """(i, Ω, ω, M) that places a circular orbit on the given ICRS pointing.
 
-    Uses the small-i approximation λ ≈ Ω + ω + M and β = i sin(ω+M).
+    This is the barycentric sky direction, not the apparent direction from JWST.
+    Use los_circular_elements to plant in the mosaic as Detos1 sees it.
     """
     lon, lat = icrs_to_ecliptic(ra_deg, dec_deg)
     inc = max(abs(lat), 0.05)
     arglat = 90.0 if lat >= 0.0 else 270.0
     node = (lon - arglat) % 360.0
     return inc, node, arglat, 0.0
+
+
+def _obliquity_rad() -> float:
+    return math.radians(F95_OBLIQUITY_ARCSEC / 3600.0)
+
+
+def ecliptic_to_icrf(x: float, y: float, z: float) -> tuple[float, float, float]:
+    """equat_ecl(-1): ecliptic J2000 → ICRF."""
+    coseps = math.cos(_obliquity_rad())
+    sineps = math.sin(_obliquity_rad())
+    return x, coseps * y - sineps * z, sineps * y + coseps * z
+
+
+def icrf_to_ecliptic(x: float, y: float, z: float) -> tuple[float, float, float]:
+    """equat_ecl(+1): ICRF → ecliptic J2000."""
+    coseps = math.cos(_obliquity_rad())
+    sineps = math.sin(_obliquity_rad())
+    return x, coseps * y + sineps * z, -sineps * y + coseps * z
+
+
+def circular_elements_through_ecliptic_xyz(
+        x: float, y: float, z: float) -> tuple[float, float, float, float, float, float]:
+    """Circular (a, e, i, Ω, ω, M) whose position is ecliptic (x,y,z) AU."""
+    r = math.sqrt(x * x + y * y + z * z)
+    lat = math.degrees(math.asin(max(-1.0, min(1.0, z / r))))
+    lon = math.degrees(math.atan2(y, x)) % 360.0
+    inc = max(abs(lat), 0.05)
+    arglat = 90.0 if lat >= 0.0 else 270.0
+    node = (lon - arglat) % 360.0
+    return r, 0.0, inc, node, arglat, 0.0
+
+
+def parse_jpl_horizons_icrf(path, jd: float) -> tuple[float, float, float]:
+    """Observer barycentric ICRF (AU) from a Horizons CSV, matching read_jpl_csv."""
+    with open(path) as fh:
+        text = fh.read()
+    header, _, rest = text.partition("$$SOE")
+    ecliptic_frame = False
+    for line in header.splitlines():
+        if "Reference frame" in line:
+            ecliptic_frame = ("Ecliptic" in line) or ("ecliptic" in line)
+    for line in rest.splitlines():
+        raw = line.strip()
+        if not raw:
+            continue
+        if raw.startswith("$$EOE"):
+            break
+        parts = [p.strip() for p in raw.split(",")]
+        if len(parts) < 8:
+            continue
+        ejd = float(parts[0])
+        if ejd <= jd:
+            continue
+        x, y, z = (float(parts[i]) for i in (2, 3, 4))
+        vx, vy, vz = (float(parts[i]) for i in (5, 6, 7))
+        dt = jd - ejd
+        pos = (x + vx * dt, y + vy * dt, z + vz * dt)
+        if ecliptic_frame:
+            pos = ecliptic_to_icrf(*pos)
+        return pos
+    raise RuntimeError(f"JD {jd} outside Horizons range in {path}")
+
+
+def los_circular_elements(ra_deg: float, dec_deg: float, a_au: float,
+                          jpl_path, jd: float
+                          ) -> tuple[float, float, float, float, float, float]:
+    """Circular orbit at a_au along the observer LOS to (ra, dec) at jd."""
+    obs = parse_jpl_horizons_icrf(jpl_path, jd)
+    ra = math.radians(ra_deg)
+    dec = math.radians(dec_deg)
+    los = (
+        math.cos(dec) * math.cos(ra),
+        math.cos(dec) * math.sin(ra),
+        math.sin(dec),
+    )
+    b = 2.0 * sum(o * l for o, l in zip(obs, los))
+    c = sum(o * o for o in obs) - a_au * a_au
+    disc = max(0.0, b * b - 4.0 * c)
+    t = 0.5 * (-b + math.sqrt(disc))
+    obj_icrf = tuple(o + t * l for o, l in zip(obs, los))
+    obj_ecl = icrf_to_ecliptic(*obj_icrf)
+    return circular_elements_through_ecliptic_xyz(*obj_ecl)
 
 
 def cell_index(value: float, step: float) -> float:

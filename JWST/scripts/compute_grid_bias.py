@@ -23,13 +23,13 @@ from grid_bias import (
     Q_STEP,
     SI_STEP,
     apparent_to_Hr,
-    aimed_at_field,
     bounds_from_key,
     cell_key,
     compute_ifree,
     ecliptic_from_ifree,
     geometric_detection_prob,
     icrs_to_ecliptic,
+    los_circular_elements,
     sample_aq,
 )
 
@@ -103,35 +103,42 @@ class JWSTSimulator:
         self.sim = OSSSSim(self.epoch_dirs[0], seed=seed)
         self.colors = PhotSpec()
 
-    def detected_sample_a(self, a, e, inc, node, peri, M, H) -> bool:
+    def epoch_flags(self, a, e, inc, node, peri, M, H) -> list[int]:
         base = dict(a=a * u.au, e=e, inc=inc * u.deg, node=node * u.deg, peri=peri * u.deg,
                     M=M * u.deg, H=H * u.mag, comp="default")
+        flags = []
         for epoch_dir, jd in zip(self.epoch_dirs, EPOCH_JD):
             self.sim.characterization_directory = epoch_dir
             r = self.sim.simulate({**base, "epoch": jd * u.day}, colors=self.colors, model_band="r")
-            if r["flag"] < 4:
-                return False
-        return True
+            flags.append(int(r["flag"]))
+        return flags
+
+    def detected_sample_a(self, a, e, inc, node, peri, M, H) -> bool:
+        return all(f >= 4 for f in self.epoch_flags(a, e, inc, node, peri, M, H))
 
 
 def sanity_check_simulator(sim: JWSTSimulator) -> None:
-    """Fail fast if a bright object aimed at the mosaic is not Sample A.
+    """Fail fast if a bright object on the JWST LOS is not Sample A.
 
-    Random-draw P is ~1e-5, so this is the check that characterization and
-    the 3-epoch ephemeris path work before burning 1e6 empty draws.
+    The plant is along the observer line of sight, not the barycentric
+    RA/Dec of the field (JWST parallax at 44 au is ~1°, larger than the mosaic).
     """
-    inc, node, peri, M = aimed_at_field(FIELD_RA, FIELD_DEC)
-    if sim.detected_sample_a(44.0, 0.02, inc, node, peri, M, 8.0):
-        print("sanity: planted field-center object is a 3-epoch detection", flush=True)
+    jpl = Path(sim.epoch_dirs[0]) / "JWST.csv"
+    a, e, inc, node, peri, M = los_circular_elements(
+        FIELD_RA, FIELD_DEC, 44.0, jpl, EPOCH_JD[0]
+    )
+    flags = sim.epoch_flags(a, e, inc, node, peri, M, 8.0)
+    if all(f >= 4 for f in flags):
+        print("sanity: LOS-planted object is a 3-epoch detection", flush=True)
         return
-    # Parallax from JWST (not the Sun) can move the aim by a few arcmin.
     for dM in (-0.15, -0.10, -0.05, 0.05, 0.10, 0.15):
-        if sim.detected_sample_a(44.0, 0.02, inc, node, peri, M + dM, 8.0):
-            print(f"sanity: planted object detected with ΔM={dM:.2f}°", flush=True)
+        shifted = sim.epoch_flags(a, e, inc, node, peri, M + dM, 8.0)
+        if all(f >= 4 for f in shifted):
+            print(f"sanity: LOS-planted object detected with ΔM={dM:.2f}°", flush=True)
             return
     raise RuntimeError(
-        "planted object at the JWST field was not a 3-epoch Sample A detection; "
-        "stop the CANFAR run — characterization/ephemeris is returning flag<4"
+        "LOS-planted object at the JWST mosaic was not a 3-epoch Sample A "
+        f"detection (flags={flags}); characterization/ephemeris is returning flag<4"
     )
 
 

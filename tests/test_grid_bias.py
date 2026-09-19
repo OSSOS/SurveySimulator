@@ -121,10 +121,63 @@ class GridBiasHelpers(unittest.TestCase):
         )
         self.assertAlmostEqual(inc, abs(lat), places=5)
         arglat = peri + M
-        # β ≈ i sin(ω+M); aim puts the object at max |latitude|.
         self.assertAlmostEqual(math.sin(math.radians(arglat)), 1.0 if lat >= 0 else -1.0, places=6)
         lam = (node + arglat) % 360.0
         self.assertAlmostEqual(lam, lon % 360.0, places=4)
+
+    def test_ecliptic_icrf_roundtrip(self):
+        x, y, z = -0.55, 0.83, -0.002
+        xe, ye, ze = grid_bias.icrf_to_ecliptic(*grid_bias.ecliptic_to_icrf(x, y, z))
+        self.assertAlmostEqual(xe, x, places=12)
+        self.assertAlmostEqual(ye, y, places=12)
+        self.assertAlmostEqual(ze, z, places=12)
+        _xi, _yi, zi = grid_bias.ecliptic_to_icrf(x, y, z)
+        # JWST near the ecliptic; ICRF z is ~sin(ε) * y ≈ 0.33 AU.
+        self.assertGreater(zi, 0.3)
+
+    def test_jwst_csv_observer_is_ecliptic_and_converts(self):
+        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        if not path.is_file():
+            self.skipTest(f"missing {path}")
+        obs = grid_bias.parse_jpl_horizons_icrf(path, 2459969.5)
+        self.assertAlmostEqual(math.sqrt(sum(c * c for c in obs)), 1.0, places=2)
+        self.assertGreater(obs[2], 0.3)
+
+    def test_los_plant_sits_on_field_line_of_sight(self):
+        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        if not path.is_file():
+            self.skipTest(f"missing {path}")
+        a, e, inc, node, peri, M = grid_bias.los_circular_elements(
+            grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG, 44.0, path, 2459969.5
+        )
+        self.assertEqual(e, 0.0)
+        self.assertAlmostEqual(a, 44.0, places=5)
+        # Reconstruct ecliptic position from the circular-element recipe.
+        lat = math.degrees(math.asin(math.sin(math.radians(inc))
+                                     * math.sin(math.radians(peri + M))))
+        lon = (node + peri + M) % 360.0
+        x = a * math.cos(math.radians(lon)) * math.cos(math.radians(lat))
+        y = a * math.sin(math.radians(lon)) * math.cos(math.radians(lat))
+        z = a * math.sin(math.radians(lat))
+        obj_icrf = grid_bias.ecliptic_to_icrf(x, y, z)
+        obs = grid_bias.parse_jpl_horizons_icrf(path, 2459969.5)
+        los = (
+            obj_icrf[0] - obs[0],
+            obj_icrf[1] - obs[1],
+            obj_icrf[2] - obs[2],
+        )
+        nrm = math.sqrt(sum(c * c for c in los))
+        los = tuple(c / nrm for c in los)
+        ra = math.radians(grid_bias.FIELD_RA_DEG)
+        dec = math.radians(grid_bias.FIELD_DEC_DEG)
+        want = (
+            math.cos(dec) * math.cos(ra),
+            math.cos(dec) * math.sin(ra),
+            math.sin(dec),
+        )
+        dot = sum(u * v for u, v in zip(los, want))
+        sep_deg = math.degrees(math.acos(max(-1.0, min(1.0, dot))))
+        self.assertLess(sep_deg, 0.02)
 
 
 if __name__ == "__main__":

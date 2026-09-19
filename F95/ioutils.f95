@@ -326,6 +326,10 @@ contains
       ! to adjust the pos values to that requested.
       ! Rewind every call so switching LUNs / reopening files cannot reuse
       ! another file's saved header offset.
+      !
+      ! RADECeclXV subtracts the observatory as ICRF. Horizons dumps may be
+      ! ICRF (HST.csv) or Ecliptic of J2000 (JWST.csv). Convert ecliptic
+      ! states to ICRF here so both work.
       
       implicit none
       
@@ -336,10 +340,15 @@ contains
       
       character(len = 512) :: line
       character(len = 30) :: date
-      real(kind=8) ejd
+      real(kind=8) ejd, coseps, sineps, ye, ze
       integer :: iend, ferr
+      logical :: ecliptic_frame
+      ! Same obliquity as rot.f95 equat_ecl (84381.41 arcsec)
+      real(kind=8), parameter :: epsilon_arcsec = 84381.41d0, &
+           secrad = Pi/180.d0/3600.d0
       
       ierr = 0
+      ecliptic_frame = .false.
       rewind(unit=iunit, iostat=ferr)
       if (ferr .ne. 0) then
          ierr = 10
@@ -347,6 +356,10 @@ contains
       end if
       do
          read(iunit, '(A512)', end=999) line
+         if (index(line, 'Reference frame') > 0) then
+            ecliptic_frame = (index(line, 'Ecliptic') > 0) .or. &
+                 (index(line, 'ecliptic') > 0)
+         end if
          if ( line == '$$SOE' ) then
             exit
          end if
@@ -365,6 +378,18 @@ contains
             pos%x = pos%x + vel%x*(jd-ejd)
             pos%y = pos%y + vel%y*(jd-ejd)
             pos%z = pos%z + vel%z*(jd-ejd)
+            if (ecliptic_frame) then
+               coseps = dcos(epsilon_arcsec*secrad)
+               sineps = dsin(epsilon_arcsec*secrad)
+               ye = pos%y
+               ze = pos%z
+               pos%y = coseps*ye - sineps*ze
+               pos%z = sineps*ye + coseps*ze
+               ye = vel%y
+               ze = vel%z
+               vel%y = coseps*ye - sineps*ze
+               vel%z = sineps*ye + coseps*ze
+            end if
             return
          end if
       end do
