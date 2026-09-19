@@ -1,5 +1,6 @@
 module getsur
 
+  use parameters
   use datadec
   use xvutils
   use poly_lib
@@ -10,6 +11,16 @@ module getsur
   integer, save :: n_jpl_eph = 0
   integer, save :: jpl_eph_lun(max_jpl_eph)
   character(len=1024), save :: jpl_eph_name(max_jpl_eph)
+
+  ! Not in the f90wrap module list. A character array here must not live in
+  ! surveysub: f90wrap emits f90wrap.runtime.direct_c_array for it, which
+  ! older CANFAR f90wrap.runtime does not provide.
+  integer, parameter :: max_survey_cache = 8
+  integer, save :: n_survey_cache = 0
+  character(len=1024), save :: survey_cache_name(max_survey_cache)
+  integer, save :: survey_cache_n(max_survey_cache)
+  type(t_pointing), save :: survey_cache_points(n_sur_max, max_survey_cache)
+  real (kind=8), save :: survey_cache_mmag(n_sur_max, max_survey_cache)
 
 contains
 
@@ -624,6 +635,7 @@ contains
        close(unit=jpl_eph_lun(k), iostat=ios)
     end do
     n_jpl_eph = 0
+    n_survey_cache = 0
   end subroutine close_jpl_ephemeris
 
   subroutine read_sur (dirn, lun_in, point, ierr)

@@ -16,16 +16,6 @@ module surveysub
   type(t_pointing), save, private :: points_loaded(n_sur_max)
   real (kind=8), save, private :: sur_mm_loaded(n_sur_max)
 
-  ! Detos1 survey cache. Reloading by directory (3-epoch AND) used to call
-  ! GetSurvey/get_code on every switch, opening a new JWST.csv LUN each time
-  ! until EMFILE, after which every draw returns flag=0.
-  integer, parameter :: max_survey_cache = 8
-  integer, save :: n_survey_cache = 0
-  character(len=1024), save :: survey_cache_name(max_survey_cache)
-  integer, save :: survey_cache_n(max_survey_cache)
-  type(t_pointing), save, private :: survey_cache_points(n_sur_max, max_survey_cache)
-  real (kind=8), save, private :: survey_cache_mmag(n_sur_max, max_survey_cache)
-
 contains
 
 
@@ -552,7 +542,6 @@ contains
           last_surnam = ' '
           survey_loaded = .false.
           n_sur_loaded = 0
-          n_survey_cache = 0
           call close_jpl_ephemeris()
   end subroutine reset_simulator
 
