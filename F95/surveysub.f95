@@ -157,7 +157,8 @@ contains
 
     ! Reload when the characterization directory changes. Do not touch
     ! ran3 (iff): callers that AND several epochs must keep one RNG stream.
-    if (first .or. (trim(surnam) /= trim(last_surnam))) then
+    if (first .or. (surnam(1:len_trim(surnam)) /= &
+         last_surnam(1:len_trim(last_surnam)))) then
        first = .false.
        last_surnam = surnam
 
