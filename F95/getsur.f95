@@ -6,6 +6,11 @@ module getsur
   use effut
   use ioutils
 
+  integer, parameter :: max_jpl_eph = 32
+  integer, save :: n_jpl_eph = 0
+  integer, save :: jpl_eph_lun(max_jpl_eph)
+  character(len=1024), save :: jpl_eph_name(max_jpl_eph)
+
 contains
 
   subroutine create_ears(ra, dec, poly)
@@ -554,7 +559,9 @@ contains
     !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
     ! this routine checks to see if the observatory code actually references
     ! a file that should then container a JPL state vector CSV file
-    ! when a LUN is returned its assigned values starting at 501
+    ! when a LUN is returned its assigned values starting at 501.
+    ! The same path reuses the already-open LUN; Detos1 used to leak one
+    ! descriptor per epoch switch (~3 per draw) until open() failed.
     !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
     !
     ! JJ Kavelaars National Research Council of Canada
@@ -573,32 +580,51 @@ contains
     character(*), intent(IN) :: code_in, dirn
     integer, intent(OUT) :: code_out
   
-    character(len=300) :: fmt, fname
-    integer :: ierr, j
-    integer :: vector_file_lun
+    character(len=300) :: fmt
+    character(len=1024) :: fname
+    integer :: ierr, j, k
 
-    data vector_file_lun /500/
-    save vector_file_lun
-    
     j=len_trim(code_in)
     write(fmt, '(Ai0A)') "(I",j,")"
     read(code_in, fmt=fmt, iostat=ierr) code_out
     if ( ierr .ne. 0 ) then
        ! try and open 'code_in' as a file in dirn
-       write(fmt, '(AI0AI0A)') "(A",len_trim(dirn)+1,"A",len_trim(code_in),")"
-       write(fname, fmt=fmt) dirn//'/', code_in
-       vector_file_lun = vector_file_lun + 1
-       open(unit=vector_file_lun, file=fname, iostat=ierr, status='old')
+       fname = dirn(1:len_trim(dirn))//'/'//code_in(1:len_trim(code_in))
+       do k = 1, n_jpl_eph
+          if (fname(1:len_trim(fname)) == &
+               jpl_eph_name(k)(1:len_trim(jpl_eph_name(k)))) then
+             code_out = -jpl_eph_lun(k)
+             return
+          end if
+       end do
+       if (n_jpl_eph .ge. max_jpl_eph) then
+          write(0, *) "Too many JPL ephemeris files open: ", fname
+          code_out = 0
+          return
+       end if
+       n_jpl_eph = n_jpl_eph + 1
+       jpl_eph_lun(n_jpl_eph) = 500 + n_jpl_eph
+       jpl_eph_name(n_jpl_eph) = fname
+       open(unit=jpl_eph_lun(n_jpl_eph), file=fname, iostat=ierr, status='old')
        if ( ierr .ne. 0 ) then
           write(0, *) "Failed to open JPL Ephemeris at ",fname," error: ", ierr
+          n_jpl_eph = n_jpl_eph - 1
           code_out=0
        else
-          code_out=-vector_file_lun
+          code_out=-jpl_eph_lun(n_jpl_eph)
        end if
     end if
     return 
 
   end subroutine get_code
+
+  subroutine close_jpl_ephemeris()
+    integer :: k, ios
+    do k = 1, n_jpl_eph
+       close(unit=jpl_eph_lun(k), iostat=ios)
+    end do
+    n_jpl_eph = 0
+  end subroutine close_jpl_ephemeris
 
   subroutine read_sur (dirn, lun_in, point, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-

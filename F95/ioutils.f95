@@ -324,6 +324,8 @@ contains
     subroutine read_jpl_csv(iunit, jd, pos, vel, ierr)
       ! lookup line in ephemeris file (pointed to by iunit) with data close to jd and then use velocity
       ! to adjust the pos values to that requested.
+      ! Rewind every call so switching LUNs / reopening files cannot reuse
+      ! another file's saved header offset.
       
       implicit none
       
@@ -335,34 +337,21 @@ contains
       character(len = 512) :: line
       character(len = 30) :: date
       real(kind=8) ejd
-      integer(kind=8) :: header_offset, offset
       integer :: iend, ferr
-      logical :: read_header
-      
-      
-      ! only read the header the first time we are called
-      data read_header /.true./
-      data header_offset /0/
-      save read_header, header_offset
-      
       
       ierr = 0
-      if (read_header) then
-         do
-            read(iunit, '(A512)', end=999) line
-            iend = len_trim(line)
-            if ( line == '$$SOE' ) then
-               read_header = .false.
-               header_offset = FTELL(iunit)
-               exit
-            end if
-         end do
+      rewind(unit=iunit, iostat=ferr)
+      if (ferr .ne. 0) then
+         ierr = 10
+         return
       end if
+      do
+         read(iunit, '(A512)', end=999) line
+         if ( line == '$$SOE' ) then
+            exit
+         end if
+      end do
       
-      ! Loop through the ephemeris lines to get to the desired JD
-      ! starting from line after the header
-      offset = header_offset - FTELL(iunit) 
-      CALL FSEEK(iunit, offset, 1, ferr)
       do
          read(iunit, '(A512)', end=999) line
          iend = len_trim(line)

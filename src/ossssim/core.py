@@ -123,8 +123,9 @@ class OSSSSim:
 
         Changing ``self.characterization_directory`` between calls reloads that
         survey (Detos1 compares the path to the last loaded directory) without
-        resetting the ran3 stream. That is required when a caller ANDs several
-        epochs. Do not construct a new OSSSSim per epoch: ``__init__`` calls
+        resetting the ran3 stream. Loaded surveys and JPL ephemeris LUNs are
+        cached, so ANDing several epochs does not reopen JWST.csv on every
+        draw. Do not construct a new OSSSSim per epoch: ``__init__`` calls
         ``reset_simulator()`` and would reseed the RNG.
 
         Args:

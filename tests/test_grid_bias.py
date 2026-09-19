@@ -91,6 +91,41 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertAlmostEqual(bounds["a"][1], 44.4, places=6)
         self.assertAlmostEqual(bounds["Hx"][1] - bounds["Hx"][0], grid_bias.H_STEP)
 
+    def test_figure20_is_not_the_1e5_detection_rate(self):
+        lon, lat = grid_bias.icrs_to_ecliptic(
+            grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG
+        )
+        self.assertAlmostEqual(lon, 211.15, places=1)
+        self.assertAlmostEqual(lat, 1.07, places=2)
+        p7 = grid_bias.geometric_detection_prob(
+            grid_bias.MOSAIC_AREA_DEG2, 7.0, lat
+        )
+        # ~1 per 10^5 draws is the on-sky geometry of 0.05 deg², not Fig. 20.
+        self.assertGreater(p7, 5e-6)
+        self.assertLess(p7, 2e-5)
+        p_cold = grid_bias.geometric_detection_prob(
+            grid_bias.MOSAIC_AREA_DEG2, 2.5, lat
+        )
+        self.assertGreater(p_cold, p7)
+        self.assertEqual(
+            grid_bias.geometric_detection_prob(
+                grid_bias.MOSAIC_AREA_DEG2, 0.5, lat
+            ),
+            0.0,
+        )
+
+    def test_aimed_at_field_reaches_jwst_latitude(self):
+        inc, node, peri, M = grid_bias.aimed_at_field()
+        lon, lat = grid_bias.icrs_to_ecliptic(
+            grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG
+        )
+        self.assertAlmostEqual(inc, abs(lat), places=5)
+        arglat = peri + M
+        # β ≈ i sin(ω+M); aim puts the object at max |latitude|.
+        self.assertAlmostEqual(math.sin(math.radians(arglat)), 1.0 if lat >= 0 else -1.0, places=6)
+        lam = (node + arglat) % 360.0
+        self.assertAlmostEqual(lam, lon % 360.0, places=4)
+
 
 if __name__ == "__main__":
     unittest.main()

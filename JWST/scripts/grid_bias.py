@@ -14,6 +14,9 @@ BOWELL_G = -0.12
 MOSAIC_AREA_DEG2 = 0.05
 MOSAIC_SIDE_DEG = math.sqrt(MOSAIC_AREA_DEG2)
 FILL_FACTOR = 1.0
+OBLIQUITY_J2000_DEG = 23.4392911
+FIELD_RA_DEG = 209.3875
+FIELD_DEC_DEG = -10.865278
 
 
 def laplace_inclination(a_au: float) -> float:
@@ -97,6 +100,46 @@ def apparent_to_Hr(m_f150w2: float, d_au: float, robs_au: float = 1.0,
     cos_a = max(-1.0, min(1.0, (-robs_au ** 2 + 2.0 * d_au ** 2) / denom))
     alpha = math.acos(cos_a)
     return m_r - 5.0 * math.log10(d_au * d_au) + bowell_phase_correction(alpha, g)
+
+
+def geometric_detection_prob(area_deg2: float, inc_deg: float, beta_deg: float) -> float:
+    """Single-epoch geometric probability for a small field.
+
+    P ≈ A / (360° × 2 × sqrt(i² − β²)) when i > |β|. For the JWST mosaic
+    (A=0.05 deg²) and a ~7° inclination belt this is ~1e-5. Eduardo et al.
+    2026 Figure 20 is the cold-belt H_r luminosity function, not this rate.
+    """
+    if abs(inc_deg) <= abs(beta_deg):
+        return 0.0
+    return area_deg2 / (360.0 * 2.0 * math.sqrt(inc_deg ** 2 - beta_deg ** 2))
+
+
+def icrs_to_ecliptic(ra_deg: float, dec_deg: float) -> tuple[float, float]:
+    """J2000 equatorial (RA, Dec) to ecliptic (lon, lat), degrees."""
+    ra = math.radians(ra_deg)
+    dec = math.radians(dec_deg)
+    eps = math.radians(OBLIQUITY_J2000_DEG)
+    x = math.cos(dec) * math.cos(ra)
+    y = math.cos(dec) * math.sin(ra)
+    z = math.sin(dec)
+    ye = y * math.cos(eps) + z * math.sin(eps)
+    ze = -y * math.sin(eps) + z * math.cos(eps)
+    lon = math.degrees(math.atan2(ye, x)) % 360.0
+    lat = math.degrees(math.asin(max(-1.0, min(1.0, ze))))
+    return lon, lat
+
+
+def aimed_at_field(ra_deg: float = FIELD_RA_DEG, dec_deg: float = FIELD_DEC_DEG
+                   ) -> tuple[float, float, float, float]:
+    """(i, Ω, ω, M) that places a circular orbit on the given ICRS pointing.
+
+    Uses the small-i approximation λ ≈ Ω + ω + M and β = i sin(ω+M).
+    """
+    lon, lat = icrs_to_ecliptic(ra_deg, dec_deg)
+    inc = max(abs(lat), 0.05)
+    arglat = 90.0 if lat >= 0.0 else 270.0
+    node = (lon - arglat) % 360.0
+    return inc, node, arglat, 0.0
 
 
 def cell_index(value: float, step: float) -> float:

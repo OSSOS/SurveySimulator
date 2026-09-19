@@ -18,14 +18,18 @@ from grid_bias import (
     A_STEP,
     FILL_FACTOR,
     H_STEP,
+    MOSAIC_AREA_DEG2,
     MOSAIC_SIDE_DEG,
     Q_STEP,
     SI_STEP,
     apparent_to_Hr,
+    aimed_at_field,
     bounds_from_key,
     cell_key,
     compute_ifree,
     ecliptic_from_ifree,
+    geometric_detection_prob,
+    icrs_to_ecliptic,
     sample_aq,
 )
 
@@ -110,6 +114,27 @@ class JWSTSimulator:
         return True
 
 
+def sanity_check_simulator(sim: JWSTSimulator) -> None:
+    """Fail fast if a bright object aimed at the mosaic is not Sample A.
+
+    Random-draw P is ~1e-5, so this is the check that characterization and
+    the 3-epoch ephemeris path work before burning 1e6 empty draws.
+    """
+    inc, node, peri, M = aimed_at_field(FIELD_RA, FIELD_DEC)
+    if sim.detected_sample_a(44.0, 0.02, inc, node, peri, M, 8.0):
+        print("sanity: planted field-center object is a 3-epoch detection", flush=True)
+        return
+    # Parallax from JWST (not the Sun) can move the aim by a few arcmin.
+    for dM in (-0.15, -0.10, -0.05, 0.05, 0.10, 0.15):
+        if sim.detected_sample_a(44.0, 0.02, inc, node, peri, M + dM, 8.0):
+            print(f"sanity: planted object detected with ΔM={dM:.2f}°", flush=True)
+            return
+    raise RuntimeError(
+        "planted object at the JWST field was not a 3-epoch Sample A detection; "
+        "stop the CANFAR run — characterization/ephemeris is returning flag<4"
+    )
+
+
 def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: int) -> tuple[float, int]:
     rng = np.random.default_rng(seed)
     si0, si1 = cell_bounds["sin_ifree"]
@@ -178,8 +203,16 @@ def main():
     cache = load_bias_cache(cache_path)
     sim = JWSTSimulator(root / "characterization", seed=args.seed)
     cells = sorted({d["cell"] for d in detections})
+    _, lat = icrs_to_ecliptic(FIELD_RA, FIELD_DEC)
+    p_geo = geometric_detection_prob(MOSAIC_AREA_DEG2, 7.0, lat)
     print(f"{len(cells)} cells, target={args.target}/cell")
+    print(
+        f"expected single-epoch geometric P ~ {p_geo:.2e} "
+        f"(0.05 deg², i=7°, β={lat:.2f}°); Fig.20 is the H_r LF, not this rate",
+        flush=True,
+    )
     print("warning: Sample A CSV has no Ω; catalog i_free uses Ω=0", flush=True)
+    sanity_check_simulator(sim)
 
     for idx, key in enumerate(cells):
         if key in cache:

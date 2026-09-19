@@ -16,6 +16,16 @@ module surveysub
   type(t_pointing), save, private :: points_loaded(n_sur_max)
   real (kind=8), save, private :: sur_mm_loaded(n_sur_max)
 
+  ! Detos1 survey cache. Reloading by directory (3-epoch AND) used to call
+  ! GetSurvey/get_code on every switch, opening a new JWST.csv LUN each time
+  ! until EMFILE, after which every draw returns flag=0.
+  integer, parameter :: max_survey_cache = 8
+  integer, save :: n_survey_cache = 0
+  character(len=1024), save :: survey_cache_name(max_survey_cache)
+  integer, save :: survey_cache_n(max_survey_cache)
+  type(t_pointing), save, private :: survey_cache_points(n_sur_max, max_survey_cache)
+  real (kind=8), save, private :: survey_cache_mmag(n_sur_max, max_survey_cache)
+
 contains
 
 
@@ -144,8 +154,9 @@ contains
     integer, save :: i, filt_i, flag_l, n_sur, &
          incode, outcod, i_sur
     character(13), save :: stra, stdec
-    integer :: in_poly
+    integer :: in_poly, icache, k
     logical, save :: newpos, rate_ok
+    logical :: cache_hit
     data &
          eff_lim /0.4d0/
     CHARACTER(len=256) :: log_msg
@@ -157,27 +168,52 @@ contains
 
     ! Reload when the characterization directory changes. Do not touch
     ! ran3 (iff): callers that AND several epochs must keep one RNG stream.
+    ! Cache loaded surveys so switching epoch1/2/3 does not reopen JWST.csv.
     if (first .or. (surnam(1:len_trim(surnam)) /= &
          last_surnam(1:len_trim(last_surnam)))) then
        first = .false.
        last_surnam = surnam
 
-! Opens and reads in survey definitions
-       call GetSurvey (surnam, lun_s, n_sur, points, sur_mmag, ierr)
-       if (ierr .ne. 0) then
-          first = .true.
-          last_surnam = ' '
-          if (ierr .eq. 100) then
-             write (screen, *) &
-                  'GetSurvey: reached maximum number of pointings, ', n_sur
-          else if (ierr .eq. 10) then
-             write (screen, *) 'Unable to open survey file in ', surnam
-          else if (ierr .eq. 30) then
-             goto 100
-          else
-             write (screen, *) 'Unknown return code in read_sur.', ierr
+       cache_hit = .false.
+       icache = 0
+       do k = 1, n_survey_cache
+          if (surnam(1:len_trim(surnam)) == &
+               survey_cache_name(k)(1:len_trim(survey_cache_name(k)))) then
+             cache_hit = .true.
+             icache = k
+             exit
           end if
-          return
+       end do
+       if (cache_hit) then
+          n_sur = survey_cache_n(icache)
+          points(1:n_sur) = survey_cache_points(1:n_sur, icache)
+          sur_mmag(1:n_sur) = survey_cache_mmag(1:n_sur, icache)
+          ierr = 0
+       else
+          call GetSurvey (surnam, lun_s, n_sur, points, sur_mmag, ierr)
+          if (ierr .ne. 0) then
+             first = .true.
+             last_surnam = ' '
+             if (ierr .eq. 100) then
+                write (screen, *) &
+                     'GetSurvey: reached maximum number of pointings, ', n_sur
+             else if (ierr .eq. 10) then
+                write (screen, *) 'Unable to open survey file in ', surnam
+             else if (ierr .eq. 30) then
+                goto 100
+             else
+                write (screen, *) 'Unknown return code in read_sur.', ierr
+             end if
+             return
+          end if
+          if (n_survey_cache .lt. max_survey_cache) then
+             n_survey_cache = n_survey_cache + 1
+             icache = n_survey_cache
+             survey_cache_name(icache) = surnam
+             survey_cache_n(icache) = n_sur
+             survey_cache_points(1:n_sur, icache) = points(1:n_sur)
+             survey_cache_mmag(1:n_sur, icache) = sur_mmag(1:n_sur)
+          end if
        end if
 100    continue
 ! Determine overall faintest 'x' magnitude for all surveys
@@ -516,6 +552,8 @@ contains
           last_surnam = ' '
           survey_loaded = .false.
           n_sur_loaded = 0
+          n_survey_cache = 0
+          call close_jpl_ephemeris()
   end subroutine reset_simulator
 
   subroutine survey_load(survey, lun_s, n_sur, ierr)
