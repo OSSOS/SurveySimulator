@@ -266,6 +266,11 @@ def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: 
     object is in the ICRS mosaic at epoch 1. Detos1 still applies η, the
     rate cut, and epochs 2–3. Multiply by geometric_detection_prob so the
     Horvitz–Thompson weight stays P(detect | cell), not P(detect | FoV).
+
+    The geometric (a, e, i) + (RA, Dec, r) → (a, e, i, Ω, ω, M) step is
+    keplerian_at_radec_r. The grid bins i_free, so compute_cell_bias calls
+    sample_aimed_elements, which fixes (i, Ω) from i_free then uses the
+    same peri_m_from_position in-plane solve.
     """
     rng = np.random.default_rng(seed)
     si0, si1 = cell_bounds["sin_ifree"]

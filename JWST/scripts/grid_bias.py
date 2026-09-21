@@ -464,6 +464,92 @@ def argument_of_latitude(R, inc_deg: float, node_deg: float) -> float:
     return math.atan2(float(R @ yhat), float(R @ xhat))
 
 
+def _radius_on_ellipse(a: float, e: float, r_au: float) -> float | None:
+    q = a * (1.0 - e)
+    q_ap = a * (1.0 + e)
+    if r_au < q - 1e-8 or r_au > q_ap + 1e-8:
+        return None
+    return min(q_ap, max(q, r_au))
+
+
+def nodes_from_inclination(R, inc_deg: float) -> list[float]:
+    """Ascending nodes Ω (deg) whose plane of inclination i contains R.
+
+    n · R = 0 with n = (sin i sin Ω, −sin i cos Ω, cos i). Empty if |β| > i.
+    """
+    x, y, z = (float(c) for c in np.asarray(R, dtype=float))
+    r = math.hypot(math.hypot(x, y), z)
+    if r < 1e-18:
+        return []
+    inc = math.radians(inc_deg)
+    si, ci = math.sin(inc), math.cos(inc)
+    if abs(si) < 1e-12:
+        return [0.0] if abs(z / r) < 1e-8 else []
+    # x sin Ω − y cos Ω = −z cot i
+    amp_a, amp_b, target = x, -y, -z * ci / si
+    amp = math.hypot(amp_a, amp_b)
+    if amp < 1e-18 or abs(target) > amp + 1e-10:
+        return []
+    psi = math.atan2(amp_b, amp_a)
+    alpha = math.asin(max(-1.0, min(1.0, target / amp)))
+    out = []
+    seen = set()
+    for ang in (alpha - psi, math.pi - alpha - psi):
+        node = math.degrees(ang) % 360.0
+        key = round(node, 8)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(node)
+    return out
+
+
+def peri_m_from_position(a: float, e: float, inc_deg: float, node_deg: float,
+                         R, f_sign: float = 1.0) -> tuple[float, float]:
+    """(ω, M) in degrees from (a, e, i, Ω) and ecliptic position R.
+
+    r = |R| fixes |true anomaly| f; u is the argument of latitude of R;
+    ω = u − f; M follows from f.
+    """
+    r_au = float(np.linalg.norm(R))
+    f_abs = true_anomaly_from_radius(a, e, r_au)
+    f_rad = f_abs if f_sign >= 0.0 else -f_abs
+    u_rad = argument_of_latitude(R, inc_deg, node_deg)
+    peri = math.degrees(u_rad - f_rad) % 360.0
+    mean_anom = math.degrees(mean_anomaly_from_true(e, f_rad)) % 360.0
+    return peri, mean_anom
+
+
+def keplerian_at_radec_r(a: float, e: float, inc_deg: float,
+                         ra_deg: float, dec_deg: float, r_au: float,
+                         obs_icrf, f_sign: float = 1.0, node_index: int = 0
+                         ) -> tuple[float, float, float, float, float, float] | None:
+    """Map (a, e, i) and ICRS (RA, Dec, r) to (a, e, i, Ω, ω, M).
+
+    This is the reusable geometric step. H is not used (photometry only).
+    RA/Dec are ICRS; elements are J2000 ecliptic. The LOS is intersected
+    at |R|=r in ICRF and rotated with icrf_to_ecliptic.
+
+    Returns None if r is off the ellipse, the ray misses the sphere, or
+    |β| > i so no node exists. Two Ω solutions in general; node_index
+    selects one. f_sign chooses inbound vs outbound true anomaly.
+    """
+    r_au = _radius_on_ellipse(a, e, r_au)
+    if r_au is None:
+        return None
+    pos_ecl = barycentric_on_icrs_los(obs_icrf, ra_deg, dec_deg, r_au)
+    if pos_ecl is None:
+        return None
+    nodes = nodes_from_inclination(pos_ecl, inc_deg)
+    if not nodes:
+        return None
+    node = nodes[int(node_index) % len(nodes)]
+    peri, mean_anom = peri_m_from_position(
+        a, e, inc_deg, node, pos_ecl, f_sign
+    )
+    return a, e, inc_deg, node, peri, mean_anom
+
+
 def poles_through_position_at_ifree(R, ifree_deg: float, a_au: float) -> list:
     """Orbit poles P with P·R = 0 and angle(P, Laplace pole) = i_free.
 
@@ -528,21 +614,15 @@ def aimed_elements(a: float, e: float, ifree_deg: float,
                    ra_deg: float, dec_deg: float, r_au: float,
                    obs_icrf, f_sign: float = 1.0, pole_index: int = 0
                    ) -> tuple[float, float, float, float] | None:
-    """Solve (i, Ω, ω, M) so the object is at ICRS (RA, Dec) with radius r.
+    """Solve (i, Ω, ω, M) for a grid-cell i_free at ICRS (RA, Dec, r).
 
-    Draw a, e, i_free (and H) from the grid cell; this infers the three
-    angles. r ∈ [q, Q] fixes |true anomaly|; the ICRS LOS is rotated to
-    ecliptic; the orbit pole is the plane through that position at i_free
-    from the Laplace pole, which gives (i, Ω); ω = u − f; M follows from f.
-
-    Returns None when the radius is off the ellipse, the ray misses |R|=r,
-    or i_free cannot reach the line of sight.
+    i_free plus the ecliptic position fixes (i, Ω) (the orbit pole through
+    R at i_free from the Laplace pole). Then peri_m_from_position gives
+    (ω, M). Use keplerian_at_radec_r when ecliptic i is already known.
     """
-    q = a * (1.0 - e)
-    q_ap = a * (1.0 + e)
-    if r_au < q - 1e-8 or r_au > q_ap + 1e-8:
+    r_au = _radius_on_ellipse(a, e, r_au)
+    if r_au is None:
         return None
-    r_au = min(q_ap, max(q, r_au))
     pos_ecl = barycentric_on_icrs_los(obs_icrf, ra_deg, dec_deg, r_au)
     if pos_ecl is None:
         return None
@@ -550,11 +630,9 @@ def aimed_elements(a: float, e: float, ifree_deg: float,
     if not poles:
         return None
     inc, node = poles[int(pole_index) % len(poles)]
-    f_abs = true_anomaly_from_radius(a, e, r_au)
-    f_rad = f_abs if f_sign >= 0.0 else -f_abs
-    u_rad = argument_of_latitude(pos_ecl, inc, node)
-    peri = math.degrees(u_rad - f_rad) % 360.0
-    mean_anom = math.degrees(mean_anomaly_from_true(e, f_rad)) % 360.0
+    peri, mean_anom = peri_m_from_position(
+        a, e, inc, node, pos_ecl, f_sign
+    )
     return inc, node, peri, mean_anom
 
 

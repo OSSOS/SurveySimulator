@@ -258,6 +258,61 @@ class GridBiasHelpers(unittest.TestCase):
                                                        math.degrees(M))
         self.assertAlmostEqual(math.sqrt(x * x + y * y + z * z), r, places=8)
 
+    def test_keplerian_at_radec_r_is_aei_to_full_elements(self):
+        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        if not path.is_file():
+            self.skipTest(f"missing {path}")
+        obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
+        a, e, inc, r = 44.0, 0.05, 3.0, 43.5
+        got = grid_bias.keplerian_at_radec_r(
+            a, e, inc, grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG,
+            r, obs, f_sign=1.0, node_index=0,
+        )
+        self.assertIsNotNone(got)
+        a2, e2, inc2, node, peri, M = got
+        self.assertEqual((a2, e2, inc2), (a, e, inc))
+        ra, dec = grid_bias.apparent_radec_deg(a, e, inc, node, peri, M, obs)
+        sep = grid_bias.sky_separation_deg(
+            ra, dec, grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG
+        )
+        self.assertLess(sep * 60.0, 0.1)
+        xyz = grid_bias.ecliptic_xyz_from_elements(a, e, inc, node, peri, M)
+        self.assertAlmostEqual(math.sqrt(sum(c * c for c in xyz)), r, places=5)
+
+    def test_keplerian_at_radec_r_matches_circular_los_plant(self):
+        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        if not path.is_file():
+            self.skipTest(f"missing {path}")
+        jd = grid_bias.EPOCH_JD[0]
+        a, e, inc, node0, peri0, M0 = grid_bias.los_circular_elements(
+            grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG, 44.0, path, jd
+        )
+        obs = grid_bias.parse_jpl_horizons_icrf(path, jd)
+        got = grid_bias.keplerian_at_radec_r(
+            a, e, inc, grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG,
+            a, obs, f_sign=1.0, node_index=0,
+        )
+        self.assertIsNotNone(got)
+        _a, _e, _i, node, peri, M = got
+        ra, dec = grid_bias.apparent_radec_deg(a, e, inc, node, peri, M, obs)
+        sep = grid_bias.sky_separation_deg(
+            ra, dec, grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG
+        )
+        self.assertLess(sep * 60.0, 0.1)
+        dang = abs((node - node0 + 180.0) % 360.0 - 180.0)
+        self.assertLess(min(dang, abs(dang - 180.0)), 1.0)
+
+    def test_keplerian_at_radec_r_rejects_i_below_latitude(self):
+        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        if not path.is_file():
+            self.skipTest(f"missing {path}")
+        obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
+        got = grid_bias.keplerian_at_radec_r(
+            44.0, 0.02, 0.2, grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG,
+            44.0, obs,
+        )
+        self.assertIsNone(got)
+
     def test_aimed_elements_land_on_icrs_los(self):
         path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
         if not path.is_file():
