@@ -23,6 +23,7 @@ from grid_bias import (
     Q_STEP,
     SI_STEP,
     apparent_to_Hr,
+    apparent_radec_deg,
     bounds_from_key,
     cell_key,
     compute_ifree,
@@ -30,7 +31,9 @@ from grid_bias import (
     geometric_detection_prob,
     icrs_to_ecliptic,
     los_circular_elements,
+    parse_jpl_horizons_icrf,
     sample_aq,
+    sky_separation_deg,
 )
 
 TARGET_DETECTIONS = 5000
@@ -127,6 +130,15 @@ def sanity_check_simulator(sim: JWSTSimulator) -> None:
     a, e, inc, node, peri, M = los_circular_elements(
         FIELD_RA, FIELD_DEC, 44.0, jpl, EPOCH_JD[0]
     )
+    obs = parse_jpl_horizons_icrf(jpl, EPOCH_JD[0])
+    ra_pred, dec_pred = apparent_radec_deg(a, e, inc, node, peri, M, obs)
+    sep = sky_separation_deg(ra_pred, dec_pred, FIELD_RA, FIELD_DEC)
+    print(
+        f"sanity plant ICRS RA,Dec={ra_pred:.5f},{dec_pred:.5f}  "
+        f"sep={sep * 60:.3f}' from mosaic centre "
+        f"(half-side {MOSAIC_SIDE_DEG * 30:.1f}')",
+        flush=True,
+    )
     flags = sim.epoch_flags(a, e, inc, node, peri, M, 8.0)
     if all(f >= 4 for f in flags):
         print("sanity: LOS-planted object is a 3-epoch detection", flush=True)
@@ -138,7 +150,9 @@ def sanity_check_simulator(sim: JWSTSimulator) -> None:
             return
     raise RuntimeError(
         "LOS-planted object at the JWST mosaic was not a 3-epoch Sample A "
-        f"detection (flags={flags}); characterization/ephemeris is returning flag<4"
+        f"detection (flags={flags}, predicted sep={sep * 60:.3f}'); "
+        "Detos1 is not using the same observer frame as the plant "
+        "(object ecliptic vs observatory ecliptic subtracted in ICRS)"
     )
 
 

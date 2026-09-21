@@ -227,6 +227,49 @@ def los_circular_elements(ra_deg: float, dec_deg: float, a_au: float,
     return circular_elements_through_ecliptic_xyz(*obj_ecl)
 
 
+def ecliptic_xyz_from_elements(a: float, e: float, inc_deg: float,
+                               node_deg: float, peri_deg: float, M_deg: float
+                               ) -> tuple[float, float, float]:
+    """Barycentric ecliptic xyz matching F95 pos_cart (e near 0 is fine)."""
+    inc = math.radians(inc_deg)
+    node = math.radians(node_deg)
+    peri = math.radians(peri_deg)
+    M = math.radians(M_deg) % (2.0 * math.pi)
+    E = M
+    for _ in range(20):
+        f = E - e * math.sin(E) - M
+        if abs(f) < 1e-14:
+            break
+        E -= f / (1.0 - e * math.cos(E))
+    cos_i, sin_i = math.cos(inc), math.sin(inc)
+    c_w, s_w = math.cos(peri), math.sin(peri)
+    c_o, s_o = math.cos(node), math.sin(node)
+    q0 = a * (math.cos(E) - e)
+    q1 = a * math.sqrt(max(0.0, 1.0 - e * e)) * math.sin(E)
+    x = (c_o * c_w - cos_i * s_o * s_w) * q0 + (-c_o * s_w - cos_i * s_o * c_w) * q1
+    y = (s_o * c_w + cos_i * c_o * s_w) * q0 + (-s_o * s_w + cos_i * c_o * c_w) * q1
+    z = (sin_i * s_w) * q0 + (sin_i * c_w) * q1
+    return x, y, z
+
+
+def apparent_radec_deg(a: float, e: float, inc_deg: float, node_deg: float,
+                       peri_deg: float, M_deg: float, obs_icrf
+                       ) -> tuple[float, float]:
+    """ICRS RA/Dec as RADECeclXV computes them (object ecliptic, obs ICRF)."""
+    obj_icrf = ecliptic_to_icrf(*ecliptic_xyz_from_elements(
+        a, e, inc_deg, node_deg, peri_deg, M_deg))
+    rel = [obj_icrf[i] - obs_icrf[i] for i in range(3)]
+    delta = math.sqrt(sum(v * v for v in rel))
+    ra = math.degrees(math.atan2(rel[1], rel[0])) % 360.0
+    dec = math.degrees(math.asin(max(-1.0, min(1.0, rel[2] / delta))))
+    return ra, dec
+
+
+def sky_separation_deg(ra1: float, dec1: float, ra2: float, dec2: float) -> float:
+    dra = (ra1 - ra2) * math.cos(math.radians(0.5 * (dec1 + dec2)))
+    return math.hypot(dra, dec1 - dec2)
+
+
 def cell_index(value: float, step: float) -> float:
     return math.floor(value / step) * step
 

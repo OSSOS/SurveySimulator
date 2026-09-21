@@ -179,6 +179,32 @@ class GridBiasHelpers(unittest.TestCase):
         sep_deg = math.degrees(math.acos(max(-1.0, min(1.0, dot))))
         self.assertLess(sep_deg, 0.02)
 
+    def test_plant_apparent_radec_is_mosaic_centre(self):
+        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        if not path.is_file():
+            self.skipTest(f"missing {path}")
+        jd = 2459969.5
+        a, e, inc, node, peri, M = grid_bias.los_circular_elements(
+            grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG, 44.0, path, jd
+        )
+        obs = grid_bias.parse_jpl_horizons_icrf(path, jd)
+        ra, dec = grid_bias.apparent_radec_deg(a, e, inc, node, peri, M, obs)
+        sep = grid_bias.sky_separation_deg(
+            ra, dec, grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG
+        )
+        self.assertLess(sep * 60.0, 0.1)
+        # Mixed frames (object ICRS, observatory left ecliptic) miss by ~26',
+        # larger than the mosaic half-width ~6.7'.
+        obs_ecl = grid_bias.icrf_to_ecliptic(*obs)
+        ra_m, dec_m = grid_bias.apparent_radec_deg(
+            a, e, inc, node, peri, M, obs_ecl
+        )
+        sep_m = grid_bias.sky_separation_deg(
+            ra_m, dec_m, grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG
+        )
+        self.assertGreater(sep_m, 0.2)
+        self.assertGreater(sep_m, grid_bias.MOSAIC_SIDE_DEG / 2.0)
+
 
 if __name__ == "__main__":
     unittest.main()
