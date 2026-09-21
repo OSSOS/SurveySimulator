@@ -29,15 +29,18 @@ from grid_bias import (
     RATE_CUT_MAX_ARCSEC_HR,
     RATE_CUT_MIN_ARCSEC_HR,
     SI_STEP,
+    aimed_detection_bias,
     apparent_to_Hr,
     bounds_from_key,
     cell_key,
     compute_ifree,
-    ecliptic_from_ifree,
     epoch_geometry,
     geometric_detection_prob,
+    geometric_prob_for_aimed,
     icrs_to_ecliptic,
     los_circular_elements,
+    parse_jpl_horizons_icrf,
+    sample_aimed_elements,
     sample_aq,
 )
 
@@ -256,29 +259,57 @@ def sanity_check_simulator(sim: JWSTSimulator) -> None:
 
 
 def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: int) -> tuple[float, int]:
+    """P(Sample A | cell) by FoV-aimed (Ω, ω, M) times single-epoch P_geom.
+
+    Isotropic angles hit the 0.05 deg² mosaic at ~1e-5. Draw a/e/i_free/H
+    from the cell, sample r on [q, Q], and invert the three angles so the
+    object is in the ICRS mosaic at epoch 1. Detos1 still applies η, the
+    rate cut, and epochs 2–3. Multiply by geometric_detection_prob so the
+    Horvitz–Thompson weight stays P(detect | cell), not P(detect | FoV).
+    """
     rng = np.random.default_rng(seed)
     si0, si1 = cell_bounds["sin_ifree"]
     h0, h1 = cell_bounds["Hx"]
+    jpl = Path(sim.epoch_dirs[0]) / "JWST.csv"
+    obs = parse_jpl_horizons_icrf(jpl, sim.element_epoch)
 
     n_detected = 0
-    n_drawn = 0
-    max_draws = max(target * 200000, 500000)
-    while n_detected < target and n_drawn < max_draws:
+    n_aimed = 0
+    n_fail = 0
+    geom_weight_sum = 0.0
+    max_tries = max(target * 1000, 10000)
+    while n_detected < target and (n_aimed + n_fail) < max_tries:
         a, q = sample_aq(rng, cell_bounds["a"], cell_bounds["q"])
         e = 1.0 - q / a
         sin_ifree = float(rng.uniform(si0, si1))
         ifree = math.degrees(math.asin(max(0.0, min(1.0, sin_ifree))))
         H = float(rng.uniform(h0, h1))
-        inc, node = ecliptic_from_ifree(ifree, a, rng)
-        peri, M = rng.uniform(0, 360, size=2)
-        n_drawn += 1
+        el = sample_aimed_elements(a, e, ifree, obs, rng)
+        if el is None:
+            n_fail += 1
+            continue
+        inc, node, peri, M = el
+        n_aimed += 1
+        p_geom = geometric_prob_for_aimed(a, e, inc, node, peri, M)
         if sim.detected_sample_a(a, e, inc, node, peri, M, H):
             n_detected += 1
-        if n_drawn % 50000 == 0:
-            print(f"    ... {n_drawn} draws, {n_detected}/{target} detections", flush=True)
+            geom_weight_sum += p_geom
+        if n_aimed % 500 == 0:
+            bias_so_far = aimed_detection_bias(n_aimed, geom_weight_sum)
+            print(
+                f"    ... {n_aimed} aimed ({n_fail} invert-fail), "
+                f"{n_detected}/{target} detections  "
+                f"P(det|FoV)={n_detected / n_aimed:.3g}  bias~{bias_so_far:.3g}",
+                flush=True,
+            )
+    if n_aimed == 0:
+        return 0.0, 0
     if n_detected < target:
-        raise RuntimeError(f"Only {n_detected}/{target} after {n_drawn} draws")
-    return n_detected / n_drawn, n_drawn
+        raise RuntimeError(
+            f"Only {n_detected}/{target} after {n_aimed} aimed plants "
+            f"({n_fail} invert-fail)"
+        )
+    return aimed_detection_bias(n_aimed, geom_weight_sum), n_aimed
 
 
 def write_detections_full(out_path: Path, detections: list[dict]) -> None:
@@ -329,6 +360,12 @@ def main():
     print(
         f"expected single-epoch geometric P ~ {p_geo:.2e} "
         f"(0.05 deg², i=7°, β={lat:.2f}°); Fig.20 is the H_r LF, not this rate",
+        flush=True,
+    )
+    print(
+        "sampling: draw a/e/i_free/H in the cell, sample r on [q, Q], invert "
+        "(Ω, ω, M) onto the ICRS mosaic (LOS rotated to ecliptic); HT bias is "
+        "P(Sample A | FoV) × P_geom",
         flush=True,
     )
     print(
