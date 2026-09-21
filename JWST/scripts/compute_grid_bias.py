@@ -128,15 +128,17 @@ class JWSTSimulator:
             self.sim.characterization_directory = epoch_dir
             self.sim.simulate(dummy, colors=self.colors, model_band="r")
 
-    def epoch_flags(self, a, e, inc, node, peri, M, H) -> list[int]:
+    def _simulate(self, epoch_dir, row, debug=False):
+        self.sim.characterization_directory = epoch_dir
+        return self.sim.simulate(row, colors=self.colors, model_band="r", debug=debug)
+
+    def epoch_rows(self, a, e, inc, node, peri, M, H, debug=False) -> list[dict]:
         base = dict(a=a * u.au, e=e, inc=inc * u.deg, node=node * u.deg, peri=peri * u.deg,
                     M=M * u.deg, H=H * u.mag, epoch=self.element_epoch * u.day, comp="default")
-        flags = []
-        for epoch_dir in self.epoch_dirs:
-            self.sim.characterization_directory = epoch_dir
-            r = self.sim.simulate(base, colors=self.colors, model_band="r")
-            flags.append(int(r["flag"]))
-        return flags
+        return [self._simulate(epoch_dir, base, debug=debug) for epoch_dir in self.epoch_dirs]
+
+    def epoch_flags(self, a, e, inc, node, peri, M, H) -> list[int]:
+        return [int(r["flag"]) for r in self.epoch_rows(a, e, inc, node, peri, M, H)]
 
     def detected_sample_a(self, a, e, inc, node, peri, M, H) -> bool:
         return all(f >= 4 for f in self.epoch_flags(a, e, inc, node, peri, M, H))
@@ -145,6 +147,28 @@ class JWSTSimulator:
 def _jd_utc(jd: float) -> str:
     mjd = jd - 2400000.5
     return (datetime(1858, 11, 17) + timedelta(days=mjd)).strftime("%Y-%m-%d %H:%M")
+
+
+def _detos_sky(row: dict) -> str:
+    """Format Detos1 outputs; RA/Dec are returned even when flag=0 after rebuild."""
+    try:
+        ra = float(row["RA"].to(u.deg).value)
+        dec = float(row["DEC"].to(u.deg).value)
+    except Exception:
+        ra = math.degrees(float(row["RA"]))
+        dec = math.degrees(float(row["DEC"]))
+    dra = float(row["d_ra"])
+    ddec = float(row["d_dec"])
+    rate = math.degrees(math.hypot(dra, ddec)) * 3600.0 / 24.0
+    r_au = float(row["r"].to(u.au).value) if hasattr(row["r"], "to") else float(row["r"])
+    dlt = float(row["delta"].to(u.au).value) if hasattr(row["delta"], "to") else float(row["delta"])
+    survey = row.get("Survey", "")
+    if isinstance(survey, bytes):
+        survey = survey.decode("utf-8", "replace")
+    return (
+        f"flag={int(row['flag'])}  RA,Dec={ra:.5f},{dec:.5f}  "
+        f"rate={rate:.3f}\"/hr  r={r_au:.3f} Δ={dlt:.3f}  survey={survey!r}"
+    )
 
 
 def sanity_check_simulator(sim: JWSTSimulator) -> None:
@@ -182,18 +206,36 @@ def sanity_check_simulator(sim: JWSTSimulator) -> None:
         f"(half-side {MOSAIC_SIDE_DEG * 30:.1f}')",
         flush=True,
     )
-    flags = sim.epoch_flags(a, e, inc, node, peri, M, 8.0)
+    rows = sim.epoch_rows(a, e, inc, node, peri, M, 8.0, debug=True)
+    flags = [int(r["flag"]) for r in rows]
+    for i, row in enumerate(rows, start=1):
+        print(f"sanity Detos1 epoch{i} {_detos_sky(row)}", flush=True)
     if all(f >= 4 for f in flags):
         print("sanity: LOS-planted object is a 3-epoch detection", flush=True)
         return
-    if flags[0] < 4 <= min(flags[1], flags[2]):
-        retried = sim.epoch_flags(a, e, inc, node, peri, M, 8.0)
-        print(f"sanity: first flags={flags}; retry flags={retried}", flush=True)
-        if all(f >= 4 for f in retried):
+    # Call epoch1 after epoch2/3 so a leftover SAVE from epoch1's first load
+    # cannot be blamed; print that isolated result too.
+    base = dict(a=a * u.au, e=e, inc=inc * u.deg, node=node * u.deg, peri=peri * u.deg,
+                M=M * u.deg, H=8.0 * u.mag, epoch=sim.element_epoch * u.day, comp="default")
+    isolated = sim._simulate(sim.epoch_dirs[0], base, debug=True)
+    print(f"sanity Detos1 epoch1 isolated after 2+3 {_detos_sky(isolated)}", flush=True)
+    flags = [int(r["flag"]) for r in rows]
+    flags[0] = int(isolated["flag"])
+    if all(f >= 4 for f in flags):
+        print("sanity: epoch1 is Sample A when evaluated after epochs 2 and 3", flush=True)
+        return
+    if flags[0] < 4 <= min(int(rows[1]["flag"]), int(rows[2]["flag"])):
+        retried = sim.epoch_rows(a, e, inc, node, peri, M, 8.0)
+        print(
+            f"sanity: first flags={[int(r['flag']) for r in rows]}; "
+            f"retry flags={[int(r['flag']) for r in retried]}",
+            flush=True,
+        )
+        if all(int(r["flag"]) >= 4 for r in retried):
             print("sanity: epoch1 miss was the first Detos1 call, retry is Sample A",
                   flush=True)
             return
-        flags = retried
+        flags = [int(r["flag"]) for r in retried]
     for dM in (-0.15, -0.10, -0.05, 0.05, 0.10, 0.15):
         shifted = sim.epoch_flags(a, e, inc, node, peri, M + dM, 8.0)
         if all(f >= 4 for f in shifted):
@@ -206,9 +248,10 @@ def sanity_check_simulator(sim: JWSTSimulator) -> None:
     raise RuntimeError(
         "LOS-planted object at the JWST mosaic was not a 3-epoch Sample A "
         f"detection (flags={flags}; {detail}). "
-        "If epoch1 is uniquely 0 while Python puts it on-center with "
-        f"rate>{RATE_CUT_MIN_ARCSEC_HR}\"/hr, Detos1's first call is still "
-        "dropping the FoV/rate test, not a mixed-frame offset"
+        "Rebuild ossssimlib: Detos1 now returns RA/Dec/rate even when flag=0 "
+        "and traces FoV/rate on stderr. epoch1 flag=0 with Fortran RA on-center "
+        "is a FoV/rate_cut/η drop; RA=0 means n_sur=0 or mag gate; a 26' offset "
+        "is still a mixed observer frame"
     )
 
 

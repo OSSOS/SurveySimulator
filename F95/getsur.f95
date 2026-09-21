@@ -18,6 +18,9 @@ module getsur
   integer, parameter :: max_survey_cache = 8
   integer, save :: n_survey_cache = 0
   character(len=1024), save :: survey_cache_name(max_survey_cache)
+  ! Shared across GetSurvey directories. Reset in close_jpl_ephemeris so a
+  ! leftover open on lun 13 cannot make epoch1 look empty while epoch2 loads.
+  logical, save :: pointing_file_open = .false.
   integer, save :: survey_cache_n(max_survey_cache)
   type(t_pointing), save :: survey_cache_points(n_sur_max, max_survey_cache)
   real (kind=8), save :: survey_cache_mmag(n_sur_max, max_survey_cache)
@@ -636,6 +639,7 @@ contains
     end do
     n_jpl_eph = 0
     n_survey_cache = 0
+    pointing_file_open = .false.
   end subroutine close_jpl_ephemeris
 
   subroutine read_sur (dirn, lun_in, point, ierr)
@@ -679,18 +683,16 @@ contains
     integer :: j, nw, lw(nw_max), lun_e, ierr_e, i1, i2, i3, i4
     character(100) :: line, fname
     character(80) :: word(nw_max)
-    logical, save :: opened, finished
-
-    data opened /.false./
+    logical, save :: finished
 
     call read_file_name (dirn, i1, i2, finished, len(dirn))
     ierr = 0
     lun_e = lun_in + 1
-    if (.not. opened) then
+    if (.not. pointing_file_open) then
        line(1:i2-i1+1) = dirn(i1:i2)
        line(i2-i1+2:) = '/pointings.list'
        open (unit=lun_in, file=line, status='old', err=1000)
-       opened = .true.
+       pointing_file_open = .true.
     end if
 1500 continue
     do j = 1, len(line)
@@ -840,7 +842,7 @@ contains
 3000 continue
     ierr = 30
     close (lun_in)
-    opened = .false.
+    pointing_file_open = .false.
     return
 
   end subroutine read_sur

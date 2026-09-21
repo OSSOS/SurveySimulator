@@ -127,7 +127,7 @@ contains
     character(10), intent(out) :: surna
 
     integer, parameter :: screen = 6, keybd = 5, &
-         lun_s = 13, lun_h = 6
+         lun_s = 97, lun_h = 6
     type(t_orb_m), save :: o_ml
     type(t_obspos), save :: obspos(2)
     type(t_v3d), save :: pos, pos2
@@ -154,6 +154,22 @@ contains
 
     flag = 0
     flag_l = 0
+    ierr = 0
+    isur = 0
+    ic = 0
+    ra = 0.d0
+    dec = 0.d0
+    d_ra = 0.d0
+    d_dec = 0.d0
+    r = 0.d0
+    delta = 0.d0
+    m_int = 0.d0
+    m_rand = 0.d0
+    eff = 0.d0
+    mt = 0.d0
+    jdayp = 0.d0
+    h_rand = 0.d0
+    surna = ' '
     call debug_set(enable_debug)
 
     ! Reload when the characterization directory changes. Do not touch
@@ -223,6 +239,10 @@ contains
        end do
        write(log_msg, *) 'Faintest magnitude =',mag_faint
        call dbg_print(2, log_msg)
+       if (n_sur .le. 0) then
+          write (0, *) 'Detos1: no pointings loaded from ', &
+               surnam(1:len_trim(surnam))
+       end if
     end if
 
 ! Compute approximate maximum apparent 'x' magnitude
@@ -303,6 +323,14 @@ contains
              call RADECeclXV (pos, obspos(1)%pos, delta_l, ra_l, dec_l)
              p(1) = ra_l
              p(2) = dec_l
+             ! Keep the last computed sky position even if this pointing
+             ! later fails FoV/rate/efficiency. Otherwise flag=0 returns
+             ! uninitialized RA/Dec and hides whether Detos1 agreed on-sky.
+             ra = ra_l
+             dec = dec_l
+             r = r_l
+             delta = delta_l
+             jdayp = obspos(1)%jday
 ! Get mag in actual survey filter.
              h = hx + color(filt_i)
              if ((amp .gt. 0.d0) .and. (period .gt. 0.d0)) then
@@ -404,7 +432,13 @@ contains
                            (obspos(2)%jday - obspos(1)%jday)*dcos(dec_l)
                       d_dec_l = (dec2 - dec_l)/(obspos(2)%jday - obspos(1)%jday)
                       rate = dsqrt(d_ra_l**2 + d_dec_l**2)
-                      angle = atan2(d_dec_l/rate, d_ra_l/rate)
+                      d_ra = d_ra_l
+                      d_dec = d_dec_l
+                      if (rate .gt. 0.d0) then
+                         angle = atan2(d_dec_l/rate, d_ra_l/rate)
+                      else
+                         angle = 0.d0
+                      end if
                       if (angle .lt. -Pi) angle = angle + TwoPi
                       if (angle .gt. Pi) angle = angle - TwoPi
                       rate_ok = (rate .ge. rc%min) .and. (rate .le. rc%max)

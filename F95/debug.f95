@@ -20,7 +20,12 @@ CONTAINS
     LOGICAL, INTENT(IN) :: on
     INTEGER, INTENT(IN), OPTIONAL :: level
     dbg_active = on
-    IF (PRESENT(level)) debug_lvl = level
+    IF (PRESENT(level)) THEN
+       debug_lvl = level
+    ELSE IF (on) THEN
+       ! Detos1's FoV/rate traces are level 2; default 0 printed nothing.
+       debug_lvl = 4
+    END IF
   END SUBROUTINE debug_set
 
   LOGICAL FUNCTION debug_is_active()

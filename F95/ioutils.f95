@@ -393,8 +393,9 @@ contains
             return
          end if
       end do
-998   ierr = 10
-999   return
+998   continue
+999   ierr = 10
+      return
     end subroutine read_jpl_csv
 
 
