@@ -286,6 +286,18 @@ def sky_separation_deg(ra1: float, dec1: float, ra2: float, dec2: float) -> floa
     return math.hypot(dra, dec1 - dec2)
 
 
+def angle_in_rate_cone(obj_deg: float, centre_deg: float, hwidth_deg: float
+                       ) -> bool:
+    """Whether a motion PA is inside the rate_cut direction cone.
+
+    Detos1 uses atan2 ∈ [−180°, 180°]. A centre of 209.4° (the JWST field
+    RA, not a PA) compared without wrapping rejects pre-turnaround motion
+    at −168.7° even when half-width is 180°.
+    """
+    dang = (centre_deg - obj_deg + 180.0) % 360.0 - 180.0
+    return abs(dang) <= hwidth_deg
+
+
 def mean_motion_deg_per_day(a_au: float) -> float:
     """n = 360° / P, P = a^{3/2} yr in days. Matches Detos1 with gmb≈1."""
     return 360.0 / (a_au ** 1.5 * 365.25)

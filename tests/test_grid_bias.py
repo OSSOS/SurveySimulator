@@ -206,6 +206,16 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertGreater(sep_m, 0.2)
         self.assertGreater(sep_m, grid_bias.MOSAIC_SIDE_DEG / 2.0)
 
+    def test_rate_cut_209_was_field_ra_not_motion_pa(self):
+        # Debug log: epoch1 object PA −168.7°, .eff centre 209.4°, hwidth 180°.
+        obj = -168.68213509828240
+        self.assertGreater(abs(209.4 - obj), 180.0)
+        self.assertTrue(grid_bias.angle_in_rate_cone(obj, 209.4, 180.0))
+        self.assertTrue(grid_bias.angle_in_rate_cone(obj, 0.0, 180.0))
+        # After turnaround the PA is near the old centre, so the unwrapped
+        # test passed epochs 2–3 by accident.
+        self.assertLess(abs(209.4 - 191.3), 180.0)
+
     def test_paper_reference_jd_is_not_an_observation(self):
         # Eduardo et al. 2026 §V: JD 2459974.5 is the orbit-fit origin,
         # "near the midpoint of the observation period", not epoch 2.

@@ -1,22 +1,51 @@
-# JWST Sample A single-epoch detection efficiency (Eduardo et al. 2026, Section IV.3.3)
-# F150W2 implant recovery mapped to r-band: m_r = m_F150W2 + 1.0 (Section VII.1)
-# rate_cut is the implant speed range 0.03–8.66 "/hr (Section III.2), not an OSSOS leftover.
-# Angle half-width 180° accepts all directions (shift-and-stack near turnaround).
+# JWST Sample A single-epoch detection efficiency.
+# File created in 4a4cdb2 ("JWST PB experiments") as an OSSOS-format .eff
+# filled from Eduardo et al. 2026 (AJ 172, 187). Not a fit to CFEPS/HST.
 #
-rate_cut= 0.03 8.66 209.4 180.0
+# rate_cut= r_min r_max angle half_width
+#   r_min, r_max: implant speed range, Section III.2
+#     "speed of 0.03-8.66 "/hr were implanted across JWST integrations"
+#   angle: OSSOS "mean direction of motion, degrees from due West".
+#     209.4 was the field RA (paper §V, ICRS 209.4°) put in this slot by
+#     mistake. Detos1 atan2 is in [-180, 180]; |209.4-(-168.7)|=378° so a
+#     180° "all directions" cone still rejected pre-turnaround (epoch 1)
+#     while post-turnaround (epochs 2–3) passed. Use 0; hwidth 180 is
+#     the HST.eff pattern for an isotropic search. The actual KBMOD grid
+#     is a (v_α, v_β) box, not a PA cone (Section IV.1).
+#   half_width: 180° = all PAs, same convention as examples/Surveys/HST/HST.eff
+#
+rate_cut= 0.03 8.66 0.0 180.0
+#
+# mag_error: OSSOS photometric-scatter template, numbers shifted to ~30 mag.
+# Not measured in Eduardo et al. (shift-and-stack has one stacked mag).
 #
 mag_error= 0.006 0.16 29.9 0.05 29.9 -0.04
 #
+# One magnitude from the stack (not 1–3 ground-based measures).
+#
 phot_frac= 1.000 0.0 0.0
+#
+# Sample A is 3-epoch by construction, so tracking fraction is 1.
+# Mag/slope echo the efficiency knee so the formula stays defined.
 #
 track_frac= 1.0 29.92 -0.61
 #
 filter= r
 #
+# Rate range the η(m) function applies to ["/hr], after conversion to rad/day.
+# Wider than rate_cut so every object that passes the cut uses this η.
+#
 rates=  0.00 20.00
 #
 function= single
 #
+# Section IV.3.3 / VII.1: F150W2 η = p0/2 (1-tanh((m-m0)/w)) with
+# p0=0.96, m0=28.92, w=0.61, mapped to r by m_r = m_F150W2 + 1 → m0=29.92.
+# OSSSSim single_param is A, M_0, w in that same tanh form.
+#
 single_param=    0.96      29.92       0.61
+#
+# Implant faint limit 30.5 in F150W2 (Section III.2); characterization
+# cutoff in the mapped r band.
 #
 mag_lim= 30.50

@@ -383,8 +383,9 @@ contains
 ! Change rates to rad/day
        c%r_cut%min = c%r_cut%min*24.d0/3600.d0*drad
        c%r_cut%max = c%r_cut%max*24.d0/3600.d0*drad
-! Change angles to radian
+! Change angles to radian, wrap the cone centre into [-π, π] to match atan2
        c%r_cut%angle = c%r_cut%angle*drad
+       c%r_cut%angle = c%r_cut%angle - TwoPi*dnint(c%r_cut%angle/TwoPi)
        c%r_cut%hwidth = c%r_cut%hwidth*drad
        rcut = .true.
        in_rates = .false.

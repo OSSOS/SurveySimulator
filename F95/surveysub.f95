@@ -442,8 +442,12 @@ contains
                       if (angle .lt. -Pi) angle = angle + TwoPi
                       if (angle .gt. Pi) angle = angle - TwoPi
                       rate_ok = (rate .ge. rc%min) .and. (rate .le. rc%max)
-                      rate_ok = rate_ok .and. &
-                           (dabs(rc%angle - angle) .le. rc%hwidth)
+                      ! atan2 is in [-π, π]; rate_cut angle may be in [0, 360).
+                      ! Unwrapped |209.4° − (−168.7°)| = 378° rejects a 180°
+                      ! "all directions" cone on the pre-turnaround side.
+                      tmp = rc%angle - angle
+                      tmp = tmp - TwoPi*dnint(tmp/TwoPi)
+                      rate_ok = rate_ok .and. (dabs(tmp) .le. rc%hwidth)
                       if (dbg_enabled(2)) then
                          write (log_msg, *) 'Check for rate.'
                          call dbg_print(2, log_msg)
@@ -453,10 +457,10 @@ contains
                               rc%min/drad*3600.d0/24.d0, &
                               rc%max/drad*3600.d0/24.d0
                          call dbg_print(2, log_msg)
-                         write (log_msg, *) 'object angle, survey angle, centre, width'
+                         write (log_msg, *) 'object angle, survey angle, centre, width, wrapped Δ'
                          call dbg_print(2, log_msg)
                          write (log_msg, *) angle/drad, rc%angle/drad, &
-                              rc%hwidth/drad
+                              rc%hwidth/drad, tmp/drad
                         call dbg_print(2, log_msg)
                          write (log_msg, *) 'object x/y/z position'
                          call dbg_print(2, log_msg)
