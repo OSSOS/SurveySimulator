@@ -6,6 +6,7 @@ import argparse
 import csv
 import math
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -16,30 +17,31 @@ from ossssim.color import PhotSpec
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from grid_bias import (
     A_STEP,
+    EPOCH_JD,
+    FIELD_DEC_DEG as FIELD_DEC,
+    FIELD_RA_DEG as FIELD_RA,
     FILL_FACTOR,
     H_STEP,
     MOSAIC_AREA_DEG2,
     MOSAIC_SIDE_DEG,
+    PAPER_REFERENCE_JD,
     Q_STEP,
+    RATE_CUT_MAX_ARCSEC_HR,
+    RATE_CUT_MIN_ARCSEC_HR,
     SI_STEP,
     apparent_to_Hr,
-    apparent_radec_deg,
     bounds_from_key,
     cell_key,
     compute_ifree,
     ecliptic_from_ifree,
+    epoch_geometry,
     geometric_detection_prob,
     icrs_to_ecliptic,
     los_circular_elements,
-    parse_jpl_horizons_icrf,
     sample_aq,
-    sky_separation_deg,
 )
 
 TARGET_DETECTIONS = 5000
-EPOCH_JD = [2459969.5, 2459974.5, 2459978.5]
-FIELD_RA = 209.3875
-FIELD_DEC = -10.865278
 
 
 def load_detections(path: Path) -> list[dict]:
@@ -82,11 +84,13 @@ def setup_pointings(char_root: Path) -> None:
     # Search footprint is the active mosaic (0.05 deg²), not the 1.6° implant box.
     # Fill factor is chip-fill inside that mosaic, not mosaic/implant (which would
     # be applied independently at each epoch and cube the spatial selection).
+    # JD is the CADC visit-window midpoint: each epoch is a ~20 h shift-and-stack,
+    # not a single 00:00 snapshot. Paper JD 2459974.5 is the orbit-fit reference.
     side = MOSAIC_SIDE_DEG
     for idx, jd in enumerate(EPOCH_JD, start=1):
         text = (
-            f"# JWST Sample A epoch {idx}\n"
-            f"{side:.5f} {side:.5f} {FIELD_RA} {FIELD_DEC} {jd} {FILL_FACTOR:.5f} "
+            f"# JWST Sample A epoch {idx} (CADC 1568 visit midpoint, shift-and-stack)\n"
+            f"{side:.5f} {side:.5f} {FIELD_RA} {FIELD_DEC} {jd:.5f} {FILL_FACTOR:.5f} "
             f"JWST.csv JWST_sampleA.eff\n"
         )
         (char_root / f"epoch{idx}" / "pointings.list").write_text(text)
@@ -103,16 +107,34 @@ class JWSTSimulator:
     def __init__(self, char_root: Path, seed: int = 42):
         setup_pointings(char_root)
         self.epoch_dirs = [str((char_root / f"epoch{i}").resolve()) for i in (1, 2, 3)]
+        # One Keplerian state; Detos1 advances M from this epoch to each pointing JD.
+        self.element_epoch = EPOCH_JD[0]
         self.sim = OSSSSim(self.epoch_dirs[0], seed=seed)
         self.colors = PhotSpec()
+        self._prime_surveys()
+
+    def _prime_surveys(self) -> None:
+        """Load each epoch's pointings.list / JWST.csv before the sanity plant.
+
+        The first Detos1 call in a process has returned flag=0 for an on-field
+        object while later calls on the same orbit returned 4. Prime with a
+        dummy that is not on the mosaic so GetSurvey/ObsPos are initialized.
+        """
+        dummy = dict(
+            a=44 * u.au, e=0.0, inc=20 * u.deg, node=0 * u.deg, peri=0 * u.deg,
+            M=0 * u.deg, H=8 * u.mag, epoch=self.element_epoch * u.day, comp="default",
+        )
+        for epoch_dir in self.epoch_dirs:
+            self.sim.characterization_directory = epoch_dir
+            self.sim.simulate(dummy, colors=self.colors, model_band="r")
 
     def epoch_flags(self, a, e, inc, node, peri, M, H) -> list[int]:
         base = dict(a=a * u.au, e=e, inc=inc * u.deg, node=node * u.deg, peri=peri * u.deg,
-                    M=M * u.deg, H=H * u.mag, comp="default")
+                    M=M * u.deg, H=H * u.mag, epoch=self.element_epoch * u.day, comp="default")
         flags = []
-        for epoch_dir, jd in zip(self.epoch_dirs, EPOCH_JD):
+        for epoch_dir in self.epoch_dirs:
             self.sim.characterization_directory = epoch_dir
-            r = self.sim.simulate({**base, "epoch": jd * u.day}, colors=self.colors, model_band="r")
+            r = self.sim.simulate(base, colors=self.colors, model_band="r")
             flags.append(int(r["flag"]))
         return flags
 
@@ -120,22 +142,43 @@ class JWSTSimulator:
         return all(f >= 4 for f in self.epoch_flags(a, e, inc, node, peri, M, H))
 
 
+def _jd_utc(jd: float) -> str:
+    mjd = jd - 2400000.5
+    return (datetime(1858, 11, 17) + timedelta(days=mjd)).strftime("%Y-%m-%d %H:%M")
+
+
 def sanity_check_simulator(sim: JWSTSimulator) -> None:
     """Fail fast if a bright object on the JWST LOS is not Sample A.
 
-    The plant is along the observer line of sight, not the barycentric
-    RA/Dec of the field (JWST parallax at 44 au is ~1°, larger than the mosaic).
+    The plant is along the observer line of sight at the first visit
+    midpoint (element epoch). Detos1 then Keplerian-propagates M to the
+    other two shift-and-stack midpoints. Do not re-label the element
+    epoch to each pointing JD: that freezes barycentric motion and is
+    not the orbit Sample A linking uses.
     """
     jpl = Path(sim.epoch_dirs[0]) / "JWST.csv"
+    element_jd = sim.element_epoch
     a, e, inc, node, peri, M = los_circular_elements(
-        FIELD_RA, FIELD_DEC, 44.0, jpl, EPOCH_JD[0]
+        FIELD_RA, FIELD_DEC, 44.0, jpl, element_jd
     )
-    obs = parse_jpl_horizons_icrf(jpl, EPOCH_JD[0])
-    ra_pred, dec_pred = apparent_radec_deg(a, e, inc, node, peri, M, obs)
-    sep = sky_separation_deg(ra_pred, dec_pred, FIELD_RA, FIELD_DEC)
+    geom = []
+    for i, jd in enumerate(EPOCH_JD, start=1):
+        ra, dec, sep, rate = epoch_geometry(
+            a, e, inc, node, peri, M, jpl, element_jd, jd
+        )
+        geom.append((i, jd, ra, dec, sep, rate))
+        in_fov = sep < MOSAIC_SIDE_DEG / 2.0
+        rate_ok = RATE_CUT_MIN_ARCSEC_HR <= rate <= RATE_CUT_MAX_ARCSEC_HR
+        print(
+            f"sanity epoch{i} {_jd_utc(jd)} JD={jd:.5f}  "
+            f"RA,Dec={ra:.5f},{dec:.5f}  sep={sep * 60:.3f}'  "
+            f"rate={rate:.3f}\"/hr  FoV={in_fov}  rate_cut={rate_ok}",
+            flush=True,
+        )
+    ra0, dec0, sep0 = geom[0][2], geom[0][3], geom[0][4]
     print(
-        f"sanity plant ICRS RA,Dec={ra_pred:.5f},{dec_pred:.5f}  "
-        f"sep={sep * 60:.3f}' from mosaic centre "
+        f"sanity plant at epoch1 LOS ICRS RA,Dec={ra0:.5f},{dec0:.5f}  "
+        f"sep={sep0 * 60:.3f}' from mosaic centre "
         f"(half-side {MOSAIC_SIDE_DEG * 30:.1f}')",
         flush=True,
     )
@@ -143,16 +186,29 @@ def sanity_check_simulator(sim: JWSTSimulator) -> None:
     if all(f >= 4 for f in flags):
         print("sanity: LOS-planted object is a 3-epoch detection", flush=True)
         return
+    if flags[0] < 4 <= min(flags[1], flags[2]):
+        retried = sim.epoch_flags(a, e, inc, node, peri, M, 8.0)
+        print(f"sanity: first flags={flags}; retry flags={retried}", flush=True)
+        if all(f >= 4 for f in retried):
+            print("sanity: epoch1 miss was the first Detos1 call, retry is Sample A",
+                  flush=True)
+            return
+        flags = retried
     for dM in (-0.15, -0.10, -0.05, 0.05, 0.10, 0.15):
         shifted = sim.epoch_flags(a, e, inc, node, peri, M + dM, 8.0)
         if all(f >= 4 for f in shifted):
             print(f"sanity: LOS-planted object detected with ΔM={dM:.2f}°", flush=True)
             return
+    detail = "; ".join(
+        f"e{i} sep={sep * 60:.3f}' rate={rate:.3f}\"/hr"
+        for i, _jd, _ra, _dec, sep, rate in geom
+    )
     raise RuntimeError(
         "LOS-planted object at the JWST mosaic was not a 3-epoch Sample A "
-        f"detection (flags={flags}, predicted sep={sep * 60:.3f}'); "
-        "Detos1 is not using the same observer frame as the plant "
-        "(object ecliptic vs observatory ecliptic subtracted in ICRS)"
+        f"detection (flags={flags}; {detail}). "
+        "If epoch1 is uniquely 0 while Python puts it on-center with "
+        f"rate>{RATE_CUT_MIN_ARCSEC_HR}\"/hr, Detos1's first call is still "
+        "dropping the FoV/rate test, not a mixed-frame offset"
     )
 
 
@@ -205,7 +261,7 @@ def write_detections_full(out_path: Path, detections: list[dict]) -> None:
             f"cla m -1 -1 S {d['name']:7s} {d['Hx']:.2f} 0.100 r {d['Hx']:.2f} {d['d_bary']:.3f} 0.100 "
             f"3 0.0000 0.083 0.073 0.311 0.343 {d['a']:11.6f} 0.1012 {d['e']:.6f} 0.001009 "
             f"{d['i']:6.3f} 0.100 0.000 0.100 0.000 0.100 0.000 0.100 0.000 0.100 "
-            f"{FIELD_RA:.3f} {FIELD_DEC:.3f} {EPOCH_JD[1]:.5f} 0.40 {d['name']:7s} {d['ifree']:6.3f} 0.000 0.000 "
+            f"{FIELD_RA:.3f} {FIELD_DEC:.3f} {PAPER_REFERENCE_JD:.5f} 0.40 {d['name']:7s} {d['ifree']:6.3f} 0.000 0.000 "
             f"{d['Hx']:.2f} {d['comp']} {d['bias']:.7f}"
         )
     out_path.write_text("\n".join(lines) + "\n")
@@ -230,6 +286,24 @@ def main():
     print(
         f"expected single-epoch geometric P ~ {p_geo:.2e} "
         f"(0.05 deg², i=7°, β={lat:.2f}°); Fig.20 is the H_r LF, not this rate",
+        flush=True,
+    )
+    print(
+        "characterization: 20-tile mosaic 0.05 deg² at "
+        f"{FIELD_RA:.5f},{FIELD_DEC:.5f} (paper 13:57:33, −10:51:55); "
+        "CADC 1568 detector-mean RA,Dec=209.39043,-10.86523",
+        flush=True,
+    )
+    for i, jd in enumerate(EPOCH_JD, start=1):
+        dt_ref = jd - PAPER_REFERENCE_JD
+        print(
+            f"  epoch{i} stack midpoint JD={jd:.5f} ({_jd_utc(jd)} UTC)  "
+            f"Δ={dt_ref:+.2f}d from paper orbit-fit ref {PAPER_REFERENCE_JD:.1f}",
+            flush=True,
+        )
+    print(
+        "element epoch = epoch1; Detos1 propagates M to each pointing JD  "
+        "(not frozen-M, not 00:00 integer days)",
         flush=True,
     )
     print("warning: Sample A CSV has no Ω; catalog i_free uses Ω=0", flush=True)

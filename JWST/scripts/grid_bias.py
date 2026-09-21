@@ -17,8 +17,24 @@ FILL_FACTOR = 1.0
 OBLIQUITY_J2000_DEG = 23.4392911
 # rot.f95 equat_ecl; used when matching Detos1 / RADECeclXV
 F95_OBLIQUITY_ARCSEC = 84381.41
+# Eduardo et al. 2026 ICRS mosaic centre (13:57:33, −10:51:55).
+# CADC proposal-1568 detector centroids average ~3″ east of this.
 FIELD_RA_DEG = 209.3875
 FIELD_DEC_DEG = -10.865278
+# Orbit-fit reference in Eduardo et al. 2026 §V (JD TDB). This is the
+# midpoint of the 10-day campaign, not an observation time.
+PAPER_REFERENCE_JD = 2459974.5
+# CADC TAP (JWST collection, proposal 1568, NIRCam F150W2 science):
+# three 20-tile mosaics, each ~20 h of dithered visits that were
+# shift-and-stacked. Use the visit-window midpoint, not 00:00 integer JD.
+#   epoch 1  jw01568001*  2023-01-24 09:51 – 01-25 05:34 UTC
+#   epoch 2  jw01568002*  2023-01-28 23:38 – 01-29 22:50 UTC
+#   epoch 3  jw01568003*  2023-02-04 00:01 – 02-04 19:36 UTC
+EPOCH_JD = (2459969.32118, 2459973.96785, 2459979.90854)
+# Implant speed range used for characterization (Eduardo et al. 2026 §III.2).
+RATE_CUT_MIN_ARCSEC_HR = 0.03
+RATE_CUT_MAX_ARCSEC_HR = 8.66
+TWO_HOURS_DAY = 2.0 / 24.0
 
 
 def laplace_inclination(a_au: float) -> float:
@@ -268,6 +284,35 @@ def apparent_radec_deg(a: float, e: float, inc_deg: float, node_deg: float,
 def sky_separation_deg(ra1: float, dec1: float, ra2: float, dec2: float) -> float:
     dra = (ra1 - ra2) * math.cos(math.radians(0.5 * (dec1 + dec2)))
     return math.hypot(dra, dec1 - dec2)
+
+
+def mean_motion_deg_per_day(a_au: float) -> float:
+    """n = 360° / P, P = a^{3/2} yr in days. Matches Detos1 with gmb≈1."""
+    return 360.0 / (a_au ** 1.5 * 365.25)
+
+
+def epoch_geometry(a: float, e: float, inc_deg: float, node_deg: float,
+                   peri_deg: float, M_deg: float, jpl_path, element_jd: float,
+                   obs_jd: float, field_ra: float = FIELD_RA_DEG,
+                   field_dec: float = FIELD_DEC_DEG
+                   ) -> tuple[float, float, float, float]:
+    """Apparent (RA, Dec, sep_deg, rate_arcsec_hr) at obs_jd.
+
+    Detos1 advances M from the element epoch to the pointing JD, then
+    measures rate over the next two hours (GetSurvey's second ObsPos).
+    """
+    n = mean_motion_deg_per_day(a)
+    m1 = M_deg + n * (obs_jd - element_jd)
+    m2 = M_deg + n * (obs_jd + TWO_HOURS_DAY - element_jd)
+    obs1 = parse_jpl_horizons_icrf(jpl_path, obs_jd)
+    obs2 = parse_jpl_horizons_icrf(jpl_path, obs_jd + TWO_HOURS_DAY)
+    ra1, dec1 = apparent_radec_deg(a, e, inc_deg, node_deg, peri_deg, m1, obs1)
+    ra2, dec2 = apparent_radec_deg(a, e, inc_deg, node_deg, peri_deg, m2, obs2)
+    dra = (ra1 - ra2) * math.cos(math.radians(dec1))
+    ddec = dec2 - dec1
+    rate = math.hypot(dra, ddec) / TWO_HOURS_DAY * 3600.0 / 24.0
+    sep = sky_separation_deg(ra1, dec1, field_ra, field_dec)
+    return ra1, dec1, sep, rate
 
 
 def cell_index(value: float, step: float) -> float:

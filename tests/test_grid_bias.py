@@ -139,7 +139,7 @@ class GridBiasHelpers(unittest.TestCase):
         path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
-        obs = grid_bias.parse_jpl_horizons_icrf(path, 2459969.5)
+        obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
         self.assertAlmostEqual(math.sqrt(sum(c * c for c in obs)), 1.0, places=2)
         self.assertGreater(obs[2], 0.3)
 
@@ -148,7 +148,8 @@ class GridBiasHelpers(unittest.TestCase):
         if not path.is_file():
             self.skipTest(f"missing {path}")
         a, e, inc, node, peri, M = grid_bias.los_circular_elements(
-            grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG, 44.0, path, 2459969.5
+            grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG, 44.0, path,
+            grid_bias.EPOCH_JD[0],
         )
         self.assertEqual(e, 0.0)
         self.assertAlmostEqual(a, 44.0, places=5)
@@ -160,7 +161,7 @@ class GridBiasHelpers(unittest.TestCase):
         y = a * math.sin(math.radians(lon)) * math.cos(math.radians(lat))
         z = a * math.sin(math.radians(lat))
         obj_icrf = grid_bias.ecliptic_to_icrf(x, y, z)
-        obs = grid_bias.parse_jpl_horizons_icrf(path, 2459969.5)
+        obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
         los = (
             obj_icrf[0] - obs[0],
             obj_icrf[1] - obs[1],
@@ -183,7 +184,7 @@ class GridBiasHelpers(unittest.TestCase):
         path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
-        jd = 2459969.5
+        jd = grid_bias.EPOCH_JD[0]
         a, e, inc, node, peri, M = grid_bias.los_circular_elements(
             grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG, 44.0, path, jd
         )
@@ -204,6 +205,38 @@ class GridBiasHelpers(unittest.TestCase):
         )
         self.assertGreater(sep_m, 0.2)
         self.assertGreater(sep_m, grid_bias.MOSAIC_SIDE_DEG / 2.0)
+
+    def test_paper_reference_jd_is_not_an_observation(self):
+        # Eduardo et al. 2026 §V: JD 2459974.5 is the orbit-fit origin,
+        # "near the midpoint of the observation period", not epoch 2.
+        self.assertEqual(grid_bias.PAPER_REFERENCE_JD, 2459974.5)
+        self.assertNotIn(grid_bias.PAPER_REFERENCE_JD, grid_bias.EPOCH_JD)
+        # CADC visit midpoints: ~4.6 d then ~5.9 d, not 1 d and not 5+4 at 00:00.
+        d12 = grid_bias.EPOCH_JD[1] - grid_bias.EPOCH_JD[0]
+        d23 = grid_bias.EPOCH_JD[2] - grid_bias.EPOCH_JD[1]
+        self.assertGreater(d12, 4.0)
+        self.assertLess(d12, 5.5)
+        self.assertGreater(d23, 5.0)
+        self.assertLess(d23, 7.0)
+        self.assertAlmostEqual(grid_bias.EPOCH_JD[0], 2459969.32118, places=4)
+        self.assertAlmostEqual(grid_bias.EPOCH_JD[2], 2459979.90854, places=4)
+
+    def test_keplerian_plant_stays_in_mosaic_at_cadc_epochs(self):
+        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        if not path.is_file():
+            self.skipTest(f"missing {path}")
+        element_jd = grid_bias.EPOCH_JD[0]
+        a, e, inc, node, peri, M = grid_bias.los_circular_elements(
+            grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG, 44.0, path, element_jd
+        )
+        half = grid_bias.MOSAIC_SIDE_DEG / 2.0
+        for jd in grid_bias.EPOCH_JD:
+            ra, dec, sep, rate = grid_bias.epoch_geometry(
+                a, e, inc, node, peri, M, path, element_jd, jd
+            )
+            self.assertLess(sep, half, msg=f"JD {jd} sep={sep * 60:.2f}'")
+            self.assertGreaterEqual(rate, grid_bias.RATE_CUT_MIN_ARCSEC_HR)
+            self.assertLessEqual(rate, grid_bias.RATE_CUT_MAX_ARCSEC_HR)
 
 
 if __name__ == "__main__":

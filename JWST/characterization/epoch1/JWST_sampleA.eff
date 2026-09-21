@@ -1,5 +1,7 @@
 # JWST Sample A single-epoch detection efficiency (Eduardo et al. 2026, Section IV.3.3)
 # F150W2 implant recovery mapped to r-band: m_r = m_F150W2 + 1.0 (Section VII.1)
+# rate_cut is the implant speed range 0.03–8.66 "/hr (Section III.2), not an OSSOS leftover.
+# Angle half-width 180° accepts all directions (shift-and-stack near turnaround).
 #
 rate_cut= 0.03 8.66 209.4 180.0
 #
