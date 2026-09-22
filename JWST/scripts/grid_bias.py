@@ -704,8 +704,12 @@ def stack_check_samples(parts: list) -> dict:
     return out
 
 
-def check_plot_tag(cell_key_tuple: tuple) -> str:
-    return "cell_" + "_".join(f"{float(v):.4g}" for v in cell_key_tuple).replace(".", "p")
+def check_plot_tag(label) -> str:
+    """Filename stem for check plots: Sample A object name, or cell key."""
+    if isinstance(label, tuple):
+        return "cell_" + "_".join(f"{float(v):.4g}" for v in label).replace(".", "p")
+    text = str(label).strip() or "object"
+    return "".join(c if c.isalnum() or c in "-_" else "_" for c in text)
 
 
 def write_bias_check_plots(out_dir, sampled: dict, detected: dict, tag: str,
@@ -715,10 +719,11 @@ def write_bias_check_plots(out_dir, sampled: dict, detected: dict, tag: str,
     """RA/Dec and a/e/i/Ω/ω/M check plots: sampled vs detected (flag≥4).
 
     Sampled = aimed orbits sent through Detos1. Detected = those with
-    flag≥4 at all three epochs (Sample A). The two RA/Dec clouds should
-    fill the mosaic the same way if detection is not a spatial cut inside
-    the field; the element histograms should match if detection is not a
-    function of those elements.
+    flag≥4 at all three epochs (Sample A). `tag` is the filename stem
+    (Sample A object name, or "all" for the combined run). The two RA/Dec
+    clouds should fill the mosaic the same way if detection is not a
+    spatial cut inside the field; the element histograms should match if
+    detection is not a function of those elements.
     """
     import matplotlib
     matplotlib.use("Agg")

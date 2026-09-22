@@ -505,6 +505,11 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertEqual(stacked["ra"].size, 2)
         self.assertAlmostEqual(stacked["a"][1], 44.1)
 
+    def test_check_plot_tag_is_per_object(self):
+        self.assertEqual(grid_bias.check_plot_tag("JPB04"), "JPB04")
+        self.assertEqual(grid_bias.check_plot_tag("JPB 13"), "JPB_13")
+        self.assertTrue(grid_bias.check_plot_tag((44.2, 42.4, 0.045, 11.3)).startswith("cell_"))
+
 
 if __name__ == "__main__":
     unittest.main()

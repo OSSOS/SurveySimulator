@@ -271,7 +271,7 @@ def sanity_check_simulator(sim: JWSTSimulator) -> None:
 
 
 def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: int,
-                      plot_dir: Path | None = None, plot_tag: str = "cell"
+                      plot_dir: Path | None = None, plot_tags: list | None = None
                       ) -> tuple[float, int, dict, dict]:
     """P(Sample A | cell) by FoV-aimed (Ω, ω, M) times single-epoch P_geom.
 
@@ -331,8 +331,11 @@ def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: 
     sampled_arr = as_check_arrays(sampled)
     detected_arr = as_check_arrays(detected)
     if plot_dir is not None and sampled_arr["ra"].size:
-        for path in write_bias_check_plots(plot_dir, sampled_arr, detected_arr, plot_tag):
-            print(f"    wrote {path}", flush=True)
+        for tag in plot_tags or []:
+            for path in write_bias_check_plots(
+                    plot_dir, sampled_arr, detected_arr, check_plot_tag(tag)
+            ):
+                print(f"    wrote {path}", flush=True)
     if n_aimed == 0:
         return 0.0, 0, sampled_arr, detected_arr
     if n_detected < target:
@@ -434,7 +437,7 @@ def main():
     )
     if plot_dir is not None:
         plot_dir.mkdir(parents=True, exist_ok=True)
-        print(f"check plots → {plot_dir}", flush=True)
+    print(f"check plots → {plot_dir} (one RA/Dec + elements pair per Sample A object)", flush=True)
     run_sampled = []
     run_detected = []
 
@@ -443,10 +446,11 @@ def main():
             print(f"cell {idx+1}/{len(cells)} {key}: cached {cache[key][0]:.4g}")
             continue
         print(f"cell {idx+1}/{len(cells)} {key}:")
-        tag = check_plot_tag(key)
+        members = [d["name"] for d in detections if d["cell"] == key]
+        print(f"  objects: {', '.join(str(n) for n in members)}", flush=True)
         bias, n_drawn, sampled, detected = compute_cell_bias(
             sim, bounds_from_key(key), args.seed + idx, args.target,
-            plot_dir=plot_dir, plot_tag=tag,
+            plot_dir=plot_dir, plot_tags=members,
         )
         cache[key] = (bias, n_drawn)
         print(f"  bias={bias:.6g} n_drawn={n_drawn}")
@@ -459,7 +463,7 @@ def main():
         all_d = stack_check_samples(run_detected)
         if all_s["ra"].size:
             for path in write_bias_check_plots(plot_dir, all_s, all_d, "all"):
-                print(f"wrote {path}", flush=True)
+                print(f"wrote {path} (all objects combined)", flush=True)
 
     for d in detections:
         d["bias"] = cache[d["cell"]][0]
