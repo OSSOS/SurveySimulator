@@ -1,3 +1,0 @@
-# JWST Sample A epoch 3 (CADC 1568 visit midpoint, shift-and-stack)
-# Mosaic side = sqrt(0.05 deg²); fill=1 (not 1.6° implant box with ff=mosaic/implant)
-0.22361 0.22361 209.3875 -10.865278 2459979.90854 1.00000 JWST.csv JWST_sampleA.eff

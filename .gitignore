@@ -31,3 +31,6 @@ F95/ossssimlib/
 
 # Grid-bias diagnostic plots (written by compute_grid_bias.py)
 JWST/check_plots/
+
+# Generated from JWST/characterization/pointings.template at run time
+JWST/characterization/epoch*/pointings.list

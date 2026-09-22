@@ -1,0 +1,4 @@
+# JWST Sample A epoch {epoch} (CADC 1568 visit midpoint, shift-and-stack)
+# Mosaic side = sqrt(0.05 deg^2); fill=1 (not 1.6 deg implant box)
+# Generated into epoch*/pointings.list at run time; do not commit those files.
+{side:.5f} {side:.5f} {ra:.5f} {dec:.6f} {jd:.5f} {fill:.5f} JWST.csv JWST_sampleA.eff

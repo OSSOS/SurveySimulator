@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 import numpy as np
 
@@ -31,6 +32,7 @@ PAPER_REFERENCE_JD = 2459974.5
 #   epoch 2  jw01568002*  2023-01-28 23:38 – 01-29 22:50 UTC
 #   epoch 3  jw01568003*  2023-02-04 00:01 – 02-04 19:36 UTC
 EPOCH_JD = (2459969.32118, 2459973.96785, 2459979.90854)
+POINTINGS_TEMPLATE_NAME = "pointings.template"
 # Implant speed range used for characterization (Eduardo et al. 2026 §III.2).
 RATE_CUT_MIN_ARCSEC_HR = 0.03
 RATE_CUT_MAX_ARCSEC_HR = 8.66
@@ -380,6 +382,44 @@ def sample_aq(rng: np.random.Generator, a_bounds: tuple, q_bounds: tuple,
     raise RuntimeError(
         f"empty (a,q) cell a=[{a0}, {a1}) q=[{q0}, {q1}); no bound orbit with q < a"
     )
+
+
+def render_pointings_text(template: str, epoch: int, jd: float) -> str:
+    """Fill pointings.template for one epoch. GetSurvey reads pointings.list."""
+    text = template.format(
+        epoch=epoch,
+        jd=jd,
+        ra=FIELD_RA_DEG,
+        dec=FIELD_DEC_DEG,
+        side=MOSAIC_SIDE_DEG,
+        fill=FILL_FACTOR,
+    )
+    if not text.endswith("\n"):
+        text += "\n"
+    return text
+
+
+def setup_pointings(char_root, template_path=None) -> list:
+    """Write gitignored epoch*/pointings.list from characterization/pointings.template.
+
+    Detos1/GetSurvey always open `{survey_dir}/pointings.list`. Keep the
+    committed source as a template and regenerate the list at run time so
+    pulling this branch does not require resetting those files.
+    """
+    char_root = Path(char_root)
+    template_path = Path(template_path) if template_path else (
+        char_root / POINTINGS_TEMPLATE_NAME
+    )
+    template = template_path.read_text()
+    written = []
+    for idx, jd in enumerate(EPOCH_JD, start=1):
+        dest = char_root / f"epoch{idx}" / "pointings.list"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        text = render_pointings_text(template, idx, jd)
+        if not dest.exists() or dest.read_text() != text:
+            dest.write_text(text)
+        written.append(dest)
+    return written
 
 
 def icrs_los_unit(ra_deg: float, dec_deg: float) -> np.ndarray:

@@ -510,6 +510,33 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertEqual(grid_bias.check_plot_tag("JPB 13"), "JPB_13")
         self.assertTrue(grid_bias.check_plot_tag((44.2, 42.4, 0.045, 11.3)).startswith("cell_"))
 
+    def test_setup_pointings_from_template(self):
+        src = ROOT / "JWST" / "characterization" / "pointings.template"
+        self.assertTrue(src.is_file())
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "pointings.template").write_text(src.read_text())
+            for i in (1, 2, 3):
+                (root / f"epoch{i}").mkdir()
+            paths = grid_bias.setup_pointings(root)
+            self.assertEqual(len(paths), 3)
+            for i, jd in enumerate(grid_bias.EPOCH_JD, start=1):
+                text = (root / f"epoch{i}" / "pointings.list").read_text()
+                self.assertIn(f"epoch {i}", text)
+                data = [ln for ln in text.splitlines() if ln and not ln.startswith("#")]
+                self.assertEqual(len(data), 1)
+                parts = data[0].split()
+                self.assertAlmostEqual(float(parts[0]) ** 2, 0.05, places=4)
+                self.assertAlmostEqual(float(parts[2]), grid_bias.FIELD_RA_DEG, places=4)
+                self.assertAlmostEqual(float(parts[3]), grid_bias.FIELD_DEC_DEG, places=5)
+                self.assertAlmostEqual(float(parts[4]), jd, places=4)
+                self.assertEqual(parts[6], "JWST.csv")
+                self.assertEqual(parts[7], "JWST_sampleA.eff")
+            # Second call is a no-op when the content already matches.
+            again = (root / "epoch1" / "pointings.list").read_text()
+            grid_bias.setup_pointings(root)
+            self.assertEqual((root / "epoch1" / "pointings.list").read_text(), again)
+
 
 if __name__ == "__main__":
     unittest.main()

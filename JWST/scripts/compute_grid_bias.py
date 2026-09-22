@@ -20,7 +20,6 @@ from grid_bias import (
     EPOCH_JD,
     FIELD_DEC_DEG as FIELD_DEC,
     FIELD_RA_DEG as FIELD_RA,
-    FILL_FACTOR,
     H_STEP,
     MOSAIC_AREA_DEG2,
     MOSAIC_SIDE_DEG,
@@ -46,6 +45,7 @@ from grid_bias import (
     record_check_sample,
     sample_aimed_elements,
     sample_aq,
+    setup_pointings,
     stack_check_samples,
     write_bias_check_plots,
 )
@@ -87,22 +87,6 @@ def save_bias_cache(path: Path, cache: dict) -> None:
         w.writerow(["a_bin", "q_bin", "si_bin", "h_bin", "bias", "n_drawn"])
         for key, (bias, n_drawn) in sorted(cache.items()):
             w.writerow([*key, bias, n_drawn])
-
-
-def setup_pointings(char_root: Path) -> None:
-    # Search footprint is the active mosaic (0.05 deg²), not the 1.6° implant box.
-    # Fill factor is chip-fill inside that mosaic, not mosaic/implant (which would
-    # be applied independently at each epoch and cube the spatial selection).
-    # JD is the CADC visit-window midpoint: each epoch is a ~20 h shift-and-stack,
-    # not a single 00:00 snapshot. Paper JD 2459974.5 is the orbit-fit reference.
-    side = MOSAIC_SIDE_DEG
-    for idx, jd in enumerate(EPOCH_JD, start=1):
-        text = (
-            f"# JWST Sample A epoch {idx} (CADC 1568 visit midpoint, shift-and-stack)\n"
-            f"{side:.5f} {side:.5f} {FIELD_RA} {FIELD_DEC} {jd:.5f} {FILL_FACTOR:.5f} "
-            f"JWST.csv JWST_sampleA.eff\n"
-        )
-        (char_root / f"epoch{idx}" / "pointings.list").write_text(text)
 
 
 class JWSTSimulator:
