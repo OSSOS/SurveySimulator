@@ -514,6 +514,64 @@ def load_detections(path, survey: GridSurvey) -> list[dict]:
     return rows
 
 
+# CFEPS.detections columns, then the six ac2c72 grid-debiasing fields.
+DETECTIONS_FULL_COLUMNS = (
+    "cl p j k sh object mag e_mag Filt Hsur dist e_dist Nobs time av_xres av_yres "
+    "max_x max_y a e_a e e_e i e_i Omega e_Omega omega e_omega tperi e_tperi "
+    "RAdeg DEdeg JD rate MPC ifree Omfree omfree Hx comp bias"
+)
+
+
+def write_detections_full(out_path, detections: list[dict], survey: GridSurvey,
+                          header_lines: str | None = None) -> None:
+    """Write an OSSOS detections file plus Laplace-free elements, Hx, comp, bias.
+
+    Columns through ``MPC`` match ``CFEPS.detections`` (including ``e_e``).
+    The six extra columns are:
+
+    - ifree: free inclination (deg) to the Laplace plane (grid cell)
+    - Omfree: free node (deg); 0 when the catalog has no Ω
+    - omfree: free periapse (deg); 0 when unknown
+    - Hx: H_r used for the (a, q, sin i_free, H) cell
+    - comp: dynamical component (cold/hot)
+    - bias: Horvitz–Thompson P(detect | cell)
+    """
+    if header_lines is None:
+        header_lines = (
+            f"# File: {survey.detections_full_name}\n"
+            f"#\n"
+            f"# Grid debiasing ac2c72; {survey.name}\n"
+            f"# H_r from {survey.mag_column}{survey.mag_color_offset:+.1f} "
+            f"- 5log10(r Δ) + 2.5log10(Bowell Φ), r=Δ=d_bary, G=-0.12\n"
+            f"# Extra after MPC: ifree Omfree omfree (Laplace-free elements; "
+            f"Omfree=omfree=0 if unknown), Hx, comp, bias\n"
+            f"#\n"
+            f"# Grid size:\n"
+            f"# h_step:  {H_STEP}\n"
+            f"# a_step:  {A_STEP}\n"
+            f"# q_step:  {Q_STEP}\n"
+            f"# si_step: {SI_STEP}\n"
+            f"#\n"
+        )
+    ref_jd = survey.paper_reference_jd or survey.epoch_jd[0]
+    nobs = survey.n_epochs
+    lines = [header_lines, DETECTIONS_FULL_COLUMNS]
+    for d in detections:
+        name = str(d["name"])
+        omfree = float(d.get("Omfree") or 0.0)
+        omegafree = float(d.get("omfree") or 0.0)
+        # After e: e_e, i, e_i, Omega, e_Omega, omega, e_omega, tperi, e_tperi
+        lines.append(
+            f"cla m -1 -1 S {name:7s} {d['Hx']:.2f} 0.100 r {d['Hx']:.2f} {d['d_bary']:.3f} 0.100 "
+            f"{nobs} 0.0000 0.083 0.073 0.311 0.343 {d['a']:11.6f} 0.1012 {d['e']:.6f} 0.001009 "
+            f"{d['i']:6.3f} 0.100 0.000 0.100 0.000 0.100 0.000 0.100 "
+            f"{survey.field_ra_deg:.3f} {survey.field_dec_deg:.3f} {ref_jd:.5f} 0.40 {name:7s} "
+            f"{d['ifree']:6.3f} {omfree:6.3f} {omegafree:6.3f} "
+            f"{d['Hx']:.2f} {d['comp']} {d['bias']:.7f}"
+        )
+    Path(out_path).write_text("\n".join(lines) + "\n")
+
+
 def sample_aq(rng: np.random.Generator, a_bounds: tuple, q_bounds: tuple,
               max_tries: int = 10000) -> tuple[float, float]:
     """Uniform draw in the (a, q) rectangle restricted to 0 < q < a."""

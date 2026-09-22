@@ -17,6 +17,7 @@ _HEADER = f"""# File: JWST-free-cla_m.detections-full
 # Grid debiasing ac2c72; Eduardo et al. 2026 Sample A (20 objects)
 # H_r from m_F150W2 + 1.0 - 5log10(r Δ) + 2.5log10(Bowell Φ), r=Δ=d_bary, G=-0.12
 # Catalog i_free uses Ω=0 (node not in Sample A CSV)
+# Extra after MPC: ifree Omfree omfree (Laplace-free; Omfree=omfree=0), Hx, comp, bias
 #
 # Grid size:
 # h_step:  {H_STEP}

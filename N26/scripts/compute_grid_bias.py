@@ -19,6 +19,7 @@ _HEADER = f"""# File: N26-free-cla_m.detections-full
 # r_AB = STMAG_F606W - 0.3; H_r from r_AB - 5log10(r Δ) + 2.5log10(Bowell Φ)
 # a, e are Napier Table 2 a_min, e_min (CC-assumption lower bounds, 15-day arc)
 # i_free is the midpoint of the Table 2 95% CI under the CC assumption
+# Extra after MPC: ifree Omfree omfree (Laplace-free; Omfree=omfree=0), Hx, comp, bias
 # Single 15-day stack (n_epochs=1), not 3-epoch AND
 #
 # Grid size:

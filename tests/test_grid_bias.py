@@ -537,6 +537,39 @@ class GridBiasHelpers(unittest.TestCase):
             grid_bias.setup_pointings(root)
             self.assertEqual((root / "epoch1" / "pointings.list").read_text(), again)
 
+    def test_detections_full_columns_match_header_and_cfeps(self):
+        cfeps = ROOT / "examples" / "Surveys" / "CFEPS" / "CFEPS.detections"
+        cfeps_header = None
+        for line in cfeps.read_text().splitlines():
+            if line.startswith("#") and " object " in line:
+                cfeps_header = line.lstrip("# ").split()
+                break
+        self.assertIsNotNone(cfeps_header)
+        names = grid_bias.DETECTIONS_FULL_COLUMNS.split()
+        self.assertEqual(names[:len(cfeps_header)], cfeps_header)
+        self.assertEqual(names[len(cfeps_header):],
+                         ["ifree", "Omfree", "omfree", "Hx", "comp", "bias"])
+        row = {
+            "name": "JPB04", "Hx": 8.12, "d_bary": 46.2, "a": 43.7,
+            "e": 0.06, "i": 1.85, "ifree": 3.2, "comp": "cold", "bias": 1.2e-5,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "out.detections-full"
+            grid_bias.write_detections_full(path, [row], grid_bias.JWST_SAMPLE_A)
+            data = [ln for ln in path.read_text().splitlines()
+                    if ln and not ln.startswith("#")]
+            self.assertEqual(data[0].split(), names)
+            tokens = data[1].split()
+            self.assertEqual(len(tokens), len(names), msg=tokens)
+            parsed = dict(zip(names, tokens))
+            self.assertEqual(parsed["e_e"], "0.001009")
+            self.assertEqual(parsed["ifree"], "3.200")
+            self.assertEqual(parsed["Omfree"], "0.000")
+            self.assertEqual(parsed["omfree"], "0.000")
+            self.assertEqual(parsed["Hx"], "8.12")
+            self.assertEqual(parsed["comp"], "cold")
+            self.assertEqual(parsed["bias"], "0.0000120")
+
 
 if __name__ == "__main__":
     unittest.main()

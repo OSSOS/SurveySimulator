@@ -193,6 +193,25 @@ class NapierCatalog(unittest.TestCase):
         self.assertAlmostEqual(grid_bias.H_COLOR_OFFSET, -0.3)
         self.assertEqual(grid_bias.EPOCH_JD, N26.epoch_jd)
 
+    def test_detections_full_has_named_ifree_not_dummy_padding(self):
+        rows = grid_bias.load_detections(N26_ROOT / "data" / "n26_detections.csv")
+        for r in rows:
+            r["bias"] = 1.0e-5
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "out.detections-full"
+            grid_bias.write_detections_full(path, rows)
+            names = grid_bias.DETECTIONS_FULL_COLUMNS.split()
+            data = [ln for ln in path.read_text().splitlines()
+                    if ln and not ln.startswith("#")]
+            self.assertEqual(data[0].split(), names)
+            tokens = data[1].split()
+            self.assertEqual(len(tokens), len(names))
+            parsed = dict(zip(names, tokens))
+            self.assertEqual(parsed["object"], "2003BF91")
+            self.assertEqual(parsed["ifree"], "1.350")
+            self.assertEqual(parsed["Omfree"], "0.000")
+            self.assertEqual(parsed["omfree"], "0.000")
+
 
 if __name__ == "__main__":
     unittest.main()
