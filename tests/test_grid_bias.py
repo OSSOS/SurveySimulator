@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import math
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -466,6 +467,43 @@ class GridBiasHelpers(unittest.TestCase):
             ra, dec, grid_bias.FIELD_RA_DEG, grid_bias.FIELD_DEC_DEG
         )
         self.assertLess(sep * 60.0, 0.1)
+
+    def test_write_bias_check_plots(self):
+        rng = np.random.default_rng(11)
+        half = grid_bias.MOSAIC_SIDE_DEG / 2.0
+        n_s, n_d = 80, 30
+        sampled = grid_bias.empty_check_samples()
+        detected = grid_bias.empty_check_samples()
+        for i in range(n_s):
+            ra = grid_bias.FIELD_RA_DEG + rng.uniform(-half, half)
+            dec = grid_bias.FIELD_DEC_DEG + rng.uniform(-half, half)
+            rec = (ra, dec, 43.8 + 0.01 * i, 0.04, 2.5, 10.0 * i, 20.0 * i, 5.0 * i)
+            grid_bias.record_check_sample(sampled, *rec)
+            if i < n_d:
+                grid_bias.record_check_sample(detected, *rec)
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = grid_bias.write_bias_check_plots(
+                tmp, sampled, detected, "unit"
+            )
+            self.assertEqual(len(paths), 2)
+            names = {p.name for p in paths}
+            self.assertEqual(names, {
+                "check_unit_radec.png",
+                "check_unit_elements.png",
+            })
+            for path in paths:
+                self.assertGreater(path.stat().st_size, 1000)
+
+    def test_stack_check_samples_concatenates_cells(self):
+        a = grid_bias.empty_check_samples()
+        b = grid_bias.empty_check_samples()
+        grid_bias.record_check_sample(a, 209.4, -10.8, 44.0, 0.05, 3.0, 10, 20, 30)
+        grid_bias.record_check_sample(b, 209.5, -10.9, 44.1, 0.06, 4.0, 40, 50, 60)
+        stacked = grid_bias.stack_check_samples(
+            [grid_bias.as_check_arrays(a), grid_bias.as_check_arrays(b)]
+        )
+        self.assertEqual(stacked["ra"].size, 2)
+        self.assertAlmostEqual(stacked["a"][1], 44.1)
 
 
 if __name__ == "__main__":

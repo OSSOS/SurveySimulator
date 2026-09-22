@@ -669,3 +669,157 @@ def aimed_detection_bias(n_aimed: int, geom_weight_sum: float) -> float:
     if n_aimed <= 0:
         return 0.0
     return float(geom_weight_sum) / float(n_aimed)
+
+
+CHECK_PLOT_KEYS = ("ra", "dec", "a", "e", "i", "Omega", "omega", "M")
+
+
+def empty_check_samples() -> dict:
+    return {key: [] for key in CHECK_PLOT_KEYS}
+
+
+def record_check_sample(store: dict, ra: float, dec: float, a: float, e: float,
+                        inc: float, node: float, peri: float, M: float) -> None:
+    store["ra"].append(float(ra))
+    store["dec"].append(float(dec))
+    store["a"].append(float(a))
+    store["e"].append(float(e))
+    store["i"].append(float(inc))
+    store["Omega"].append(float(node) % 360.0)
+    store["omega"].append(float(peri) % 360.0)
+    store["M"].append(float(M) % 360.0)
+
+
+def as_check_arrays(samples: dict) -> dict:
+    return {key: np.asarray(samples[key], dtype=float) for key in CHECK_PLOT_KEYS}
+
+
+def stack_check_samples(parts: list) -> dict:
+    """Concatenate per-cell check-sample dicts for a run-level plot."""
+    out = {}
+    for key in CHECK_PLOT_KEYS:
+        chunks = [np.asarray(part[key], dtype=float) for part in parts]
+        chunks = [c for c in chunks if c.size]
+        out[key] = np.concatenate(chunks) if chunks else np.array([], dtype=float)
+    return out
+
+
+def check_plot_tag(cell_key_tuple: tuple) -> str:
+    return "cell_" + "_".join(f"{float(v):.4g}" for v in cell_key_tuple).replace(".", "p")
+
+
+def write_bias_check_plots(out_dir, sampled: dict, detected: dict, tag: str,
+                           field_ra: float = FIELD_RA_DEG,
+                           field_dec: float = FIELD_DEC_DEG,
+                           side_deg: float = MOSAIC_SIDE_DEG) -> list:
+    """RA/Dec and a/e/i/Ω/ω/M check plots: sampled vs detected (flag≥4).
+
+    Sampled = aimed orbits sent through Detos1. Detected = those with
+    flag≥4 at all three epochs (Sample A). The two RA/Dec clouds should
+    fill the mosaic the same way if detection is not a spatial cut inside
+    the field; the element histograms should match if detection is not a
+    function of those elements.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    from matplotlib import pyplot as plt
+    from matplotlib.patches import Rectangle
+    from pathlib import Path
+
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sampled = as_check_arrays(sampled)
+    detected = as_check_arrays(detected)
+    n_s = int(sampled["ra"].size)
+    n_d = int(detected["ra"].size)
+    half = 0.5 * side_deg
+    pad = 0.4 * side_deg
+    ra_lim = (field_ra - half - pad, field_ra + half + pad)
+    dec_lim = (field_dec - half - pad, field_dec + half + pad)
+
+    fig, axes = plt.subplots(2, 2, figsize=(9.2, 8.0),
+                             gridspec_kw={"height_ratios": [1.35, 1.0]})
+    scat_s, scat_d = axes[0]
+    hist_ra, hist_dec = axes[1]
+    for ax, data, n, color, title in (
+            (scat_s, sampled, n_s, "0.35", f"sampled for Detos1 (n={n_s})"),
+            (scat_d, detected, n_d, "C0", f"detected flag≥4 (n={n_d})"),
+    ):
+        if n:
+            ax.scatter(data["ra"], data["dec"], s=6, alpha=0.35, c=color,
+                       linewidths=0, rasterized=True)
+        ax.add_patch(Rectangle(
+            (field_ra - half, field_dec - half), side_deg, side_deg,
+            fill=False, edgecolor="k", lw=1.0,
+        ))
+        ax.plot(field_ra, field_dec, "k+", ms=9, mew=1.2)
+        ax.set_xlim(*ra_lim)
+        ax.set_ylim(*dec_lim)
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_xlabel("RA [deg, ICRS]")
+        ax.set_ylabel("Dec [deg, ICRS]")
+        ax.set_title(title)
+        ax.grid(True, alpha=0.25)
+    _overlay_hist(hist_ra, sampled["ra"], detected["ra"], "RA [deg, ICRS]", n_s, n_d)
+    _overlay_hist(hist_dec, sampled["dec"], detected["dec"], "Dec [deg, ICRS]", n_s, n_d)
+    fig.suptitle(f"{tag}: epoch-1 RA/Dec  (detected = flag≥4 at all 3 epochs)",
+                 fontsize=11)
+    fig.tight_layout()
+    radec_path = out_dir / f"check_{tag}_radec.png"
+    fig.savefig(radec_path, dpi=140)
+    plt.close(fig)
+
+    elem_labels = (
+        ("a", "a [au]", False),
+        ("e", "e", False),
+        ("i", "i [deg]", False),
+        ("Omega", r"$\Omega$ [deg]", True),
+        ("omega", r"$\omega$ [deg]", True),
+        ("M", "M [deg]", True),
+    )
+    fig, axes = plt.subplots(2, 3, figsize=(10.5, 6.4))
+    for ax, (key, xlabel, circular) in zip(axes.ravel(), elem_labels):
+        _overlay_hist(ax, sampled[key], detected[key], xlabel, n_s, n_d,
+                      circular=circular)
+    fig.suptitle(
+        f"{tag}: elements sent to Detos1 vs detected (flag≥4). "
+        "Densities should match if detection is independent of these elements.",
+        fontsize=10,
+    )
+    fig.tight_layout()
+    elem_path = out_dir / f"check_{tag}_elements.png"
+    fig.savefig(elem_path, dpi=140)
+    plt.close(fig)
+    return [radec_path, elem_path]
+
+
+def _overlay_hist(ax, sampled, detected, xlabel: str, n_s: int, n_d: int,
+                  circular: bool = False) -> None:
+    sampled = np.asarray(sampled, dtype=float)
+    detected = np.asarray(detected, dtype=float)
+    if circular:
+        hist_range = (0.0, 360.0)
+        bins = 36
+    elif sampled.size:
+        lo, hi = float(np.min(sampled)), float(np.max(sampled))
+        if hi <= lo:
+            hi = lo + 1e-6
+        pad = 0.05 * (hi - lo)
+        hist_range = (lo - pad, hi + pad)
+        bins = min(40, max(12, int(np.sqrt(sampled.size))))
+    else:
+        hist_range = None
+        bins = 20
+    if sampled.size:
+        ax.hist(sampled, bins=bins, range=hist_range, density=True,
+                histtype="stepfilled", alpha=0.35, color="0.45",
+                label=f"sampled ({n_s})")
+    if detected.size:
+        ax.hist(detected, bins=bins, range=hist_range, density=True,
+                histtype="step", color="C0", lw=1.6,
+                label=f"detected flag≥4 ({n_d})")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("density")
+    ax.legend(fontsize=7, frameon=False)
+    if circular:
+        ax.set_xlim(0.0, 360.0)

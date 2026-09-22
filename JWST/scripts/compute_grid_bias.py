@@ -31,17 +31,23 @@ from grid_bias import (
     SI_STEP,
     aimed_detection_bias,
     apparent_to_Hr,
+    as_check_arrays,
     bounds_from_key,
     cell_key,
+    check_plot_tag,
     compute_ifree,
+    empty_check_samples,
     epoch_geometry,
     geometric_detection_prob,
     geometric_prob_for_aimed,
     icrs_to_ecliptic,
     los_circular_elements,
     parse_jpl_horizons_icrf,
+    record_check_sample,
     sample_aimed_elements,
     sample_aq,
+    stack_check_samples,
+    write_bias_check_plots,
 )
 
 TARGET_DETECTIONS = 5000
@@ -152,14 +158,20 @@ def _jd_utc(jd: float) -> str:
     return (datetime(1858, 11, 17) + timedelta(days=mjd)).strftime("%Y-%m-%d %H:%M")
 
 
-def _detos_sky(row: dict) -> str:
-    """Format Detos1 outputs; RA/Dec are returned even when flag=0 after rebuild."""
+def _row_radec(row: dict) -> tuple[float, float]:
+    """Detos1 ICRS RA/Dec in degrees (available even when flag=0 after rebuild)."""
     try:
         ra = float(row["RA"].to(u.deg).value)
         dec = float(row["DEC"].to(u.deg).value)
     except Exception:
         ra = math.degrees(float(row["RA"]))
         dec = math.degrees(float(row["DEC"]))
+    return ra, dec
+
+
+def _detos_sky(row: dict) -> str:
+    """Format Detos1 outputs; RA/Dec are returned even when flag=0 after rebuild."""
+    ra, dec = _row_radec(row)
     dra = float(row["d_ra"])
     ddec = float(row["d_dec"])
     rate = math.degrees(math.hypot(dra, ddec)) * 3600.0 / 24.0
@@ -258,7 +270,9 @@ def sanity_check_simulator(sim: JWSTSimulator) -> None:
     )
 
 
-def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: int) -> tuple[float, int]:
+def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: int,
+                      plot_dir: Path | None = None, plot_tag: str = "cell"
+                      ) -> tuple[float, int, dict, dict]:
     """P(Sample A | cell) by FoV-aimed (Ω, ω, M) times single-epoch P_geom.
 
     Isotropic angles hit the 0.05 deg² mosaic at ~1e-5. Draw a/e/i_free/H
@@ -277,6 +291,8 @@ def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: 
     h0, h1 = cell_bounds["Hx"]
     jpl = Path(sim.epoch_dirs[0]) / "JWST.csv"
     obs = parse_jpl_horizons_icrf(jpl, sim.element_epoch)
+    sampled = empty_check_samples()
+    detected = empty_check_samples()
 
     n_detected = 0
     n_aimed = 0
@@ -296,9 +312,14 @@ def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: 
         inc, node, peri, M = el
         n_aimed += 1
         p_geom = geometric_prob_for_aimed(a, e, inc, node, peri, M)
-        if sim.detected_sample_a(a, e, inc, node, peri, M, H):
+        rows = sim.epoch_rows(a, e, inc, node, peri, M, H)
+        flags = [int(r["flag"]) for r in rows]
+        ra, dec = _row_radec(rows[0])
+        record_check_sample(sampled, ra, dec, a, e, inc, node, peri, M)
+        if all(f >= 4 for f in flags):
             n_detected += 1
             geom_weight_sum += p_geom
+            record_check_sample(detected, ra, dec, a, e, inc, node, peri, M)
         if n_aimed % 500 == 0:
             bias_so_far = aimed_detection_bias(n_aimed, geom_weight_sum)
             print(
@@ -307,14 +328,19 @@ def compute_cell_bias(sim: JWSTSimulator, cell_bounds: dict, seed: int, target: 
                 f"P(det|FoV)={n_detected / n_aimed:.3g}  bias~{bias_so_far:.3g}",
                 flush=True,
             )
+    sampled_arr = as_check_arrays(sampled)
+    detected_arr = as_check_arrays(detected)
+    if plot_dir is not None and sampled_arr["ra"].size:
+        for path in write_bias_check_plots(plot_dir, sampled_arr, detected_arr, plot_tag):
+            print(f"    wrote {path}", flush=True)
     if n_aimed == 0:
-        return 0.0, 0
+        return 0.0, 0, sampled_arr, detected_arr
     if n_detected < target:
         raise RuntimeError(
             f"Only {n_detected}/{target} after {n_aimed} aimed plants "
             f"({n_fail} invert-fail)"
         )
-    return aimed_detection_bias(n_aimed, geom_weight_sum), n_aimed
+    return aimed_detection_bias(n_aimed, geom_weight_sum), n_aimed, sampled_arr, detected_arr
 
 
 def write_detections_full(out_path: Path, detections: list[dict]) -> None:
@@ -351,6 +377,15 @@ def main():
     parser.add_argument("--root", default=str(Path(__file__).resolve().parents[1]))
     parser.add_argument("--target", type=int, default=TARGET_DETECTIONS)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--check-plots-dir", default=None,
+        help="Directory for sampled-vs-detected RA/Dec and element check plots "
+             "(default: <root>/check_plots)",
+    )
+    parser.add_argument(
+        "--no-check-plots", action="store_true",
+        help="Skip writing sampled-vs-detected check plots",
+    )
     args = parser.parse_args()
 
     root = Path(args.root)
@@ -394,15 +429,37 @@ def main():
     print("warning: Sample A CSV has no Ω; catalog i_free uses Ω=0", flush=True)
     sanity_check_simulator(sim)
 
+    plot_dir = None if args.no_check_plots else Path(
+        args.check_plots_dir or (root / "check_plots")
+    )
+    if plot_dir is not None:
+        plot_dir.mkdir(parents=True, exist_ok=True)
+        print(f"check plots → {plot_dir}", flush=True)
+    run_sampled = []
+    run_detected = []
+
     for idx, key in enumerate(cells):
         if key in cache:
             print(f"cell {idx+1}/{len(cells)} {key}: cached {cache[key][0]:.4g}")
             continue
         print(f"cell {idx+1}/{len(cells)} {key}:")
-        bias, n_drawn = compute_cell_bias(sim, bounds_from_key(key), args.seed + idx, args.target)
+        tag = check_plot_tag(key)
+        bias, n_drawn, sampled, detected = compute_cell_bias(
+            sim, bounds_from_key(key), args.seed + idx, args.target,
+            plot_dir=plot_dir, plot_tag=tag,
+        )
         cache[key] = (bias, n_drawn)
         print(f"  bias={bias:.6g} n_drawn={n_drawn}")
         save_bias_cache(cache_path, cache)
+        run_sampled.append(sampled)
+        run_detected.append(detected)
+
+    if plot_dir is not None and run_sampled:
+        all_s = stack_check_samples(run_sampled)
+        all_d = stack_check_samples(run_detected)
+        if all_s["ra"].size:
+            for path in write_bias_check_plots(plot_dir, all_s, all_d, "all"):
+                print(f"wrote {path}", flush=True)
 
     for d in detections:
         d["bias"] = cache[d["cell"]][0]
