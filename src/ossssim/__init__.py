@@ -15,4 +15,3 @@ from .models import DetectFile, ModelFile, ModelOutputFile, ModelFileEcsv, Model
 from .ephem import Ephem
 from .characterization import *
 from .survey import SurveyCharacterization, Pointing
-from . import Characterizations

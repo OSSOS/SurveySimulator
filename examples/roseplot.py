@@ -15,15 +15,15 @@ def face_down_plot() -> None:
     """
 
     # create a plot object (requires an epoch to put the planets in the right place.)
-    plot = RosePlot(Time('2022-09-01T10:00:00').jd)
+    plot = RosePlot(Time('2022-09-01T10:00:00'))
 
     # add some KBOs form a 'model file' which is a file with at least the following columns defined
     # a  e inc  peri  node  M  H
     distant_kbos = ossssim.ModelFile('distant_TNOs.txt')
     plot.add_model(distant_kbos, mc='r', ms=10)
 
-    # add pointing wedges from the OSSOS++ surveys
-    plot.add_pointings(os.path.join('Surveys/CFEPS/pointings.list'))
+    # add pointing wedges from a survey characterization directory (Fortran-loaded)
+    plot.add_pointings(os.path.join('Surveys', 'CFEPS'))
 
     # Add some objects to the plot, this files is in SSim CDS format.
     detection_table = Table.read(os.path.join('Surveys/CFEPS/CFEPS.CDS'), format='cds')

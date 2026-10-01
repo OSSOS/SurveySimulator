@@ -9,7 +9,7 @@ RUN apt -y -q update
 RUN apt -y -q install curl wget man man-db git build-essential zip unzip xdg-utils less emacs nano xterm vim rsync tree gfortran
 RUN apt -y install python3-numpy
 # Python package build uses setuptools + f90wrap (pip install . → setup.py → make -C F95).
-# meson/ninja are not required for the SurveySimulator build.
+# NumPy's f2py on Python>=3.12 uses meson+ninja; those come from pyproject build-system requires.
 
 
 

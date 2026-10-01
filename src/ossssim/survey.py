@@ -3,10 +3,9 @@ Survey characterization access: areas, fill factors, and efficiency vs depth.
 
 Example
 -------
->>> from ossssim import SurveyCharacterization, Characterizations
+>>> from ossssim import SurveyCharacterization
 >>> import numpy as np
->>> survey = SurveyCharacterization.from_directory(
-...     Characterizations.surveys['CFEPS'])
+>>> survey = SurveyCharacterization.from_directory('F95/tests/Surveys/CFEPS')
 >>> mags = np.arange(21.0, 26.0, 0.1)
 >>> m, area = survey.coverage_vs_magnitude(mags)
 """

@@ -25,8 +25,13 @@ MODULE	?= ossssimlib
 GOBJ	= GiMeObjF95
 
 
-FC	= gfortran
-FPP	= gfortran -E -x f95-cpp-input -fPIC -DPYTHON
+# FC is read by NumPy's meson f2py backend (Python>=3.12); --fcompiler is ignored there.
+# Make's built-in default is FC=f77; ?= would not override it.
+ifeq ($(origin FC),default)
+FC := gfortran
+endif
+FC	?= gfortran
+FPP	= $(FC) -E -x f95-cpp-input -fPIC -DPYTHON
 # FPP_F90FLAGS = -x f95-cpp-input -fPIC
 
 
@@ -35,9 +40,17 @@ FFLAGP	= -O3
 CFLAGS  = 
 CPPFLAGS = 
 LIBTOOL = ar src
-BUILD_DIR = meson
+# Temporary tree for numpy.f2py's meson backend (not a project-level Meson build).
+BUILD_DIR = f2py_build
 KIND_MAP = kind_map
-F2PYFLAGS = --build-dir $(BUILD_DIR) --fcompiler=gfortran
+F2PYFLAGS = --build-dir $(BUILD_DIR)
+
+# NumPy f2py meson.build lists -lsrc before -L…; GNU ld then fails to find libsrc.
+# LIBRARY_PATH resolves the archive regardless of flag order. LDFLAGS/FCFLAGS help
+# meson and the Fortran compiler find libsrc.a and .mod files from bbdir.
+export LIBRARY_PATH := $(CURDIR)$(if $(LIBRARY_PATH),:$(LIBRARY_PATH),)
+export LDFLAGS := -L$(CURDIR)$(if $(LDFLAGS), $(LDFLAGS),)
+export FCFLAGS := -I$(CURDIR)$(if $(FCFLAGS), $(FCFLAGS),)
 
 
 .PHONY: all clean
@@ -96,9 +109,29 @@ Modules: _$(MODULE).so Makefile
 	echo "Modules have been built"
 
 $(MODULE): Makefile $(FPPM) libsrc.a
+	# Force fresh .mod/.o visibility for f90wrap; stale debug.mod caused CANFAR clashes.
+	# Wipe any prior f2py/meson tree so we never reuse deleted /tmp/pip-build-env-* paths.
+	rm -rf $(BUILD_DIR)
 	f90wrap -m $(MODULE) $(FPPM) -k $(KIND_MAP) -v -P > f90wrap.log 2>&1
-	mkdir -p $(BUILD_DIR) 
+	mkdir -p $(BUILD_DIR)
+	# .mod files must be visible from f2py's bbdir (sibling of these symlinks).
 	ln -s -f $(CURDIR)/*.mod $(BUILD_DIR)/
-	f2py-f90wrap $(F2PYFLAGS) -c -m _$(MODULE) $(F90_WRAP_M) -lsrc -L$(CURDIR)  > f2py_f90wrap.log 2>&1
+	# Surface the real compiler/linker error; pip only shows make's exit status otherwise.
+	# Prefer f2py_f90wrap.log (ninja) over meson-log.txt (configure-only, often stale).
+	f2py-f90wrap $(F2PYFLAGS) -c -m _$(MODULE) $(F90_WRAP_M) -L$(CURDIR) -lsrc > f2py_f90wrap.log 2>&1 \
+		|| { \
+			echo "==== f2py_f90wrap.log (last 80 lines) ===="; \
+			tail -n 80 f2py_f90wrap.log; \
+			if [ -d $(BUILD_DIR)/bbdir ]; then \
+				echo "==== meson compile -C $(BUILD_DIR)/bbdir -v ===="; \
+				meson compile -C $(BUILD_DIR)/bbdir -v || true; \
+			fi; \
+			if [ -f $(BUILD_DIR)/bbdir/meson-logs/meson-log.txt ]; then \
+				echo "==== meson-log.txt (last 40 lines) ===="; \
+				tail -n 40 $(BUILD_DIR)/bbdir/meson-logs/meson-log.txt; \
+			fi; \
+			exit 1; \
+		}
 	\rm f90wrap*.f90 *.fpp *.o *.mod .f2py_f2cmap libsrc.a
 	\rm -r $(BUILD_DIR) 
+

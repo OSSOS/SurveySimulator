@@ -46,7 +46,7 @@ program Driver
 
   use gimeobjut
   use surveysub
-  use debug
+  use debug, only: debug_init_from_args, debug_is_active
 
   implicit none
 
@@ -175,7 +175,7 @@ program Driver
 
 !        Determine if the object would be detected
      call Detos1 (o_m, epoch, h, color, gb, ph, period, amp, survey_dir, seed, &
-             debug_on, &
+             debug_is_active(), &
           flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, &
           jday_p, ic, surna, h_rand, ierr)
 

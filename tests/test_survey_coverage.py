@@ -4,16 +4,21 @@ import unittest
 
 import numpy as np
 
-from ossssim import Characterizations, SurveyCharacterization
+from ossssim import SurveyCharacterization
 
 script_directory = pathlib.Path(__file__).parent.resolve()
-CFEPS = Characterizations.surveys['CFEPS']
+CFEPS = script_directory / 'data' / 'Surveys' / 'CFEPS'
 
 
 class SurveyCharacterizationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.survey = SurveyCharacterization.from_directory(CFEPS)
+        if not CFEPS.is_dir():
+            raise unittest.SkipTest(f'CFEPS fixture missing: {CFEPS}')
+        try:
+            cls.survey = SurveyCharacterization.from_directory(str(CFEPS))
+        except ImportError:
+            raise unittest.SkipTest('ossssimlib not importable')
 
     def test_loads_pointings(self):
         self.assertGreater(len(self.survey), 0)

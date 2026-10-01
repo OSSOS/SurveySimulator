@@ -39,12 +39,13 @@ def pos_cart(a: np.array, e: np.array, inc: np.array, Omega: np.array, omega: np
     d42 = delau4 * delau2
     d52 = delau5 * delau2
     d43 = delau4 * delau3
+    # Rotation matrix must match F95/elemutils.f95 pos_cart (signs matter).
     mat[0, 0, :] = d42 - cos_i * d53
-    mat[0, 1, :] = d43 + cos_i * d52
+    mat[0, 1, :] = -d43 - cos_i * d52
     mat[1, 0, :] = d52 + cos_i * d43
     mat[1, 1, :] = -d53 + cos_i * d42
     mat[2, 0, :] = sin_i * delau3
-    mat[2, 1, :] = -sin_i * delau2
+    mat[2, 1, :] = sin_i * delau2
 
     # Cartesian coordinates
     p = (mat * q_vec).sum(axis=1)

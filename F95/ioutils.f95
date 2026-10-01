@@ -2,7 +2,6 @@ module ioutils
 
   use parameters
   use datadec
-  use debug
 
 contains
 

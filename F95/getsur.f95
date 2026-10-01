@@ -5,7 +5,6 @@ module getsur
   use poly_lib
   use effut
   use ioutils
-  use debug
 
 contains
 

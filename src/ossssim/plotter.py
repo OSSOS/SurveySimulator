@@ -1,7 +1,11 @@
 """
-Some methods to aid making orbit plots from simulator outputs
+Helpers for orbit / survey footprint plots from simulator outputs.
 """
+from __future__ import annotations
+
 import logging
+from pathlib import Path
+from typing import List, Optional, Union
 
 import numpy
 from astropy import units
@@ -17,15 +21,16 @@ from numpy.random import default_rng
 from . import definitions
 from .models import ModelFile
 from .models import Parametric
+from .pos_cart import pos_cart
+from .survey import SurveyCharacterization
 
 np = numpy
 
 # setup the plotting Look and Feel.
 rcParams['font.size'] = 12  # good for posters/slides
-rcParams['patch.facecolor'] = (0.4, 0.7607843137254902, 0.6470588235294118)  # brewer2mpl 'Set2' 'qualitative' colors
+rcParams['patch.facecolor'] = (0.4, 0.7607843137254902, 0.6470588235294118)
 rcParams['figure.figsize'] = (10, 10)
 rcParams['figure.dpi'] = 150
-# this is the puor color cycle from brewer2mpl
 rcParams['axes.prop_cycle'] = cycler('color', [(0.4980392156862745, 0.23137254901960785, 0.03137254901960784),
                                                (0.7019607843137254, 0.34509803921568627, 0.023529411764705882),
                                                (0.8784313725490196, 0.5098039215686274, 0.0784313725490196),
@@ -38,43 +43,100 @@ rcParams['axes.prop_cycle'] = cycler('color', [(0.4980392156862745, 0.2313725490
                                                (0.32941176470588235, 0.15294117647058825, 0.5333333333333333),
                                                (0.17647058823529413, 0.0, 0.29411764705882354)])
 rcParams['font.family'] = 'sans-serif'
-rcParams['font.sans-serif'] = ['Sofia Pro', 'Tahoma']
+# Prefer common fonts; fall back silently if Sofia Pro is missing
+rcParams['font.sans-serif'] = ['DejaVu Sans', 'Tahoma', 'Helvetica', 'Arial', 'Sofia Pro']
 ALMOST_BLACK = '#262626'
+
+
+def _as_time(epoch) -> Time:
+    """Normalize constructor epoch to an astropy Time."""
+    if isinstance(epoch, Time):
+        return epoch
+    if isinstance(epoch, (int, float, numpy.floating)):
+        return Time(epoch, format='jd')
+    if isinstance(epoch, Quantity):
+        raise TypeError(
+            'RosePlot epoch must be an astropy Time (or JD float), '
+            'not an angle Quantity such as Neptune longitude'
+        )
+    return Time(epoch)
+
+
+# Angle (degrees) along which radial distance labels are drawn, and a
+# semi-transparent white box so labels stay legible over dense scatter.
+_RADIAL_LABEL_ANGLE = 100
+_RADIAL_LABEL_BBOX = dict(boxstyle='round,pad=0.15', facecolor='white',
+                          alpha=0.6, edgecolor='none')
+
+
+def _wedge_width_from_area(area_deg2: float) -> Quantity:
+    """Approximate RA wedge width from spherical area (square-equivalent)."""
+    side = float(numpy.sqrt(max(area_deg2, 0.0)))
+    return side * units.deg
+
+
+def _ensure_cartesian_table(table):
+    """
+    Return a table that has heliocentric ecliptic ``x,y,z``.
+
+    Detect/parametric outputs already store Rebound state vectors. Lookup-table
+    models (e.g. L7) only have Keplerian elements; convert with the Python
+    ``pos_cart`` port of Fortran ``elemutils.pos_cart`` (not currently
+    f90wrap-exported — only datadec/ioutils/surveysub are wrapped).
+    """
+    if all(name in table.colnames for name in ('x', 'y', 'z')):
+        return table
+    required = ('a', 'e', 'inc', 'node', 'peri', 'M')
+    missing = [name for name in required if name not in table.colnames]
+    if missing:
+        raise KeyError(
+            "RosePlot.add_model needs cartesian columns x,y,z or Keplerian "
+            f"elements {required}; missing {missing}"
+        )
+
+    def _col(name, unit=None):
+        col = table[name]
+        if unit is not None and hasattr(col, 'to'):
+            return numpy.asarray(col.to(unit).value, dtype=float)
+        if hasattr(col, 'value'):
+            return numpy.asarray(col.value, dtype=float)
+        return numpy.asarray(col, dtype=float)
+
+    xyz = pos_cart(
+        _col('a', 'au'),
+        _col('e'),
+        _col('inc', 'rad'),
+        _col('node', 'rad'),
+        _col('peri', 'rad'),
+        _col('M', 'rad'),
+    )
+    out = table.copy()
+    out['x'] = xyz[0] * units.au
+    out['y'] = xyz[1] * units.au
+    out['z'] = xyz[2] * units.au
+    return out
 
 
 class TimeSeriesPlot:
     """
-    Plot the elements of model as function of index in the list, aids in diagnosis the distribution of elements.
+    Plot model elements vs index (diagnostic distribution checks).
     """
 
     def __init__(self, model: (ModelFile or Parametric)) -> None:
-        """Given an input model setup methods to make plots.
-        Args:
-            model: a model object from the ossssim package."""
         self.model = model
         self.fig = plt.figure(figsize=(8, 15))
 
     def plot(self, variables: list = None) -> None:
-        """
-        Plot model elements as the value vs position in the array (index).
-
-        Args:
-            variables ([] or None): a list of columns to plot. e.g. (['a', 'e', 'inc']) default:None plots all columns in model.
-
-        To see what columns are available look at self.model.colnames
-
-        Intended for diagnostic purposes.
-        """
-
         if variables is None:
             variables = self.model.targets.column_names
-        nx = len(variables)//2
+        n = max(len(variables), 1)
+        nx = max((n + 1) // 2, 1)
         ny = 2
         for i, column in enumerate(variables):
-            ax = self.fig.add_subplot(nx, ny, i)
+            ax = self.fig.add_subplot(nx, ny, i + 1)
             if column not in self.model.targets.column_names:
                 logging.warning(f"Could not plot {column} as does not appear input model.")
-                pass
+                continue
 
             values = self.model.targets[column]
             if isinstance(values[0], (list, numpy.ndarray)):
@@ -84,57 +146,53 @@ class TimeSeriesPlot:
             else:
                 ax.plot(values.to(definitions.column_unit[column]).value,
                         color='k', marker='o', linestyle='none', linewidth=2, markersize=1)
-            ax.ylabel(f"{column} ({definitions.column_unit[column]})")
+            ax.set_ylabel(f"{column} ({definitions.column_unit[column]})")
         plt.show()
 
 
 class RosePlot:
     """
-    Plot objects of model as face-down view of the outer solar system.
-    Construct a plot of solar orbits (based on OSSSSim ModelFile and Characterization and OSSOS
-    formatted detection lists) in a top-down view.
+    Face-down (polar RA × heliocentric distance) view of models, detections,
+    and survey footprints.
 
-    We have called this the 'Rose Plot' as the blocks drawn on the top-down view give a sort of 'rose petal' look.. it's a stretch.
-
+    Survey footprints are loaded via ``SurveyCharacterization`` (Fortran
+    ``survey_load`` / pointing geometry), not a custom ``pointings.list`` parser.
     """
 
-    def __init__(self, epoch: Time, outer_edge=85 * units.au, inner_edge=10 * units.au) -> None:
+    def __init__(self, epoch, outer_edge=85 * units.au, inner_edge=10 * units.au) -> None:
         """
-        Plot the TNO discoveries on a top-down Solar System showing the position of Neptune and model TNOs.
-
-        Discoveries are plotted at their time of discovery according to the positions in detection file, formatted like OSSOS.CDS file
-
-        Coordinates are polar RA, radial axis is in AU.
-
-        This is not a 'projection' of the particles into any common plane.
-
-        Each wedge is a different latitude above the plane, but inside each wedge it is heliocentric distance vs RA.
-        If someone asks we know this is NOT (for example) a projection of each object down into the ecliptic.
-
-        TODO: Make galactic wedge more realistic.
+        Args:
+            epoch: discovery / plot epoch as ``astropy.time.Time`` or Julian Date float.
         """
-        self.epoch = epoch
+        self.epoch = _as_time(epoch)
         self._longitude_neptune = None
         self.frame = 'heliocentrictrueecliptic'
         self.outer_edge = outer_edge.to('au').value
         self.inner_edge = inner_edge.to('au').value
         self.fig = plt.figure(figsize=(8, 8))
-        rect = [0.0725, 0.0725, 0.85, 0.85]  # the plot occupies not all the figure space
-        self.ax1 = self.fig.add_axes(rect, polar=True, frameon=False)  # theta (RA) is zero at E, increases anticlockwise
+        rect = [0.0725, 0.0725, 0.85, 0.85]
+        self.ax1 = self.fig.add_axes(rect, polar=True, frameon=False)
         self.ax1.set_aspect('equal')
 
         self.ax1.set_rlim(0, self.outer_edge)
-        rings = range(0, 100, 15)
-        ring_labels = ["", ""].extend([f"{x:3d} au" for x in rings])
-        self.ax1.set_rgrids(rings, ring_labels, angle=100, alpha=0.45)
+        rings = list(range(0, 100, 15))
+        ring_labels = [""] * 2 + [f"{x:3d} au" for x in rings[2:]]
+        # pad / trim so label count matches rings
+        if len(ring_labels) < len(rings):
+            ring_labels = ring_labels + [f"{x:3d} au" for x in rings[len(ring_labels):]]
+        ring_labels = ring_labels[:len(rings)]
+        self.ax1.set_rgrids(rings, ring_labels, angle=_RADIAL_LABEL_ANGLE, alpha=0.45)
         self.ax1.yaxis.set_major_locator(MultipleLocator(25))
-        self.ax1.xaxis.set_major_locator(MultipleLocator(numpy.deg2rad(15)))  # every 2 hours
+        for tick_label in self.ax1.yaxis.get_ticklabels():
+            tick_label.set_bbox(_RADIAL_LABEL_BBOX)
+        self.ax1.xaxis.set_major_locator(MultipleLocator(numpy.deg2rad(15)))
         self.ax1.grid(axis='x', color='k', linestyle='--', alpha=0.2)
         x_tick_labels = []
         lon = numpy.arange(0, 360, 30) * units.deg
         lat = numpy.zeros(len(lon)) * units.deg
         dist = numpy.ones(len(lon)) * 45 * units.au
-        coord = SkyCoord(lon, lat, distance=dist, obstime='2000-01-01', frame='heliocentrictrueecliptic').transform_to('icrs')
+        coord = SkyCoord(lon, lat, distance=dist, obstime='2000-01-01',
+                         frame='heliocentrictrueecliptic').transform_to('icrs')
 
         for label_values in coord.ra.hour:
             lv = int(numpy.round(label_values))
@@ -144,66 +202,65 @@ class RosePlot:
 
     @property
     def longitude_neptune(self):
-        """
-        Return the longitude of Neptune based on the current epoch
-        """
+        """Ecliptic longitude of Neptune at the plot epoch (via Horizons)."""
         if self._longitude_neptune is None:
-            neptune = jplhorizons.Horizons(899, epochs=self.epoch.jd, location='568')
-            self._longitude_neptune = neptune['EcLon']
+            planet = jplhorizons.Horizons(899, epochs=self.epoch.jd, location='568')
+            eph = planet.ephemerides()
+            self._longitude_neptune = eph['EclLon'][0]
         return self._longitude_neptune
 
-    def add_pointings(self, pointing_filename, color='b', alpha=0.1, label=False):
+    def add_pointings(
+        self,
+        survey_directory: Union[str, Path],
+        color: str = 'b',
+        high_latitude_color: str = 'y',
+        alpha: float = 0.1,
+        label: bool = False,
+        latitude_cut: float = 10.0,
+    ) -> int:
         """
-        Read in an OSSOS pointing file and add the blocks in that file to the RosePlot
+        Add approximate RA wedges for each pointing in a survey characterization.
+
+        Args:
+            survey_directory: path to a characterization directory (``pointings.list``
+                + ``.eff`` files), loaded via Fortran ``SurveyCharacterization``.
+            color: wedge face color near the ecliptic
+            high_latitude_color: color when |ecliptic lat| exceeds ``latitude_cut``
+            alpha: wedge transparency
+            label: annotate with short pointing id
+            latitude_cut: degrees; above this |b| use ``high_latitude_color``
+
+        Returns:
+            Number of wedges drawn.
         """
-        names = []
-        with open(pointing_filename, 'r') as file_obj:
-            while True:
-                line = file_obj.readline()
-                if len(line) == 0:
-                    break
-                if line.startswith('#'):
-                    continue
-                attributes = line.split()
-                if label:
-                    name = attributes[-1][0:2]
-                    if name in names:
-                        name = None
-                    names.append(name)
-                else:
+        survey = SurveyCharacterization.from_directory(str(survey_directory))
+        names: List[str] = []
+        n_drawn = 0
+        for pointing in survey:
+            pos = SkyCoord(
+                ra=pointing.ra * units.rad,
+                dec=pointing.dec * units.rad,
+                distance=44 * units.au,
+                obstime='2000-01-01',
+            ).transform_to(self.frame)
+            wedge_color = color
+            if not (-latitude_cut < pos.lat.degree < latitude_cut):
+                wedge_color = high_latitude_color
+            width = _wedge_width_from_area(pointing.area_deg2)
+            name = None
+            if label:
+                name = pointing.id[:8]
+                if name in names:
                     name = None
-                pos = SkyCoord(attributes[2],
-                               attributes[3],
-                               unit=('hour', 'deg', 'au'),
-                               obstime='2000-01-01',
-                               distance=44).transform_to(self.frame)
-                if not (-10 < pos.lat.degree < 10) :
-                    color='y'
-                if 'poly' in attributes[0]:
-                    n_vertices = int(attributes[1])
-                    min_ra = max_ra = None
-                    for idx in range(n_vertices):
-                        vertices = [float(x) for x in file_obj.readline().split()]
-                        if min_ra is None or min_ra > vertices[0]:
-                            min_ra = vertices[0]
-                        if max_ra is None or max_ra < vertices[0]:
-                            max_ra = vertices[0]
-                    width = (max_ra - min_ra) * units.deg
                 else:
-                    width = float(attributes[0]) * units.deg
-                self.add_block(pos.lon, width, color=color, alpha=alpha, label=name)
+                    names.append(name)
+            self.add_block(pos.lon, width, color=wedge_color, alpha=alpha, label=name)
+            n_drawn += 1
+        return n_drawn
 
     def add_block(self, ra_cen: Quantity, width: Quantity, color='b',
                   alpha=0.1, label=None) -> None:
-        """
-        Add a 'wedge' to the polar plot to show the location of a block.
-        Args:
-            ra_cen: the Right Ascension of the centre of the block
-            width: the full width of the block
-            color: face color to fill in the block
-            alpha: transparency of block
-            label: name of the block
-        """
+        """Add a polar wedge for one survey block."""
         self.ax1.bar(ra_cen.to('rad').value,
                      self.outer_edge,
                      linewidth=0.1,
@@ -218,10 +275,7 @@ class RosePlot:
                               size=25, color=ALMOST_BLACK)
 
     def add_galactic_plane(self, minimum_latitude=22 * units.deg):
-        """
-        Put a grey bar over the area that has the galactic plane contamination,
-        ie. the ecliptic plane contains galactic latitude < minimum_latitude
-        """
+        """Shade ecliptic longitudes where |b| < ``minimum_latitude``."""
         lon = numpy.arange(0, 360, 0.1)*units.deg
         lat = 0*lon
         coords = SkyCoord(lon,
@@ -247,11 +301,8 @@ class RosePlot:
                 self.ax1.annotate('galactic plane', (plane, self.outer_edge - 15), size=10, color='k', alpha=0.45)
                 end_arc = start_arc = None
 
-    # No optional on these just yet
     def add_planets(self):
-        """
-        Use Horizons to lookup the positions of the planets at epoch and then plot those locations.
-        """
+        """Plot major planets at the plot epoch via Horizons."""
         ids = {'Jupiter': 599, 'Saturn': 699, 'Uranus': 799,
                'Neptune': 899, 'Pluto': 999}
         fc = ALMOST_BLACK
@@ -273,13 +324,7 @@ class RosePlot:
                              alpha=alpha)
 
     def add_detections(self, detection_table):
-        """
-        Taking a OSSOS/CFEPS detection list in CDS format an plot real detections.
-
-        Args:
-            detection_table (Table): astropy table to add to face_down plot must have columns 'x' and 'y' in 'au'
-        """
-        # noinspection SpellCheckingInspection
+        """Plot CDS-style detections (RAdeg, DEdeg, dist)."""
         coords = SkyCoord(detection_table['RAdeg'],
                           detection_table['DEdeg'],
                           obstime='2000-01-01',
@@ -290,53 +335,51 @@ class RosePlot:
                          s=5,
                          c='c')
 
-    def add_scale_rings(self, radii: list = [10, 30, 50, 100]) -> None:
-        """
-        Add scale rings to the plot.
-
-        radii: the radii of rings to plot to provide scale to the plot.
-        """
-
+    def add_scale_rings(self, radii: Optional[List] = None) -> None:
+        """Add guide circles at the given heliocentric distances (au)."""
+        if radii is None:
+            radii = [10, 30, 50, 100]
         theta = numpy.arange(0, 2*numpy.pi, 2*numpy.pi/1000)
+        label_angle = numpy.deg2rad(_RADIAL_LABEL_ANGLE)
         for guide_circle in radii:
             r = numpy.ones(len(theta))*guide_circle
             self.ax1.plot(theta, r, ls=':')
-            self.ax1.annotate(f"{guide_circle} au", (0, guide_circle+1),
+            # Label on the ring itself (like the r-grid labels), boxed so it
+            # stays readable on top of dense model scatter.
+            self.ax1.annotate(f"{guide_circle} au", (label_angle, guide_circle),
                               color='b', horizontalalignment='center',
-                              verticalalignment='center_baseline')
+                              verticalalignment='center',
+                              bbox=_RADIAL_LABEL_BBOX)
 
     def add_model(self, model: ModelFile, mc: str = 'k', ms: float = 1.,
                   sample_size: int = None, alpha: float = 1.0) -> None:
         """
-        Make a face-down plot of the solar system for this model.
+        Scatter model objects on the face-down plot.
+
+        Uses ``x,y,z`` when present (detect / parametric outputs). For
+        element-only model files, fills those columns via Keplerian ``pos_cart``.
         """
-        coord = SkyCoord(model.table['x'], model.table['y'], model.table['z'], representation_type='cartesian',
+        table = model.table
+        n = len(table)
+        if sample_size is not None and sample_size < n:
+            rng = default_rng()
+            table = table[rng.integers(0, n, sample_size)]
+        table = _ensure_cartesian_table(table)
+
+        coord = SkyCoord(table['x'], table['y'], table['z'],
+                         representation_type='cartesian',
                          frame='heliocentrictrueecliptic', obstime='2000-01-01').transform_to(self.frame)
 
-        if sample_size is None:
-            choice = numpy.arange(len(coord))
-        else:
-            rng = default_rng()
-            choice = rng.integers(0, len(model.table), sample_size)
-
-        self.ax1.plot(coord.lon.to('rad').value[choice],
-                      coord.distance.to('au').value[choice],
+        self.ax1.plot(coord.lon.to('rad').value,
+                      coord.distance.to('au').value,
                       f'.{mc}',
                       markersize=ms,
                       alpha=alpha)
 
     @staticmethod
     def savefig(filename, **kwargs) -> None:
-        """
-        Save the figure to file
-
-        filename: name of file to save figure to
-        """
         plt.savefig(filename, **kwargs)
 
     @staticmethod
     def show() -> None:
-        """
-        Display the plot.
-        """
         plt.show()

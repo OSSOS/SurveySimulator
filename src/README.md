@@ -18,9 +18,10 @@ fixtures live under `../F95/tests/Surveys/` and `../F95/tests/Models/`.
 pip install .
 ```
 
-(from the repository root). Requires gfortran, make, and f90wrap. The build
-runs `make -C F95 MODULE=ossssimlib` and installs `_ossssimlib` plus the
-`ossssimlib` Python package alongside `ossssim`.
+(from the repository root). Requires gfortran and make. Pip’s isolated build
+pulls f90wrap, NumPy, meson, and ninja from `[build-system]` in
+`pyproject.toml`. The build runs `make -C F95 MODULE=ossssimlib` and installs
+`_ossssimlib` plus the `ossssimlib` Python package alongside `ossssim`.
 
 ### Contents
 

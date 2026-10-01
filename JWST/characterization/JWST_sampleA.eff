@@ -1,0 +1,20 @@
+# JWST Sample A single-epoch detection efficiency (Eduardo et al. 2026, Section IV.3.3)
+# F150W2 implant recovery mapped to r-band: m_r = m_F150W2 + 1.0 (Section VII.1)
+#
+rate_cut= 0.03 8.66 209.4 180.0
+#
+mag_error= 0.006 0.16 29.9 0.05 29.9 -0.04
+#
+phot_frac= 1.000 0.0 0.0
+#
+track_frac= 1.0 29.92 -0.61
+#
+filter= r
+#
+rates=  0.00 20.00
+#
+function= single
+#
+single_param=    0.96      29.92       0.61
+#
+mag_lim= 30.50

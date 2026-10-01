@@ -105,8 +105,9 @@ def face_down_plot(model_file: str, detect_file: str) -> None:
     Args:
         detect_file: name of file with the detected sources
     """
-    plot = plotter.RosePlot(definitions.Neptune['Longitude'])
-    plot.add_model(ModelFile(model_file), mc='k', ms=0.05, alpha=0.1)
+    model = ModelFile(model_file)
+    plot = plotter.RosePlot(model.epoch)
+    plot.add_model(model, mc='k', ms=0.05, alpha=0.1)
     plot.add_model(ModelFile(detect_file), ms=5, mc='g')
     # plot.show()
     plot.savefig('ring.png')

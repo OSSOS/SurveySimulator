@@ -121,6 +121,12 @@ class OSSSSim:
         """
         Pass the target elements to detos1 and determine if this target would be detected.
 
+        Changing ``self.characterization_directory`` between calls reloads that
+        survey (Detos1 compares the path to the last loaded directory) without
+        resetting the ran3 stream. That is required when a caller ANDs several
+        epochs. Do not construct a new OSSSSim per epoch: ``__init__`` calls
+        ``reset_simulator()`` and would reseed the RNG.
+
         Args:
             row (Row or dict): elements of the target to simulate
             colors (PhotSpec): colors of the target index by 'g-x' etc, see below.

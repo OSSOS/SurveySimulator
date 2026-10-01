@@ -1,6 +1,6 @@
 module surveysub
 
-  use debug
+  use debug, only: debug_set, dbg_print, dbg_enabled
   use common_data
   use parameters
   use datadec
@@ -20,7 +20,7 @@ contains
 
 
   subroutine Detos1 (o_m, jday, hx, color, gb, ph, period, amp, surnam, seed, &
-          debug_on, &
+          enable_debug, &
        flag, ra, dec, d_ra, d_dec, r, delta, m_int, m_rand, eff, isur, mt, &
        jdayp, ic, surna, h_rand, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -93,7 +93,7 @@ contains
 !f2py intent(in) amp
 !f2py intent(in) surnam
 !f2py intent(in) seed
-!f2py intent(in) debug_on
+!f2py intent(in) enable_debug
 !f2py intent(out) flag
 !f2py intent(out) ra
 !f2py intent(out) dec
@@ -118,7 +118,7 @@ contains
     integer, intent(inout) :: seed
     integer, intent(out) :: flag
     integer, intent(out) :: isur, ic, ierr
-    logical, intent(in) :: debug_on
+    logical, intent(in) :: enable_debug
 
     real (kind=8), intent(in) :: jday, hx, color(58), gb, ph, period, amp
     real (kind=8), intent(out) :: ra, dec, d_ra, d_dec, r, delta, m_int, &
@@ -153,14 +153,19 @@ contains
 
     flag = 0
     flag_l = 0
-    call debug_set(debug_on)
+    call debug_set(enable_debug)
 
-    if (first) then
+    ! Reload when the characterization directory changes. Do not touch
+    ! ran3 (iff): callers that AND several epochs must keep one RNG stream.
+    if (first .or. (trim(surnam) /= trim(last_surnam))) then
        first = .false.
+       last_surnam = surnam
 
 ! Opens and reads in survey definitions
        call GetSurvey (surnam, lun_s, n_sur, points, sur_mmag, ierr)
        if (ierr .ne. 0) then
+          first = .true.
+          last_surnam = ' '
           if (ierr .eq. 100) then
              write (screen, *) &
                   'GetSurvey: reached maximum number of pointings, ', n_sur
@@ -249,7 +254,7 @@ contains
                 jday_o = obspos(1)%jday
                 newpos = .true.
              end if
-             if (debug_lvl > 1) then
+             if (dbg_enabled(2)) then
                 write (log_msg, *) 'Survey: ', i_sur
                 call dbg_print(2, log_msg)
                 write (log_msg, *) 'Target x/y/z location, epoch of elements, epoch of observation'
@@ -287,7 +292,7 @@ contains
              end if
 
 ! Format angles for output
-             if (debug_lvl > 1) then 
+             if (dbg_enabled(2)) then 
                 incode = 1
                 outcod = 1
                 call Format (ra_l, incode, outcod, stra, ierr)
@@ -324,7 +329,7 @@ contains
 !
 ! Here we use polygons.
                 in_poly = point_in_polygon(p, poly)
-                if (debug_lvl>1) then
+                if (dbg_enabled(2)) then
                    write (log_msg, *) 'Check for FOV.'
                    call dbg_print(2, log_msg)
 
@@ -339,7 +344,7 @@ contains
 
 ! Check for chip gaps, ..., the filling factor.
                    random = ran3(seed)
-                   if (debug_lvl > 1 ) then
+                   if (dbg_enabled(2)) then
                       write (log_msg, *) &
                            'In FOV of survey. Check filling factor.'
                       call dbg_print(2, log_msg)
@@ -355,7 +360,7 @@ contains
                       call pos_cart (o_ml, pos2)
                       call DistSunEcl (obspos(2)%jday, pos2, r2)
                       call RADECeclXV (pos2, obspos(2)%pos, delta2, ra2, dec2)
-                      if (debug_lvl > 1) then
+                      if (dbg_enabled(2)) then
                          write (log_msg, *) 'Check for second position.'
                          call dbg_print(2, log_msg)
                          write (log_msg, *) o_ml%m
@@ -378,7 +383,7 @@ contains
                       rate_ok = (rate .ge. rc%min) .and. (rate .le. rc%max)
                       rate_ok = rate_ok .and. &
                            (dabs(rc%angle - angle) .le. rc%hwidth)
-                      if (debug_lvl > 1) then
+                      if (dbg_enabled(2)) then
                          write (log_msg, *) 'Check for rate.'
                          call dbg_print(2, log_msg)
                          write (log_msg, *) 'object rate, survey rate, min, max'
@@ -432,7 +437,7 @@ contains
                             random = ran3(seed)
                             track = min(track_max, &
                                  1.d0 + (m_rand_l - track_mag)*track_slope)
-                            if (debug_lvl > 1) then
+                            if (dbg_enabled(2)) then
                                write (log_msg, *) &
                                     'Checking for track if object was tracked: ', random, track
                                call dbg_print(2, log_msg)
@@ -507,6 +512,7 @@ contains
   subroutine reset_simulator()
           first = .true.
           iff = 0
+          last_surnam = ' '
           survey_loaded = .false.
           n_sur_loaded = 0
   end subroutine reset_simulator

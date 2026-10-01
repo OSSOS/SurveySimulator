@@ -229,7 +229,11 @@ def face_down_plot(model_file: str, detect_file: str,
     # noinspection PyArgumentEqualDefault
     drawn_model = ossssim.ModelFile(model_file)
     plot.add_model(drawn_model, mc='k', ms=1, alpha=0.5, sample_size=5000)
-    plot.add_pointings('OSSOSv11/ObsSummary/OSSOS/pointings.list')
+    # Prefer in-repo CFEPS fixture; fall back to legacy OSSOS path if present
+    survey_dir = 'Surveys/CFEPS'
+    if not os.path.isdir(survey_dir):
+        survey_dir = os.path.join('OSSOSv11', 'ObsSummary', 'OSSOS')
+    plot.add_pointings(survey_dir)
     if detection_table is not None:
         plot.add_detections(detection_table)
     plot.add_galactic_plane()

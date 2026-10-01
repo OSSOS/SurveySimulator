@@ -1,5 +1,14 @@
 [build-system]
-requires = ["setuptools>=68", "wheel", "f90wrap", "setuptools-scm>=8"]
+# Python>=3.12 / NumPy>=2: f2py-f90wrap compiles via meson+ninja (not distutils).
+requires = [
+    "setuptools>=68",
+    "wheel",
+    "numpy>=2",
+    "f90wrap",
+    "meson",
+    "ninja",
+    "setuptools-scm>=8",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -20,7 +29,9 @@ dependencies = [
     "pydantic",
     "scipy",
     "rebound",
-    "astroquery"
+    "astroquery",
+    # f90wrap-generated ossssimlib imports f90wrap.runtime at import time
+    "f90wrap",
 ]
 requires-python = ">=3.12"
 keywords = [
@@ -35,14 +46,22 @@ keywords = [
 homepage = "https://www.ossos-survey.org/simulator.html"
 
 # Extension is built by setup.py (make -C F95 MODULE=ossssimlib → _ossssimlib + ossssimlib/).
+# ossssimlib is the f90wrap-generated pure-python package (created by make into
+# F95/ossssimlib); _ossssimlib is the compiled f2py module it wraps.
 # Legacy name SurveySubsF95 / _SurveySubsF95.so is no longer used.
 [tool.setuptools]
-packages = ["ossssim"]
-package-dir = {"" = "src"}
+packages = ["ossssim", "ossssimlib"]
+package-dir = {"" = "src", "ossssimlib" = "F95/ossssimlib"}
 include-package-data = true
 ext-modules = [
-  {name = "ossssimlib", sources = []}
+  {name = "_ossssimlib", sources = []}
 ]
 
 [tool.setuptools_scm]
 version_file = "src/ossssim/__version__.py"
+fallback_version = "2.0.0"
+
+# Ignore legacy non-PEP440 tags such as SurveySim11 / FirstQuarterPaper.
+# Prefer dotted tags (v2.0.0, 2025.2, …).
+[tool.setuptools_scm.tag]
+strict = true
