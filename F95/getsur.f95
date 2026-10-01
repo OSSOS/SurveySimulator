@@ -1,10 +1,29 @@
 module getsur
 
+  use parameters
   use datadec
   use xvutils
   use poly_lib
   use effut
   use ioutils
+
+  integer, parameter :: max_jpl_eph = 32
+  integer, save :: n_jpl_eph = 0
+  integer, save :: jpl_eph_lun(max_jpl_eph)
+  character(len=1024), save :: jpl_eph_name(max_jpl_eph)
+
+  ! Not in the f90wrap module list. A character array here must not live in
+  ! surveysub: f90wrap emits f90wrap.runtime.direct_c_array for it, which
+  ! older CANFAR f90wrap.runtime does not provide.
+  integer, parameter :: max_survey_cache = 8
+  integer, save :: n_survey_cache = 0
+  character(len=1024), save :: survey_cache_name(max_survey_cache)
+  ! Shared across GetSurvey directories. Reset in close_jpl_ephemeris so a
+  ! leftover open on lun 13 cannot make epoch1 look empty while epoch2 loads.
+  logical, save :: pointing_file_open = .false.
+  integer, save :: survey_cache_n(max_survey_cache)
+  type(t_pointing), save :: survey_cache_points(n_sur_max, max_survey_cache)
+  real (kind=8), save :: survey_cache_mmag(n_sur_max, max_survey_cache)
 
 contains
 
@@ -364,8 +383,9 @@ contains
 ! Change rates to rad/day
        c%r_cut%min = c%r_cut%min*24.d0/3600.d0*drad
        c%r_cut%max = c%r_cut%max*24.d0/3600.d0*drad
-! Change angles to radian
+! Change angles to radian, wrap the cone centre into [-π, π] to match atan2
        c%r_cut%angle = c%r_cut%angle*drad
+       c%r_cut%angle = c%r_cut%angle - TwoPi*dnint(c%r_cut%angle/TwoPi)
        c%r_cut%hwidth = c%r_cut%hwidth*drad
        rcut = .true.
        in_rates = .false.
@@ -554,7 +574,9 @@ contains
     !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
     ! this routine checks to see if the observatory code actually references
     ! a file that should then container a JPL state vector CSV file
-    ! when a LUN is returned its assigned values starting at 501
+    ! when a LUN is returned its assigned values starting at 501.
+    ! The same path reuses the already-open LUN; Detos1 used to leak one
+    ! descriptor per epoch switch (~3 per draw) until open() failed.
     !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
     !
     ! JJ Kavelaars National Research Council of Canada
@@ -573,32 +595,53 @@ contains
     character(*), intent(IN) :: code_in, dirn
     integer, intent(OUT) :: code_out
   
-    character(len=300) :: fmt, fname
-    integer :: ierr, j
-    integer :: vector_file_lun
+    character(len=300) :: fmt
+    character(len=1024) :: fname
+    integer :: ierr, j, k
 
-    data vector_file_lun /500/
-    save vector_file_lun
-    
     j=len_trim(code_in)
     write(fmt, '(Ai0A)') "(I",j,")"
     read(code_in, fmt=fmt, iostat=ierr) code_out
     if ( ierr .ne. 0 ) then
        ! try and open 'code_in' as a file in dirn
-       write(fmt, '(AI0AI0A)') "(A",len_trim(dirn)+1,"A",len_trim(code_in),")"
-       write(fname, fmt=fmt) dirn//'/', code_in
-       vector_file_lun = vector_file_lun + 1
-       open(unit=vector_file_lun, file=fname, iostat=ierr, status='old')
+       fname = dirn(1:len_trim(dirn))//'/'//code_in(1:len_trim(code_in))
+       do k = 1, n_jpl_eph
+          if (fname(1:len_trim(fname)) == &
+               jpl_eph_name(k)(1:len_trim(jpl_eph_name(k)))) then
+             code_out = -jpl_eph_lun(k)
+             return
+          end if
+       end do
+       if (n_jpl_eph .ge. max_jpl_eph) then
+          write(0, *) "Too many JPL ephemeris files open: ", fname
+          code_out = 0
+          return
+       end if
+       n_jpl_eph = n_jpl_eph + 1
+       jpl_eph_lun(n_jpl_eph) = 500 + n_jpl_eph
+       jpl_eph_name(n_jpl_eph) = fname
+       open(unit=jpl_eph_lun(n_jpl_eph), file=fname, iostat=ierr, status='old')
        if ( ierr .ne. 0 ) then
           write(0, *) "Failed to open JPL Ephemeris at ",fname," error: ", ierr
+          n_jpl_eph = n_jpl_eph - 1
           code_out=0
        else
-          code_out=-vector_file_lun
+          code_out=-jpl_eph_lun(n_jpl_eph)
        end if
     end if
     return 
 
   end subroutine get_code
+
+  subroutine close_jpl_ephemeris()
+    integer :: k, ios
+    do k = 1, n_jpl_eph
+       close(unit=jpl_eph_lun(k), iostat=ios)
+    end do
+    n_jpl_eph = 0
+    n_survey_cache = 0
+    pointing_file_open = .false.
+  end subroutine close_jpl_ephemeris
 
   subroutine read_sur (dirn, lun_in, point, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -641,18 +684,16 @@ contains
     integer :: j, nw, lw(nw_max), lun_e, ierr_e, i1, i2, i3, i4
     character(100) :: line, fname
     character(80) :: word(nw_max)
-    logical, save :: opened, finished
-
-    data opened /.false./
+    logical, save :: finished
 
     call read_file_name (dirn, i1, i2, finished, len(dirn))
     ierr = 0
     lun_e = lun_in + 1
-    if (.not. opened) then
+    if (.not. pointing_file_open) then
        line(1:i2-i1+1) = dirn(i1:i2)
        line(i2-i1+2:) = '/pointings.list'
        open (unit=lun_in, file=line, status='old', err=1000)
-       opened = .true.
+       pointing_file_open = .true.
     end if
 1500 continue
     do j = 1, len(line)
@@ -802,7 +843,7 @@ contains
 3000 continue
     ierr = 30
     close (lun_in)
-    opened = .false.
+    pointing_file_open = .false.
     return
 
   end subroutine read_sur

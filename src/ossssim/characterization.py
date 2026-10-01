@@ -226,6 +226,18 @@ class SingleTanhParam(CharacterizationParameter):
         return float(self.A / 2.0 * (1.0 - np.tanh((mag - m0) / self.w)))
 
 
+def logistic_to_tanh(eta0: float, m50: float, sigma: float) -> tuple[float, float, float]:
+    """Map a logistic efficiency curve onto OSSOS ``single_param`` (A, M_0, w).
+
+    Napier et al. 2026 (PSJ 7, 117) fit
+    :math:`\\eta(m) = \\eta_0 / (1 + \\exp((m - m_{50}) / \\sigma))`.
+    OSSOS uses :math:`\\eta(m) = (A/2) (1 - \\tanh((m - M_0) / w))`.
+    These are identical when ``A = eta0``, ``M_0 = m50``, and ``w = 2 * sigma``,
+    because ``1 - tanh(x) = 2 / (1 + exp(2x))``.
+    """
+    return float(eta0), float(m50), float(2.0 * sigma)
+
+
 class DoubleTanhParam(CharacterizationParameter):
     """
     DoubleTanh class to define the parameters for the double tanh function

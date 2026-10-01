@@ -2,7 +2,7 @@
 import math
 import unittest
 
-from ossssim.characterization import SingleTanhParam
+from ossssim.characterization import SingleTanhParam, logistic_to_tanh
 
 
 class SingleTanhRateDependenceTest(unittest.TestCase):
@@ -59,6 +59,17 @@ class SingleTanhRateDependenceTest(unittest.TestCase):
         self.assertAlmostEqual(parsed.M_0, 24.0)
         self.assertAlmostEqual(parsed.w, 0.5)
         self.assertAlmostEqual(parsed.alpha_rate, 0.0)
+
+
+class LogisticToTanh(unittest.TestCase):
+    def test_napier_identity(self):
+        A, m0, w = logistic_to_tanh(1.0, 29.21, 0.11)
+        self.assertEqual((A, m0, w), (1.0, 29.21, 0.22))
+        mag = 29.21
+        logistic = 1.0 / (1.0 + math.exp((mag - 29.21) / 0.11))
+        tanh = A / 2.0 * (1.0 - math.tanh((mag - m0) / w))
+        self.assertAlmostEqual(logistic, 0.5)
+        self.assertAlmostEqual(tanh, logistic)
 
 
 if __name__ == "__main__":

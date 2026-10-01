@@ -127,7 +127,7 @@ contains
     character(10), intent(out) :: surna
 
     integer, parameter :: screen = 6, keybd = 5, &
-         lun_s = 13, lun_h = 6
+         lun_s = 97, lun_h = 6
     type(t_orb_m), save :: o_ml
     type(t_obspos), save :: obspos(2)
     type(t_v3d), save :: pos, pos2
@@ -144,8 +144,9 @@ contains
     integer, save :: i, filt_i, flag_l, n_sur, &
          incode, outcod, i_sur
     character(13), save :: stra, stdec
-    integer :: in_poly
+    integer :: in_poly, icache, k
     logical, save :: newpos, rate_ok
+    logical :: cache_hit
     data &
          eff_lim /0.4d0/
     CHARACTER(len=256) :: log_msg
@@ -153,30 +154,72 @@ contains
 
     flag = 0
     flag_l = 0
+    ierr = 0
+    isur = 0
+    ic = 0
+    ra = 0.d0
+    dec = 0.d0
+    d_ra = 0.d0
+    d_dec = 0.d0
+    r = 0.d0
+    delta = 0.d0
+    m_int = 0.d0
+    m_rand = 0.d0
+    eff = 0.d0
+    mt = 0.d0
+    jdayp = 0.d0
+    h_rand = 0.d0
+    surna = ' '
     call debug_set(enable_debug)
 
     ! Reload when the characterization directory changes. Do not touch
     ! ran3 (iff): callers that AND several epochs must keep one RNG stream.
-    if (first .or. (trim(surnam) /= trim(last_surnam))) then
+    ! Cache loaded surveys so switching epoch1/2/3 does not reopen JWST.csv.
+    if (first .or. (surnam(1:len_trim(surnam)) /= &
+         last_surnam(1:len_trim(last_surnam)))) then
        first = .false.
        last_surnam = surnam
 
-! Opens and reads in survey definitions
-       call GetSurvey (surnam, lun_s, n_sur, points, sur_mmag, ierr)
-       if (ierr .ne. 0) then
-          first = .true.
-          last_surnam = ' '
-          if (ierr .eq. 100) then
-             write (screen, *) &
-                  'GetSurvey: reached maximum number of pointings, ', n_sur
-          else if (ierr .eq. 10) then
-             write (screen, *) 'Unable to open survey file in ', surnam
-          else if (ierr .eq. 30) then
-             goto 100
-          else
-             write (screen, *) 'Unknown return code in read_sur.', ierr
+       cache_hit = .false.
+       icache = 0
+       do k = 1, n_survey_cache
+          if (surnam(1:len_trim(surnam)) == &
+               survey_cache_name(k)(1:len_trim(survey_cache_name(k)))) then
+             cache_hit = .true.
+             icache = k
+             exit
           end if
-          return
+       end do
+       if (cache_hit) then
+          n_sur = survey_cache_n(icache)
+          points(1:n_sur) = survey_cache_points(1:n_sur, icache)
+          sur_mmag(1:n_sur) = survey_cache_mmag(1:n_sur, icache)
+          ierr = 0
+       else
+          call GetSurvey (surnam, lun_s, n_sur, points, sur_mmag, ierr)
+          if (ierr .ne. 0) then
+             first = .true.
+             last_surnam = ' '
+             if (ierr .eq. 100) then
+                write (screen, *) &
+                     'GetSurvey: reached maximum number of pointings, ', n_sur
+             else if (ierr .eq. 10) then
+                write (screen, *) 'Unable to open survey file in ', surnam
+             else if (ierr .eq. 30) then
+                goto 100
+             else
+                write (screen, *) 'Unknown return code in read_sur.', ierr
+             end if
+             return
+          end if
+          if (n_survey_cache .lt. max_survey_cache) then
+             n_survey_cache = n_survey_cache + 1
+             icache = n_survey_cache
+             survey_cache_name(icache) = surnam
+             survey_cache_n(icache) = n_sur
+             survey_cache_points(1:n_sur, icache) = points(1:n_sur)
+             survey_cache_mmag(1:n_sur, icache) = sur_mmag(1:n_sur)
+          end if
        end if
 100    continue
 ! Determine overall faintest 'x' magnitude for all surveys
@@ -196,6 +239,10 @@ contains
        end do
        write(log_msg, *) 'Faintest magnitude =',mag_faint
        call dbg_print(2, log_msg)
+       if (n_sur .le. 0) then
+          write (0, *) 'Detos1: no pointings loaded from ', &
+               surnam(1:len_trim(surnam))
+       end if
     end if
 
 ! Compute approximate maximum apparent 'x' magnitude
@@ -276,6 +323,14 @@ contains
              call RADECeclXV (pos, obspos(1)%pos, delta_l, ra_l, dec_l)
              p(1) = ra_l
              p(2) = dec_l
+             ! Keep the last computed sky position even if this pointing
+             ! later fails FoV/rate/efficiency. Otherwise flag=0 returns
+             ! uninitialized RA/Dec and hides whether Detos1 agreed on-sky.
+             ra = ra_l
+             dec = dec_l
+             r = r_l
+             delta = delta_l
+             jdayp = obspos(1)%jday
 ! Get mag in actual survey filter.
              h = hx + color(filt_i)
              if ((amp .gt. 0.d0) .and. (period .gt. 0.d0)) then
@@ -377,12 +432,22 @@ contains
                            (obspos(2)%jday - obspos(1)%jday)*dcos(dec_l)
                       d_dec_l = (dec2 - dec_l)/(obspos(2)%jday - obspos(1)%jday)
                       rate = dsqrt(d_ra_l**2 + d_dec_l**2)
-                      angle = atan2(d_dec_l/rate, d_ra_l/rate)
+                      d_ra = d_ra_l
+                      d_dec = d_dec_l
+                      if (rate .gt. 0.d0) then
+                         angle = atan2(d_dec_l/rate, d_ra_l/rate)
+                      else
+                         angle = 0.d0
+                      end if
                       if (angle .lt. -Pi) angle = angle + TwoPi
                       if (angle .gt. Pi) angle = angle - TwoPi
                       rate_ok = (rate .ge. rc%min) .and. (rate .le. rc%max)
-                      rate_ok = rate_ok .and. &
-                           (dabs(rc%angle - angle) .le. rc%hwidth)
+                      ! atan2 is in [-π, π]; rate_cut angle may be in [0, 360).
+                      ! Unwrapped |209.4° − (−168.7°)| = 378° rejects a 180°
+                      ! "all directions" cone on the pre-turnaround side.
+                      tmp = rc%angle - angle
+                      tmp = tmp - TwoPi*dnint(tmp/TwoPi)
+                      rate_ok = rate_ok .and. (dabs(tmp) .le. rc%hwidth)
                       if (dbg_enabled(2)) then
                          write (log_msg, *) 'Check for rate.'
                          call dbg_print(2, log_msg)
@@ -392,10 +457,10 @@ contains
                               rc%min/drad*3600.d0/24.d0, &
                               rc%max/drad*3600.d0/24.d0
                          call dbg_print(2, log_msg)
-                         write (log_msg, *) 'object angle, survey angle, centre, width'
+                         write (log_msg, *) 'object angle, survey angle, centre, width, wrapped Δ'
                          call dbg_print(2, log_msg)
                          write (log_msg, *) angle/drad, rc%angle/drad, &
-                              rc%hwidth/drad
+                              rc%hwidth/drad, tmp/drad
                         call dbg_print(2, log_msg)
                          write (log_msg, *) 'object x/y/z position'
                          call dbg_print(2, log_msg)
@@ -515,6 +580,7 @@ contains
           last_surnam = ' '
           survey_loaded = .false.
           n_sur_loaded = 0
+          call close_jpl_ephemeris()
   end subroutine reset_simulator
 
   subroutine survey_load(survey, lun_s, n_sur, ierr)

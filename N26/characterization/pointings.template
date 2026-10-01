@@ -1,0 +1,4 @@
+# N26 Napier et al. 2026 (PSJ 7, 117) heliostack of Bernstein 2004 GO-9433
+# 400" × 600" ACS mosaic (~0.02 deg²); 15-day stack midpoint, not 3-epoch AND.
+# Generated into pointings.list at run time; do not commit that file.
+{width:.5f} {height:.5f} {ra:.5f} {dec:.6f} {jd:.5f} {fill:.5f} {observer_csv} {eff_file}

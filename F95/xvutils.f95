@@ -209,9 +209,11 @@ contains
           write(0,*) "Failed while reading JPL Ephem for time ",t," using LUN: ",-1*code
           return 
        end if
-       ! if we are working in JPL coords then we don't need to rotate to Ecliptic 
-       r = dsqrt((pos%x + pos_b%x)**2 + (pos%y + pos_b%y)**2 &
-           + (pos%z + pos_b%z)**2)
+       ! JPL states are returned in ICRF (ecliptic Horizons dumps are rotated
+       ! in read_jpl_csv). pos_b from BaryXV is ecliptic; rotate it to match.
+       call equat_ecl (-1, pos_b, pos_b_rot, ierr)
+       r = dsqrt((pos%x + pos_b_rot%x)**2 + (pos%y + pos_b_rot%y)**2 &
+           + (pos%z + pos_b_rot%z)**2)
        return 
     else
 ! use observatory code value to determine location.       

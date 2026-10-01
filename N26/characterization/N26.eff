@@ -1,0 +1,51 @@
+# N26 single-stack detection efficiency.
+# Napier et al. 2026, Planet. Sci. J. 7, 117 (arXiv:2604.16731)
+# heliostack reanalysis of Bernstein et al. 2004 (AJ 128, 1364), HST GO-9433
+# ACS WFC F606W. Four objects (2003 BF91, BH91, ABCD, WXYZ). FV53/BG91
+# were visible in single exposures and were not part of this search.
+#
+# Photometry: catalog STMAG_F606W. OSSSSim runs in r_AB with
+#   r_AB = STMAG_F606W - 0.3
+# so every magnitude in this file is in r_AB, 0.3 mag brighter than Napier's
+# STMAG values. (Napier vs Bernstein zeropoint offset on the two objects in
+# both catalogs is ~0.2 mag; the ST→AB conversion adopted here is −0.3.)
+#
+# rate_cut= r_min r_max angle half_width
+#   Same isotropic cone as examples/Surveys/HST/HST.eff (0.05–6.4 "/hr).
+#   Angle 0, half-width 180: Detos1 atan2 is in [−180, 180]; a non-wrapped
+#   centre equal to the field RA rejects pre-turnaround PAs (see JWST .eff).
+#   Napier searches barycentric CCKBO trajectories and corrects HST parallax
+#   in the stack; this cut is the on-sky rate at the 15-day midpoint, not
+#   the LEO parallax loops.
+#
+rate_cut= 0.05 6.4 0.0 180.0
+#
+# mag_error: OSSOS photometric-scatter template, numbers shifted to ~29 mag.
+# One stacked magnitude (heliostack of the full 15-day sequence).
+#
+mag_error= 0.006 0.16 28.9 0.05 28.9 -0.04
+#
+phot_frac= 1.000 0.0 0.0
+#
+# Characterized sample is the stack itself, so tracking fraction is 1.
+#
+track_frac= 1.0 28.91 -0.22
+#
+filter= r
+#
+rates=  0.00 20.00
+#
+function= single
+#
+# Napier Eq. 20 logistic η = η0 / (1 + exp((m − m50)/σ))
+#   η0 = 1.0, m50 = 29.21 ± 0.03 STMAG, σ = 0.11 ± 0.02
+# OSSOS single_param is A/2 (1 − tanh((m − M0)/w)), identical when
+#   A = η0, M0 = m50, w = 2σ  (because 1 − tanh(x) = 2/(1+exp(2x))).
+# Mapped to r_AB: M0 = 29.21 − 0.3 = 28.91, w = 0.22.
+#
+single_param=    1.00      28.91       0.22
+#
+# Implant faint limit 29.7 STMAG (Napier §III.1) → 29.4 r_AB; keep a little
+# headroom so mag_lim is not the efficiency knee.
+#
+mag_lim= 29.50

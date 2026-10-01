@@ -1,3 +1,0 @@
-# JWST Sample A epoch 2
-# Mosaic side = sqrt(0.05 deg²); fill=1 (not 1.6° implant box with ff=mosaic/implant)
-0.22361 0.22361 209.3875 -10.865278 2459974.5 1.00000 JWST.csv JWST_sampleA.eff

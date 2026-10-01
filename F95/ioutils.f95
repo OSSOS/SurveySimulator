@@ -324,6 +324,12 @@ contains
     subroutine read_jpl_csv(iunit, jd, pos, vel, ierr)
       ! lookup line in ephemeris file (pointed to by iunit) with data close to jd and then use velocity
       ! to adjust the pos values to that requested.
+      ! Rewind every call so switching LUNs / reopening files cannot reuse
+      ! another file's saved header offset.
+      !
+      ! RADECeclXV subtracts the observatory as ICRF. Horizons dumps may be
+      ! ICRF (HST.csv) or Ecliptic of J2000 (JWST.csv). Convert ecliptic
+      ! states to ICRF here so both work.
       
       implicit none
       
@@ -334,35 +340,31 @@ contains
       
       character(len = 512) :: line
       character(len = 30) :: date
-      real(kind=8) ejd
-      integer(kind=8) :: header_offset, offset
+      real(kind=8) ejd, coseps, sineps, ye, ze
       integer :: iend, ferr
-      logical :: read_header
-      
-      
-      ! only read the header the first time we are called
-      data read_header /.true./
-      data header_offset /0/
-      save read_header, header_offset
-      
+      logical :: ecliptic_frame
+      ! Same obliquity as rot.f95 equat_ecl (84381.41 arcsec)
+      real(kind=8), parameter :: epsilon_arcsec = 84381.41d0, &
+           secrad = Pi/180.d0/3600.d0
       
       ierr = 0
-      if (read_header) then
-         do
-            read(iunit, '(A512)', end=999) line
-            iend = len_trim(line)
-            if ( line == '$$SOE' ) then
-               read_header = .false.
-               header_offset = FTELL(iunit)
-               exit
-            end if
-         end do
+      ecliptic_frame = .false.
+      rewind(unit=iunit, iostat=ferr)
+      if (ferr .ne. 0) then
+         ierr = 10
+         return
       end if
+      do
+         read(iunit, '(A512)', end=999) line
+         if (index(line, 'Reference frame') > 0) then
+            ecliptic_frame = (index(line, 'Ecliptic') > 0) .or. &
+                 (index(line, 'ecliptic') > 0)
+         end if
+         if ( line == '$$SOE' ) then
+            exit
+         end if
+      end do
       
-      ! Loop through the ephemeris lines to get to the desired JD
-      ! starting from line after the header
-      offset = header_offset - FTELL(iunit) 
-      CALL FSEEK(iunit, offset, 1, ferr)
       do
          read(iunit, '(A512)', end=999) line
          iend = len_trim(line)
@@ -376,11 +378,24 @@ contains
             pos%x = pos%x + vel%x*(jd-ejd)
             pos%y = pos%y + vel%y*(jd-ejd)
             pos%z = pos%z + vel%z*(jd-ejd)
+            if (ecliptic_frame) then
+               coseps = dcos(epsilon_arcsec*secrad)
+               sineps = dsin(epsilon_arcsec*secrad)
+               ye = pos%y
+               ze = pos%z
+               pos%y = coseps*ye - sineps*ze
+               pos%z = sineps*ye + coseps*ze
+               ye = vel%y
+               ze = vel%z
+               vel%y = coseps*ye - sineps*ze
+               vel%z = sineps*ye + coseps*ze
+            end if
             return
          end if
       end do
-998   ierr = 10
-999   return
+998   continue
+999   ierr = 10
+      return
     end subroutine read_jpl_csv
 
 
