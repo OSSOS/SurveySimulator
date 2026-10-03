@@ -13,10 +13,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Build and Push the SSIM Docker image
-      run:  |
-        docker build --target deploy --build-arg VERSION=python -t ssim:python -f Dockerfile .
-        docker login --username ${{ secrets.IMAGES_CANFAR_LOGIN}} --password ${{ IMAGES_CANFAR_TOKEN}}
-        docker push ssim:python
-    -
+    - uses: actions/checkout@v4
+      with:
+        # Full history + tags so setuptools_scm can derive the image version.
+        fetch-depth: 0
+
+    - name: Install setuptools-scm (for the image tag)
+      run: python -m pip install --upgrade setuptools-scm
+
+    - name: Log in to CANFAR Harbor
+      if: github.event_name == 'push'
+      uses: docker/login-action@v3
+      with:
+        registry: images.canfar.net
+        username: ${{ secrets.IMAGES_CANFAR_LOGIN }}
+        password: ${{ secrets.IMAGES_CANFAR_TOKEN }}
+
+    - name: Build the unified SSim image
+      run: make build
+
+    - name: Push to CANFAR
+      if: github.event_name == 'push'
+      run: make push

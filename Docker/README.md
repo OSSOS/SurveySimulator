@@ -1,37 +1,56 @@
 # Building the SurveySimulator image
 
-To run the SSim on CANFAR we need to make a `docker` container.  There are `dev` and `deploy` targets in the Makefile. 
+A single Docker image serves every runtime:
 
+- **CANFAR / skaha** — the same image runs as a **notebook** (JupyterLab), a
+  **desktop-app** (`xterm` with `SSim`/`Driver` on `PATH`), and a **headless**
+  batch session.
+- **Cursor cloud** — [`.cursor/environment.json`](../.cursor/environment.json)
+  builds this image and does an editable install of the `/workspace` checkout.
+- **Local development** — [`.devcontainer/devcontainer.json`](../.devcontainer/devcontainer.json)
+  builds the same image on a laptop (Dev Containers).
 
-## Testing/Development build and run
-To build a development version of the container that you will run locally to ensure everything is working.  
-You can also use this conatiner to run SSim analysis locally.
+The image is built by extending CANFAR's `astroml` base
+(`images.canfar.net/skaha/astroml`), which already provides conda Python 3.12,
+JupyterLab, `xterm`, the CADC client tools, and the SSS user mapping skaha
+relies on. The [`Dockerfile`](../Dockerfile) adds the Fortran toolchain, bakes
+the Survey Simulator, and sets an explicit `tini` + [`etc/startup.sh`](../etc/startup.sh)
+entrypoint (skaha overrides the container `CMD` per session type).
+
+## Build
+
+```
+make build
+```
+
+Override the base image snapshot with `make build ASTROML_TAG=26.04` (defaults
+to a pinned monthly tag).
+
+## Run locally
+
+Run the image as a desktop-app `xterm` (the simulator binary is on `PATH` as `SSim`):
+
 ```
 make dev
-docker run --user testuser --interactive --tty --ip 0.0.0.0 --rm --env DISPLAY=host.docker.internal:0 images.canfar.net/uvickbos/ssim:python xterm -fg white -bg black -title ssim:python
+docker run --rm -it images.canfar.net/uvickbos/ssim:<version> xterm
 ```
-This will launch an xterm running as testuser with access to the Survey Simulator.
 
-### Note on macOS and X11  
-To use the above testuser on OS-X requires having X11 running. On OS-X do the following:
-- Install XQuartz (likely you already have)
-- start and `xterm`
-- set XQuartz->Preferences->Security : Allow conections from network clients.
-- type `xhost +` in your xterm window to allow open connections to X11
+Or start a shell to run the Fortran `Driver` / Python `ossssim` directly:
+
+```
+docker run --rm -it images.canfar.net/uvickbos/ssim:<version> bash
+```
 
 ## Production
 
-This is the version we will load to `images.canfar.net`.  The `make` command builds the production versionof the container and pushes to `CANFAR` 
-You may need to do a `docker login` before running this build step, see https://github.com/opencadc/skaha/tree/master/skaha-containers#publishing
-
-To make a release to `canfar.net` run in deploy mode.
+Build and push to `images.canfar.net`. Run `docker login images.canfar.net`
+first (see https://github.com/opencadc/science-containers for Harbor access).
 
 ```
-make deploy 
+make deploy
 ```
 
-### Tag on images.canfar.net ###
-Once you have loaded the images log into `images.canfar.net` and tagged them as `desktop-app` images.
+### Tag on images.canfar.net
 
-
-
+Once loaded, log into `images.canfar.net` and tag the image with the session
+types it supports (`notebook`, `desktop-app`, and `headless`).

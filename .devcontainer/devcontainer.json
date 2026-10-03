@@ -1,0 +1,13 @@
+{
+  "name": "OSS Survey Simulator",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "ubuntu",
+  "runArgs": ["--platform=linux/amd64"],
+  "remoteEnv": {
+    "PATH": "/opt/conda/bin:${containerEnv:PATH}"
+  },
+  "postCreateCommand": "sudo /opt/conda/bin/python -m pip install -e . && sudo /opt/conda/bin/python -m pip install pytest"
+}

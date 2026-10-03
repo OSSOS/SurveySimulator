@@ -600,7 +600,7 @@ contains
     integer :: ierr, j, k
 
     j=len_trim(code_in)
-    write(fmt, '(Ai0A)') "(I",j,")"
+    write(fmt, '(A,I0,A)') "(I",j,")"
     read(code_in, fmt=fmt, iostat=ierr) code_out
     if ( ierr .ne. 0 ) then
        ! try and open 'code_in' as a file in dirn
