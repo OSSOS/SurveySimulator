@@ -15,15 +15,22 @@ src/ossssim/         Python package (src-layout)
 tests/               Python unit tests for the simulator
 docs/                Characterization format docs and mini examples
 examples/            Python scripts and notebooks
-N26/                 Napier 2026 / Bernstein 2004 project that *uses* SSim
 SurveySimulator-Data Sibling directory: full Characterizations/ and Models/
                      (distributed separately; DOI / web download)
 ```
 
-The JWST / Roman follow-up project (Sample A characterization, GBTDS
-sampling catalog) is a **separate repository**, not shipped with ossssim.
-Clone [jwst-tno-followup](https://github.com/ijiraq/jwst-tno-followup) next
-to this tree, or set `SSIM_ROOT` when running those scripts.
+Grid-based survey debiasing and the survey-specific follow-up projects live in
+**separate repositories**, not shipped with ossssim:
+
+- [survey_debias](https://github.com/ijiraq/survey_debias) — shared grid-cell
+  debiasing helpers and runner (imports `ossssim`).
+- [jwst-tno-followup](https://github.com/ijiraq/jwst-tno-followup) — JWST / Roman
+  Sample A characterization and the GBTDS sampling catalog.
+- [hst-tno-followup](https://github.com/ijiraq/hst-tno-followup) — N26 (Napier
+  et al. 2026) and Bernstein 2004/2006 HST survey characterization.
+
+Clone the ones you need next to this tree, or set `SSIM_ROOT` when running
+those scripts.
 
 Language-specific guides:
 
