@@ -6,5 +6,8 @@
   },
   "remoteUser": "ubuntu",
   "runArgs": ["--platform=linux/amd64"],
-  "postCreateCommand": "sudo env \"PATH=$PATH\" python -m pip install -e . && sudo env \"PATH=$PATH\" python -m pip install pytest"
+  "remoteEnv": {
+    "PATH": "/opt/conda/bin:${containerEnv:PATH}"
+  },
+  "postCreateCommand": "sudo /opt/conda/bin/python -m pip install -e . && sudo /opt/conda/bin/python -m pip install pytest"
 }

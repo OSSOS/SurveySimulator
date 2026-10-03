@@ -5,5 +5,5 @@
     "context": ".."
   },
   "user": "ubuntu",
-  "install": "sudo env \"PATH=$PATH\" python -m pip install -e .\nsudo env \"PATH=$PATH\" python -m pip install pytest"
+  "install": "sudo /opt/conda/bin/python -m pip install -e .\nsudo /opt/conda/bin/python -m pip install pytest"
 }

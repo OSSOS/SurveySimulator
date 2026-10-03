@@ -19,7 +19,11 @@ USER root
 
 # conda is the runtime Python for every session type; put it first on PATH for all
 # users and non-login shells (skaha, the ubuntu dev user, and the Cursor agent).
+# astroml does not auto-activate the base env, so also prepend it for login and
+# interactive shells (ENV alone does not cover `bash -l` / `bash -i`).
 ENV PATH=/opt/conda/bin:${PATH}
+RUN printf '%s\n' 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/zzz-conda-path.sh \
+ && printf '%s\n' 'export PATH=/opt/conda/bin:$PATH' >> /etc/bash.bashrc
 
 # Fortran toolchain for the F95 detection engine, plus tini for signal/zombie handling.
 # astroml may already provide some of these; apt is idempotent and only adds what is missing.
