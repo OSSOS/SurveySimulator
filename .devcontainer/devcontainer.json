@@ -1,0 +1,10 @@
+{
+  "name": "OSS Survey Simulator",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "ubuntu",
+  "runArgs": ["--platform=linux/amd64"],
+  "postCreateCommand": "sudo env \"PATH=$PATH\" python -m pip install -e . && sudo env \"PATH=$PATH\" python -m pip install pytest"
+}
