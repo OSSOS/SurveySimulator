@@ -6,7 +6,8 @@ epoch to the requested date with the same two-body mean motion Detos1 uses
 (n = 360° / (a^{3/2} yr)), then sky coordinates are computed with the Fortran
 ``pos_cart`` + ``RADECeclXV`` geometry (ecliptic object, ICRF observer).
 
-Default pointing is the Roman GBTDS field given for the JWST follow-up
+This lives in ``JWST/``, a follow-up *project that uses SSim*, not in the
+simulator library.  Default pointing is the Roman GBTDS field for the JWST
 proposal: 13:52:25.52 −11:01:25.3, epoch 2027-05-01, 10° radius.
 """
 from __future__ import annotations
@@ -23,6 +24,19 @@ from astropy.time import Time
 
 # rot.f95 equat_ecl J2000 obliquity
 F95_OBLIQUITY_ARCSEC = 84381.41
+# parameters.f95 gmb: Sun + planets, used by Detos1 as n ∝ sqrt(gmb)
+GMB = (
+    1.0
+    + 1.0 / 6023600.0
+    + 1.0 / 408523.71
+    + 1.0 / 328900.56
+    + 1.0 / 3098708.0
+    + 1.0 / 1047.3486
+    + 1.0 / 3497.898
+    + 1.0 / 22902.98
+    + 1.0 / 19412.24
+    + 1.0 / 1.35e8
+)
 TWO_PI = 2.0 * math.pi
 DEG2RAD = math.pi / 180.0
 
@@ -41,8 +55,8 @@ def gbtds_center() -> SkyCoord:
 
 
 def mean_motion_deg_per_day(a_au: np.ndarray) -> np.ndarray:
-    """n = 360° / P, P = a^{3/2} yr in days. Matches Detos1 with gmb ≈ 1."""
-    return 360.0 / (np.asarray(a_au, dtype=float) ** 1.5 * 365.25)
+    """n = sqrt(gmb) * 360° / P, P = a^{3/2} yr in days. Matches Detos1."""
+    return math.sqrt(GMB) * 360.0 / (np.asarray(a_au, dtype=float) ** 1.5 * 365.25)
 
 
 def compute_E(e: np.ndarray, M: np.ndarray) -> np.ndarray:
@@ -130,11 +144,14 @@ def sky_separation_deg(ra1: np.ndarray, dec1: np.ndarray,
     return c1.separation(c2).to(u.deg).value
 
 
+def barycentric_icrf_au(body: str, epoch: Time) -> np.ndarray:
+    """Barycentric ICRF AU, matching Detos1 ObsPos / RADECeclXV."""
+    return get_body_barycentric(body, epoch).xyz.to(u.au).value
+
+
 def observer_icrf_au(epoch: Time) -> np.ndarray:
-    """Geocenter, heliocentric ICRF AU (Sun at origin, matching Keplerian pos_cart)."""
-    earth = get_body_barycentric("earth", epoch)
-    sun = get_body_barycentric("sun", epoch)
-    return (earth - sun).xyz.to(u.au).value
+    """Geocenter, barycentric ICRF AU."""
+    return barycentric_icrf_au("earth", epoch)
 
 
 def parse_model_epoch_jd(path: Path) -> float:
@@ -188,8 +205,19 @@ def load_ssim_model(path: Path) -> dict:
     }
 
 
-def positions_at_epoch(model: dict, obs_jd: float, obs_icrf: np.ndarray) -> dict:
-    """Advance M and return apparent RA/Dec plus heliocentric r at obs_jd."""
+def positions_at_epoch(model: dict, obs_jd: float,
+                       obs_icrf: np.ndarray | None = None,
+                       sun_icrf: np.ndarray | None = None) -> dict:
+    """Advance M and return apparent RA/Dec plus heliocentric r at obs_jd.
+
+    Object ``pos_cart`` is barycentric ecliptic (SSim). Observer and Sun are
+    barycentric ICRF. ``helio_dist`` is |R_obj − R_sun|.
+    """
+    epoch = Time(obs_jd, format="jd")
+    if obs_icrf is None:
+        obs_icrf = observer_icrf_au(epoch)
+    if sun_icrf is None:
+        sun_icrf = barycentric_icrf_au("sun", epoch)
     dt_day = obs_jd - model["epoch_jd"]
     m_obs = model["M"] + mean_motion_deg_per_day(model["a"]) * dt_day
     x, y, z = pos_cart(
@@ -200,7 +228,8 @@ def positions_at_epoch(model: dict, obs_jd: float, obs_icrf: np.ndarray) -> dict
         model["peri"] * DEG2RAD,
         m_obs * DEG2RAD,
     )
-    r = helio_dist_au(x, y, z)
+    ox, oy, oz = ecliptic_to_icrf(x, y, z)
+    r = helio_dist_au(ox - sun_icrf[0], oy - sun_icrf[1], oz - sun_icrf[2])
     ra, dec, delta = apparent_radec_deg(x, y, z, obs_icrf)
     out = dict(model)
     out.update({
@@ -285,8 +314,8 @@ def field_table(selected: dict) -> Table:
         "model_file": _repo_relative(selected["filename"]),
         "n_model": selected["n_model"],
         "n_in_field": selected["n_in_field"],
-        "observer": "geocenter heliocentric ICRF",
-        "geometry": "SSim pos_cart + RADECeclXV; no Detos1 / detectability",
+        "observer": "geocenter barycentric ICRF",
+        "geometry": "SSim pos_cart + RADECeclXV; sqrt(gmb) mean motion; no Detos1",
     }
     return table
 
@@ -378,10 +407,13 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 
 def _parse_skycoord(ra_str: str, dec_str: str) -> SkyCoord:
-    try:
+    """Sexagesimal RA is hour angle; a bare number is degrees."""
+    if ":" in ra_str or ":" in dec_str:
         return SkyCoord(ra_str, dec_str, unit=(u.hourangle, u.deg), frame="icrs")
-    except Exception:
+    try:
         return SkyCoord(float(ra_str) * u.deg, float(dec_str) * u.deg, frame="icrs")
+    except ValueError:
+        return SkyCoord(ra_str, dec_str, unit=(u.hourangle, u.deg), frame="icrs")
 
 
 def _parse_epoch(value: str) -> Time:

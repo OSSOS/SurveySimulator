@@ -1,4 +1,4 @@
-"""Geometry tests for JWST/scripts/gbtds_field_positions.py (no Fortran)."""
+"""Project tests for JWST/scripts/gbtds_field_positions.py (no Fortran)."""
 from __future__ import annotations
 
 import math
@@ -11,7 +11,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "JWST" / "scripts"))
 import gbtds_field_positions as gfp  # noqa: E402
 
@@ -20,7 +20,6 @@ TEST_MODEL = ROOT / "tests" / "data" / "test_model.dat"
 
 class PosCartTest(unittest.TestCase):
     def test_perihelion_on_x_axis(self):
-        # i=0, Ω=0, ω=0, M=0 → perihelion at (a(1-e), 0, 0)
         x, y, z = gfp.pos_cart(
             np.array([10.0]), np.array([0.2]), np.array([0.0]),
             np.array([0.0]), np.array([0.0]), np.array([0.0]),
@@ -29,15 +28,21 @@ class PosCartTest(unittest.TestCase):
         self.assertAlmostEqual(float(y[0]), 0.0, places=10)
         self.assertAlmostEqual(float(z[0]), 0.0, places=10)
 
-    def test_mean_motion_matches_kepler(self):
+    def test_mean_motion_includes_gmb(self):
         n = gfp.mean_motion_deg_per_day(np.array([39.4]))
         period_day = 39.4 ** 1.5 * 365.25
-        self.assertAlmostEqual(float(n[0]) * period_day, 360.0, places=8)
+        self.assertAlmostEqual(float(n[0]) * period_day, 360.0 * math.sqrt(gfp.GMB),
+                               places=8)
 
 
 class FieldSelectTest(unittest.TestCase):
     def test_gbtds_center_parses(self):
         c = gfp.gbtds_center()
+        self.assertAlmostEqual(c.ra.deg, 208.1063333, places=5)
+        self.assertAlmostEqual(c.dec.deg, -11.0236944, places=5)
+
+    def test_numeric_ra_is_degrees(self):
+        c = gfp._parse_skycoord("208.1063333", "-11.0236944")
         self.assertAlmostEqual(c.ra.deg, 208.1063333, places=5)
         self.assertAlmostEqual(c.dec.deg, -11.0236944, places=5)
 
@@ -52,7 +57,6 @@ class FieldSelectTest(unittest.TestCase):
             "filename": "x",
             "epoch_jd": 2453157.5,
         }
-        # pad remaining arrays expected by select_field
         for key in ("e", "inc", "node", "peri", "M", "H", "dist_model",
                     "helio_dist", "delta", "M_obs", "x", "y", "z"):
             dummy[key] = np.zeros(n)
@@ -70,40 +74,32 @@ class TinyModelEphemerisTest(unittest.TestCase):
         model = gfp.load_ssim_model(TEST_MODEL)
         self.assertEqual(model["n_model"], 2)
         epoch = Time("2027-05-01")
-        obs = gfp.observer_icrf_au(epoch)
-        pos = gfp.positions_at_epoch(model, epoch.jd, obs)
+        pos = gfp.positions_at_epoch(model, epoch.jd)
         self.assertEqual(pos["ra"].shape, (2,))
         self.assertTrue(np.all(np.isfinite(pos["ra"])))
         self.assertTrue(np.all(np.isfinite(pos["dec"])))
         self.assertTrue(np.all(pos["helio_dist"] > 1.0))
-        q = model["a"] * (1.0 - model["e"])
-        Q = model["a"] * (1.0 + model["e"])
-        self.assertTrue(np.all(pos["helio_dist"] >= q - 1e-6))
-        self.assertTrue(np.all(pos["helio_dist"] <= Q + 1e-6))
 
     def test_object_on_los_lands_near_field(self):
-        """Circular ecliptic orbit at r through the GBTDS ICRS LOS."""
+        """Circular orbit along the GBTDS ICRS LOS at barycentric r = 42 AU."""
         epoch = Time("2027-05-01")
-        obs = gfp.observer_icrf_au(epoch)
+        earth = gfp.observer_icrf_au(epoch)
+        sun = gfp.barycentric_icrf_au("sun", epoch)
         field = gfp.gbtds_center()
         r = 42.0
-        # Plant barycentric on the ICRS LOS, invert a circular i≈|β| orbit.
         ra, dec = field.ra.radian, field.dec.radian
         los = np.array([math.cos(dec) * math.cos(ra),
                         math.cos(dec) * math.sin(ra),
                         math.sin(dec)])
-        # object ICRF ≈ observer + t*los with |R|=r
-        # solve |obs + t los|^2 = r^2
-        b = 2.0 * np.dot(obs, los)
-        c = np.dot(obs, obs) - r * r
-        disc = b * b - 4.0 * c
-        t = 0.5 * (-b + math.sqrt(disc))
-        obj_icrf = obs + t * los
-        # ecliptic from ICRF (equat_ecl +1)
+        b = 2.0 * np.dot(earth, los)
+        c = np.dot(earth, earth) - r * r
+        t = 0.5 * (-b + math.sqrt(b * b - 4.0 * c))
+        obj_icrf = earth + t * los
+        helio_expected = float(np.linalg.norm(obj_icrf - sun))
         eps = math.radians(gfp.F95_OBLIQUITY_ARCSEC / 3600.0)
-        x = obj_icrf[0]
-        y = math.cos(eps) * obj_icrf[1] + math.sin(eps) * obj_icrf[2]
-        z = -math.sin(eps) * obj_icrf[1] + math.cos(eps) * obj_icrf[2]
+        x, y0, z0 = obj_icrf
+        y = math.cos(eps) * y0 + math.sin(eps) * z0
+        z = -math.sin(eps) * y0 + math.cos(eps) * z0
         lat = math.degrees(math.asin(z / r))
         lon = math.degrees(math.atan2(y, x)) % 360.0
         inc = max(abs(lat), 0.05)
@@ -125,10 +121,10 @@ class TinyModelEphemerisTest(unittest.TestCase):
             "filename": "planted",
             "n_model": 1,
         }
-        pos = gfp.positions_at_epoch(model, epoch.jd, obs)
+        pos = gfp.positions_at_epoch(model, epoch.jd, earth, sun)
         sep = SkyCoord(pos["ra"] * u.deg, pos["dec"] * u.deg).separation(field)
         self.assertLess(sep.deg[0], 0.05)
-        self.assertAlmostEqual(float(pos["helio_dist"][0]), r, places=5)
+        self.assertAlmostEqual(float(pos["helio_dist"][0]), helio_expected, places=4)
 
 
 if __name__ == "__main__":

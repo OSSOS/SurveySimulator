@@ -12,9 +12,11 @@ interfaces share the same F95 detection engine.
 ```text
 F95/                 Fortran sources, Driver Makefile, F95/tests fixtures
 src/ossssim/         Python package (src-layout)
-tests/               Python unit tests
+tests/               Python unit tests for the simulator
 docs/                Characterization format docs and mini examples
 examples/            Python scripts and notebooks
+JWST/                JWST / Roman follow-up project that *uses* SSim
+N26/                 Napier 2026 / Bernstein 2004 project that *uses* SSim
 SurveySimulator-Data Sibling directory: full Characterizations/ and Models/
                      (distributed separately; DOI / web download)
 ```
