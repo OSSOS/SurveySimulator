@@ -11,7 +11,8 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-HELPER = ROOT / "JWST" / "scripts" / "grid_bias.py"
+HELPER = ROOT / "src" / "ossssim" / "grid_bias.py"
+JWST_CHAR = ROOT / "tests" / "data" / "Surveys" / "JWST"
 
 spec = importlib.util.spec_from_file_location("grid_bias", HELPER)
 grid_bias = importlib.util.module_from_spec(spec)
@@ -137,7 +138,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertGreater(zi, 0.3)
 
     def test_jwst_csv_observer_is_ecliptic_and_converts(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
@@ -145,7 +146,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertGreater(obs[2], 0.3)
 
     def test_los_plant_sits_on_field_line_of_sight(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         a, e, inc, node, peri, M = grid_bias.los_circular_elements(
@@ -182,7 +183,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertLess(sep_deg, 0.02)
 
     def test_plant_apparent_radec_is_mosaic_centre(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         jd = grid_bias.EPOCH_JD[0]
@@ -233,7 +234,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertAlmostEqual(grid_bias.EPOCH_JD[2], 2459979.90854, places=4)
 
     def test_keplerian_plant_stays_in_mosaic_at_cadc_epochs(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         element_jd = grid_bias.EPOCH_JD[0]
@@ -260,7 +261,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertAlmostEqual(math.sqrt(x * x + y * y + z * z), r, places=8)
 
     def test_keplerian_at_radec_r_is_aei_to_full_elements(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
@@ -281,7 +282,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertAlmostEqual(math.sqrt(sum(c * c for c in xyz)), r, places=5)
 
     def test_keplerian_at_radec_r_matches_circular_los_plant(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         jd = grid_bias.EPOCH_JD[0]
@@ -304,7 +305,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertLess(min(dang, abs(dang - 180.0)), 1.0)
 
     def test_keplerian_at_radec_r_rejects_i_below_latitude(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
@@ -315,7 +316,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertIsNone(got)
 
     def test_aimed_elements_land_on_icrs_los(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         jd = grid_bias.EPOCH_JD[0]
@@ -340,7 +341,7 @@ class GridBiasHelpers(unittest.TestCase):
         )
 
     def test_aimed_elements_need_icrs_to_ecliptic_rotation(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
@@ -361,7 +362,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertLess(pos_icrf[2], -5.0)
 
     def test_aimed_branches_share_position_not_periapse(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
@@ -385,7 +386,7 @@ class GridBiasHelpers(unittest.TestCase):
             self.assertAlmostEqual(xyz_p[i], xyz_m[i], places=6)
 
     def test_sample_aimed_elements_stays_in_mosaic(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
@@ -406,7 +407,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertEqual(hits, 25)
 
     def test_aimed_fails_when_ifree_below_field_latitude(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
@@ -425,7 +426,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertEqual(grid_bias.aimed_detection_bias(0, 0.0), 0.0)
 
     def test_aimed_pgeom_uses_object_latitude(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         obs = grid_bias.parse_jpl_horizons_icrf(path, grid_bias.EPOCH_JD[0])
@@ -448,7 +449,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertGreater(n_field_zero, 0)
 
     def test_circular_aimed_matches_los_plant_sky(self):
-        path = ROOT / "JWST" / "characterization" / "epoch1" / "JWST.csv"
+        path = JWST_CHAR / "epoch1" / "JWST.csv"
         if not path.is_file():
             self.skipTest(f"missing {path}")
         jd = grid_bias.EPOCH_JD[0]
@@ -511,7 +512,7 @@ class GridBiasHelpers(unittest.TestCase):
         self.assertTrue(grid_bias.check_plot_tag((44.2, 42.4, 0.045, 11.3)).startswith("cell_"))
 
     def test_setup_pointings_from_template(self):
-        src = ROOT / "JWST" / "characterization" / "pointings.template"
+        src = JWST_CHAR / "pointings.template"
         self.assertTrue(src.is_file())
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

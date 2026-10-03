@@ -1,8 +1,9 @@
 """Grid-cell Horvitz–Thompson helpers shared by JWST Sample A and N26.
 
-Module-level field defaults are JWST Sample A so existing JWST scripts and
-tests keep working.  N26 (and any later survey) must pass ``survey=`` or
-explicit field geometry.
+Module-level field defaults are JWST Sample A.  N26 (and any later survey)
+must pass ``survey=`` or explicit field geometry.  JWST survey files and
+wrappers live in the separate ``jwst-tno-followup`` project, not in this
+tree.
 """
 from __future__ import annotations
 
@@ -113,7 +114,7 @@ N26_HELIOSTACK = GridSurvey(
     check_detected_title="detected flag≥4 (single 15-day stack)",
 )
 
-# JWST aliases kept so JWST/scripts/grid_bias.py can re-export this module.
+# JWST Sample A aliases (module-level defaults; jwst-tno-followup re-exports).
 H_COLOR_OFFSET = JWST_SAMPLE_A.mag_color_offset
 MOSAIC_AREA_DEG2 = JWST_SAMPLE_A.mosaic_area_deg2
 MOSAIC_SIDE_DEG = JWST_SAMPLE_A.mosaic_side_deg

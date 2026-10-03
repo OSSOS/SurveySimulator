@@ -12,12 +12,18 @@ interfaces share the same F95 detection engine.
 ```text
 F95/                 Fortran sources, Driver Makefile, F95/tests fixtures
 src/ossssim/         Python package (src-layout)
-tests/               Python unit tests
+tests/               Python unit tests for the simulator
 docs/                Characterization format docs and mini examples
 examples/            Python scripts and notebooks
+N26/                 Napier 2026 / Bernstein 2004 project that *uses* SSim
 SurveySimulator-Data Sibling directory: full Characterizations/ and Models/
                      (distributed separately; DOI / web download)
 ```
+
+The JWST / Roman follow-up project (Sample A characterization, GBTDS
+sampling catalog) is a **separate repository**, not shipped with ossssim.
+Clone [jwst-tno-followup](https://github.com/ijiraq/jwst-tno-followup) next
+to this tree, or set `SSIM_ROOT` when running those scripts.
 
 Language-specific guides:
 
@@ -61,7 +67,10 @@ Pass a characterization directory path into `OSSSSim(...)`, for example
 Full survey characterizations and large model tables live in the sibling
 **SurveySimulator-Data** tree (not shipped inside this package). Small
 fixtures for Driver/Python tests remain under `F95/tests/{Surveys,Models}/`
-and `docs/examples/mini_survey/`.
+(including a small JWST Sample A observer fixture) and
+`docs/examples/mini_survey/`. JWST Sample A characterization used for science
+runs is in the separate
+[jwst-tno-followup](https://github.com/ijiraq/jwst-tno-followup) project.
 
 ## Licence
 
