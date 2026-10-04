@@ -11,6 +11,7 @@ from collections import OrderedDict
 from collections.abc import Iterable
 import numpy
 from astropy import units
+from astropy.io.misc.ecsv import read_header as read_ecsv_header
 from astropy.table import QTable, Table
 from astropy.time import Time
 from astropy.units import Quantity
@@ -346,9 +347,12 @@ class ModelFileOld(ModelFile):
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def _read_next_data_line(self) -> str:
         """
-        Get the next line or a random line that is not a comment line from the file and parse into a row
+        Return the next non-comment data line, or a random one when randomize is set.
+
+        Random mode seeks to a byte offset in the data region, discards a possibly
+        partial line, then reads the next complete non-comment line.
         """
         if self.randomize:
             while True:
@@ -364,11 +368,10 @@ class ModelFileOld(ModelFile):
                             raise EOFError
                         if line[0] != "#":
                             break
-                    break
+                    return line
                 except EOFError:
                     self._f_obj.close()
                     self._f_obj = open(self.filename)
-                    pass
         else:
             while True:
                 line = self._f_obj.readline()
@@ -377,27 +380,44 @@ class ModelFileOld(ModelFile):
                 if len(line) == 0:
                     raise StopIteration
                 if not line.startswith('#'):
-                    break
-        values = line.split()
+                    return line
+
+    def _values_to_row(self, values) -> OrderedDict:
+        """
+        Coerce a list of field strings into an OrderedDict of model column values.
+        """
         row = OrderedDict()
         for idx, colname in enumerate(self.colnames):
             try:
-                if '.' in values[idx]:
-                    value = float(values[idx].replace('d', 'e'))
-                else:
-                    value = int(values[idx])
-            except ValueError:
-                value = str(values[idx])
+                raw = values[idx]
             except IndexError as ex:
                 # for non-resonant we don't need to have j/k defined in file.
                 if colname in ['j', 'k']:
-                    value = 0
+                    row[colname] = 0
+                    continue
+                raise ex
+            if raw is None or raw == '':
+                row[colname] = None
+                continue
+            try:
+                if '.' in raw:
+                    value = float(raw.replace('d', 'e'))
                 else:
-                    raise ex
+                    value = int(raw)
+            except ValueError:
+                value = str(raw)
             if definitions.column_unit.get(colname, None) is not None:
                 value = value * definitions.column_unit[colname]
             row[colname] = value
         return row
+
+    def __next__(self):
+        """
+        Get the next line or a random line that is not a comment line from the file and parse into a row
+        """
+        line = self._read_next_data_line()
+        return self._values_to_row(line.split())
+
     @property
     def table(self):
         return self.targets
@@ -431,33 +451,28 @@ class ModelFileOld(ModelFile):
         return self._targets
 
 
-class ModelFileEcsv(ModelFile, OSSSSimFile):
+class ModelFileEcsv(ModelFileOld, OSSSSimFile):
     """
-    A class to drive the SSim using a standard model file.
+    Stream or fully load an ECSV model file for the SSim.
 
-    ModelFile opens file and reads the header for the epoch, seed, longitude_neptune and colors
-    and then loops over or randomly offsets into the file to read model objects.
+    Iteration mirrors ModelFileOld: one row at a time from the CSV body (optional
+    random byte seeks), after parsing only the ECSV YAML header. Accessing
+    ``table`` / ``read()`` still loads the full QTable via Astropy.
     """
+
+    # ECSV meta uses OSSSSimFile key names (Epoch, Seed, ...); not ModelFileOld's JD/lambdaN.
+    epoch = OSSSSimFile.epoch
+    seed = OSSSSimFile.seed
+    longitude_neptune = OSSSSimFile.longitude_neptune
+    colors = OSSSSimFile.colors
+    model_band = OSSSSimFile.model_band
 
     def __init__(self, filename, randomize=False):
-        super().__init__(filename)
-        self.filename = filename
+        ModelFileOld.__init__(self, filename, randomize=randomize)
         self._table = None
-        if randomize:
-            DeprecationWarning("Randomize is no longer supported.")
-        self.randomize = False
-        self._header = None
-        self._header_parsed = False
-        self._colnames = None
-        self._colors = None
-        self._epoch = None
-        self._longitude_neptune = None
-        self.header_lines = []
-        self._f_obj = open(self.filename, 'r')
-        self.f_loc = 0
-        self._targets = None
-        self._f = None
         self._last_row_written = 0
+        self._ecsv_delimiter = TABLE_COLUMN_DELIMITER
+        self.mask_these_if_not_detected = copy.copy(definitions.observables)
 
     @classmethod
     def read(cls, filename) -> 'ModelFileEcsv':
@@ -469,19 +484,69 @@ class ModelFileEcsv(ModelFile, OSSSSimFile):
         self._table = QTable.read(self.filename, format=INITIAL_TABLE_FORMAT)
         self._last_row_written = len(self._table)
 
-    def __iter__(self):
-        return iter(self.table)
-
-    def __len__(self):
-        return len(self.table)
-
     @property
     def header(self) -> dict:
-        return self.table.meta
+        """
+        Parse ECSV YAML header and position the stream at the first data row.
+
+        Does not load the CSV body into a QTable.
+        """
+        if self._header is not None or self._header_parsed:
+            return self._header
+
+        ecsv = read_ecsv_header(self.filename)
+        self._header = dict(ecsv.table_meta)
+        self._colnames = [col.name for col in ecsv.cols]
+        self._ecsv_delimiter = ecsv.delimiter if ecsv.delimiter is not None else TABLE_COLUMN_DELIMITER
+
+        # Advance past comment header and the CSV column-name line so random seeks
+        # and sequential reads start in the data region only.
+        self._f_obj.seek(0)
+        for _ in range(ecsv.n_header):
+            line = self._f_obj.readline()
+            if line:
+                self.header_lines.append(line[1:] if line.startswith('#') else line)
+        names_line = self._f_obj.readline()
+        if not names_line:
+            raise IOError(f"ECSV file {self.filename} has no column-name or data rows")
+        self.f_loc = self._f_obj.tell()
+        self._header['_end_of_header_offset'] = self.f_loc
+        self._header['_delimiter'] = self._ecsv_delimiter
+        self._header_parsed = True
+        return self._header
+
+    @property
+    def colnames(self):
+        if self._colnames is None:
+            # header parse fills _colnames
+            _ = self.header
+        if not self._colnames:
+            raise IOError(f"Failed to get column names in {self.filename}\n")
+        return self._colnames
 
     @property
     def column_names(self) -> list[str]:
-        return self.table.colnames
+        return self.colnames
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        """
+        Stream the next (or a random) ECSV data row without loading the full table.
+        """
+        # Ensure header parsed and file pointer / data offset are ready.
+        _ = self.header
+        line = self._read_next_data_line()
+        delimiter = self._ecsv_delimiter
+        if delimiter == ' ':
+            values = line.split()
+        else:
+            values = [value.strip() for value in line.strip('\n').split(delimiter)]
+        return self._values_to_row(values)
+
+    def __len__(self):
+        return len(self.table)
 
     @property
     def table(self) -> QTable:
@@ -492,9 +557,7 @@ class ModelFileEcsv(ModelFile, OSSSSimFile):
     @property
     def targets(self):
         """
-        targets set by looping over the entire file and returning a 'QTable'.
-        This can be used when you want access to the
-        entire table of data rather than just reading one-line at a time.
+        Full QTable of targets. Loads the entire ECSV file on first access.
         """
         return self.table
 
