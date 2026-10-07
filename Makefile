@@ -11,8 +11,11 @@ NAME = $(REPO)/$(PROJECT)/$(DEVNAME)
 
 # Build the single unified CANFAR/skaha + Cursor image. One image runs in all three
 # skaha session types (notebook/desktop-app/headless) and is the Cursor/devcontainer base.
+# Prefer buildx --load so CI can attach a BuildKit config with limited max-parallelism.
 build: Dockerfile
-	docker build --build-arg ASTROML_TAG=$(ASTROML_TAG) -t $(NAME):$(VERSION) -t $(NAME):latest -f Dockerfile .
+	DOCKER_BUILDKIT=1 docker buildx build --load \
+		--build-arg ASTROML_TAG=$(ASTROML_TAG) \
+		-t $(NAME):$(VERSION) -t $(NAME):latest -f Dockerfile .
 
 # Backwards-compatible alias for the previous `production` target.
 production: build
