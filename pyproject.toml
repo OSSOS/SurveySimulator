@@ -23,7 +23,7 @@ authors = [
 license = "EUPL-1.2"
 license-files = ["LICENCE.txt"]
 dependencies = [
-    "astropy>=7.0",
+    "astropy>=7.2",
     "numpy>=2.3",
     "matplotlib",
     "pydantic",

@@ -1,0 +1,13 @@
+{
+  "name": "OSS Survey Simulator",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "user": "ubuntu",
+  "install": "sudo /opt/conda/bin/python -m pip install -e .\nsudo /opt/conda/bin/python -m pip install pytest",
+  "repositoryDependencies": [
+    "github.com/ijiraq/survey_debias",
+    "github.com/ijiraq/hst-tno-followup"
+  ]
+}

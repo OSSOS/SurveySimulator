@@ -1,80 +1,66 @@
-# this builds a container that can be used to run the SurveySimulator (python and fortran)
-# This container is loaded into the canfar Science Portal for use/execution.
-# Can also be used directly with docker.
-FROM condaforge/miniforge3:latest as base
-# FROM jupyter/scipy-notebook as base
-# USER root
-# ENV DEBIAN_FRONTEND="noninteractive"
-RUN apt -y -q update 
-RUN apt -y -q install curl wget man man-db git build-essential zip unzip xdg-utils less emacs nano xterm vim rsync tree gfortran
-RUN apt -y install python3-numpy
-# Python package build uses setuptools + f90wrap (pip install . → setup.py → make -C F95).
-# NumPy's f2py on Python>=3.12 uses meson+ninja; those come from pyproject build-system requires.
+# Unified CANFAR/skaha + Cursor/dev container for the OSS Survey Simulator.
+#
+# One image serves every runtime:
+#   * CANFAR/skaha  - notebook (JupyterLab), desktop-app (xterm) and headless sessions
+#   * Cursor cloud  - .cursor/environment.json builds and tests the /workspace checkout
+#   * Local dev     - .devcontainer/devcontainer.json builds the same image on a laptop
+#
+# Base: CANFAR's astroml image is explicitly a "same container, different interfaces"
+# image - it already ships conda Python 3.12, JupyterLab, xterm, the CADC client tools
+# and the SSS user mapping skaha relies on, and runs in all three skaha session types.
+# We extend it rather than rebuild that stack (CANFAR guidance: always extend the base).
+# https://www.opencadc.org/canfar/latest/platform/containers/
+ARG ASTROML_TAG=26.06
+FROM images.canfar.net/skaha/astroml:${ASTROML_TAG}
 
+LABEL maintainer="J.J. Kavelaars <jjkavelaars@gmail.com>"
 
+USER root
 
-# SKAHA system settings and permissions
-RUN apt install -y -q sssd libnss-sss libpam-sss
-COPY etc/nofiles.conf /etc/security/limits.d/
-COPY etc/nsswitch.conf /etc/
-## see https://bugzilla.redhat.com/show_bug.cgi?id=1773148
-RUN touch /etc/sudo.conf && echo "Set disable_coredump false" > /etc/sudo.conf
-# generate missing dbus uuid (issue #47)
-RUN dbus-uuidgen --ensure
+# conda is the runtime Python for every session type; put it first on PATH for all
+# users and non-login shells (skaha, the ubuntu dev user, and the Cursor agent).
+# astroml does not auto-activate the base env, so also prepend it for login and
+# interactive shells (ENV alone does not cover `bash -l` / `bash -i`).
+ENV PATH=/opt/conda/bin:${PATH}
+RUN printf '%s\n' 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/zzz-conda-path.sh \
+ && printf '%s\n' 'export PATH=/opt/conda/bin:$PATH' >> /etc/bash.bashrc
 
+# Fortran toolchain for the F95 detection engine, plus tini for signal/zombie handling.
+# astroml may already provide some of these; apt is idempotent and only adds what is missing.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends build-essential gfortran make tini \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* /var/tmp/*
 
-# setup this container for skaha launching
+# Bake the stable Survey Simulator into the image for the CANFAR runtime
+# (CANFAR convention: ship tested code in the image). This installs the Python
+# package (ossssim + the f90wrap ossssimlib extension) into the conda env and builds
+# the Fortran Driver, exposed on PATH as `SSim`.
+RUN mkdir -p /opt/SSim
+COPY . /opt/SSim/
+WORKDIR /opt/SSim
+# Cap compile parallelism so meson/ninja/f2py and gfortran do not OOM the builder
+# (GitHub hosted runners are ~7 GB RAM; layer export also needs headroom).
+RUN MAKEFLAGS="${MAKEFLAGS:--j2}" \
+    CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-2}" \
+    pip install . \
+ && make -C F95 clean \
+ && make -j2 -C F95 Driver GIMEOBJ=ReadModelFromFile \
+ && cp F95/Driver /usr/local/bin/SSim
+
+# Development user for Cursor cloud and the local devcontainer. skaha injects the real
+# CADC user at runtime via SSS, so this `ubuntu` user is only used by Cursor/devcontainer.
+# Passwordless sudo lets the editable (-e) install write into the root-owned conda env
+# without a multi-GB `chown -R /opt/conda` layer.
+RUN if ! id -u ubuntu >/dev/null 2>&1; then useradd -m -s /bin/bash ubuntu; fi \
+ && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-ubuntu \
+ && chmod 0440 /etc/sudoers.d/90-ubuntu
+
+# Our own explicit, auditable launch path. skaha overrides CMD per session type
+# (notebook/desktop-app/headless); tini reaps processes and startup.sh execs that command.
+RUN mkdir -p /skaha
 COPY etc/startup.sh /skaha/startup.sh
 RUN chmod +x /skaha/startup.sh
 
-
-# setup a the needed python environment
-# RUN apt-get update && yes | apt-get install python3.11 pip
-# RUN yes | apt install python3.12-venv
-# RUN python3 -m venv /opt/SSim/venv
-RUN pip install jupyter
-RUN pip install cadctap
-RUN pip install vos
-RUN pip install scipy
-RUN pip install astropy
-RUN pip install astroquery
-RUN pip install matplotlib
-RUN pip install f90wrap
-# RUN pip install git+https://github.com/jameskermode/f90wrap
-RUN pip install rebound
-RUN pip3 install astroplan
-RUN pip install Deprecated
-RUN pip install canfar
-
-
-# Build the SSim
-RUN mkdir -p /opt/SSim
-COPY ./ /opt/SSim/
-# COPY src /opt/SSim/python
-WORKDIR /opt/SSim/F95
-
-# install Fortran based binary of SSim
-RUN make clean && ls && make Driver GIMEOBJ=ReadModelFromFile
-RUN cp Driver /usr/local/bin/SSim
-# RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections 
-# RUN apt-get install -y ttf-mscorefonts-installer
-
-# install the Python based version of SSim
-FROM base as deploy
-WORKDIR /opt/SSim/
-RUN pip install .
-# RUN python setup.py install
-
-# Two build sets, deploy and test
-FROM base as test
-
-RUN mkdir -p /arc/home
-RUN groupadd -g 1001 testuser
-RUN useradd -u 1001 -g 1001 -s /bin/bash -d /arc/home/testuser -m testuser
-RUN chown -R testuser /opt/SSim
-WORKDIR /opt/SSim/
-# RUN pip3 install -e .
-USER testuser
-WORKDIR /arc/home/testuser
-COPY etc/ReadModelFromFile.in ./
-ENTRYPOINT ["/skaha/startup.sh"]
+WORKDIR /
+ENTRYPOINT ["tini", "-g", "--", "/skaha/startup.sh"]
