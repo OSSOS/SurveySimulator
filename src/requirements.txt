@@ -1,4 +1,4 @@
-astropy~=6.0.0
+astropy>=7.2
 astroquery~=0.4.6
 ephem~=3.7.7.1
 f90wrap~=0.2.7

@@ -2,6 +2,7 @@
 Model classes for the Outer Solar System Survey Simulator.
 """
 import copy
+import csv
 import logging
 import os
 import re
@@ -356,12 +357,14 @@ class ModelFileOld(ModelFile):
         """
         if self.randomize:
             while True:
-                # offset to random location in the file.
-                self._f_obj.seek(random.randint(self.header['_end_of_header_offset'],
-                                                os.stat(self.filename).st_size))
+                # offset to random location in the data region.
+                data_start = self.header['_end_of_header_offset']
+                offset = random.randint(data_start, os.stat(self.filename).st_size)
+                self._f_obj.seek(offset)
                 try:
-                    # read to the end of this line.
-                    self._f_obj.readline()
+                    # Discard a partial line only when not already at a line start.
+                    if offset != data_start:
+                        self._f_obj.readline()
                     while True:
                         line = self._f_obj.readline()
                         if len(line) == 0:
@@ -472,6 +475,7 @@ class ModelFileEcsv(ModelFileOld, OSSSSimFile):
         self._table = None
         self._last_row_written = 0
         self._ecsv_delimiter = TABLE_COLUMN_DELIMITER
+        self._column_units = {}
         self.mask_these_if_not_detected = copy.copy(definitions.observables)
 
     @classmethod
@@ -497,6 +501,7 @@ class ModelFileEcsv(ModelFileOld, OSSSSimFile):
         ecsv = read_ecsv_header(self.filename)
         self._header = dict(ecsv.table_meta)
         self._colnames = [col.name for col in ecsv.cols]
+        self._column_units = {col.name: col.unit for col in ecsv.cols}
         self._ecsv_delimiter = ecsv.delimiter if ecsv.delimiter is not None else TABLE_COLUMN_DELIMITER
 
         # Advance past comment header and the CSV column-name line so random seeks
@@ -528,6 +533,39 @@ class ModelFileEcsv(ModelFileOld, OSSSSimFile):
     def column_names(self) -> list[str]:
         return self.colnames
 
+    def _values_to_row(self, values) -> OrderedDict:
+        """
+        Coerce field strings using ECSV schema units when present.
+        """
+        # Ensure schema units are available.
+        _ = self.header
+        row = OrderedDict()
+        for idx, colname in enumerate(self.colnames):
+            try:
+                raw = values[idx]
+            except IndexError as ex:
+                if colname in ['j', 'k']:
+                    row[colname] = 0
+                    continue
+                raise ex
+            if raw is None or raw == '':
+                row[colname] = None
+                continue
+            try:
+                if '.' in raw:
+                    value = float(raw.replace('d', 'e'))
+                else:
+                    value = int(raw)
+            except ValueError:
+                value = str(raw)
+            unit = self._column_units.get(colname)
+            if unit:
+                value = value * units.Unit(unit)
+            elif definitions.column_unit.get(colname, None) is not None:
+                value = value * definitions.column_unit[colname]
+            row[colname] = value
+        return row
+
     def __iter__(self):
         return self
 
@@ -538,11 +576,7 @@ class ModelFileEcsv(ModelFileOld, OSSSSimFile):
         # Ensure header parsed and file pointer / data offset are ready.
         _ = self.header
         line = self._read_next_data_line()
-        delimiter = self._ecsv_delimiter
-        if delimiter == ' ':
-            values = line.split()
-        else:
-            values = [value.strip() for value in line.strip('\n').split(delimiter)]
+        values = next(csv.reader([line.rstrip('\n')], delimiter=self._ecsv_delimiter))
         return self._values_to_row(values)
 
     def __len__(self):
