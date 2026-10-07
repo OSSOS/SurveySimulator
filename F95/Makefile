@@ -77,6 +77,31 @@ test:
 %.o : %.f95
 	$(FC) $(FFLAGS) -c $<
 
+# ---------------------------------------------------------------------------
+# Explicit Fortran MODULE dependencies for parallel builds (make -j).
+# gfortran emits .mod files alongside .o; consumers must wait on the
+# provider .o so the .mod exists. Derived from `use` statements in F95/*.f95.
+# ---------------------------------------------------------------------------
+datadec.o: parameters.o poly_dec.o
+poly_lib.o: poly_dec.o parameters.o
+ioutils.o: parameters.o datadec.o
+elemutils.o: datadec.o
+effut.o: datadec.o parameters.o
+rot.o: datadec.o elemutils.o
+xvutils.o: elemutils.o rot.o ioutils.o
+numutils.o: datadec.o xvutils.o rot.o common_data.o
+getsur.o: parameters.o datadec.o xvutils.o poly_lib.o effut.o ioutils.o
+surveysub.o: debug.o common_data.o parameters.o datadec.o poly_lib.o \
+	effut.o numutils.o getsur.o ioutils.o
+
+# GiMeObj.f95 is a symlink to $(GIMEOBJ).f95 (ReadModelFromFile / InnerHotModel).
+# File-based rule (not a phony that rm's .o) so -j builds cannot race link vs compile.
+GiMeObj.f95: $(GIMEOBJ).f95
+	ln -sfn $(GIMEOBJ).f95 GiMeObj.f95
+
+# Union of modules used by ReadModelFromFile and InnerHotModel.
+GiMeObj.o: GiMeObj.f95 datadec.o modelutils.o ioutils.o elemutils.o rot.o
+
 .PHONY: clean
 
 clean: rmtmp
@@ -90,15 +115,15 @@ rmtmp:
 
 .PHONY: link
 
+# Convenience target to refresh the GiMeObj symlink (forces relink of GiMeObj.o).
 link:
-	\rm -f GiMeObj.f95
-	\rm -f GiMeObj.o
-	ln -s $(GIMEOBJ).f95 GiMeObj.f95
+	rm -f GiMeObj.f95 GiMeObj.o
+	$(MAKE) GiMeObj.f95
 
-Driver: link Driver.f95 $(OBJA) $(OBJU) Makefile GiMeObj.f95
+Driver: Driver.f95 $(OBJA) $(OBJU) Makefile GiMeObj.f95
 	$(FC) $(FFLAGP) -o Driver $(OBJA) $(OBJU) Driver.f95
 
-magerr: link magerr.f95 $(OBJU) ${SRCM} Makefile
+magerr: magerr.f95 $(OBJU) ${SRCM} Makefile GiMeObj.f95
 	$(FC) $(FFLAGP) -o magerr $(OBJU) ${SRCM} magerr.f95
 	rm GiMeObj.f95
 
