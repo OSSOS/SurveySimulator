@@ -39,9 +39,13 @@ RUN apt-get update \
 RUN mkdir -p /opt/SSim
 COPY . /opt/SSim/
 WORKDIR /opt/SSim
-RUN pip install . \
+# Cap compile parallelism so meson/ninja/f2py and gfortran do not OOM the builder
+# (GitHub hosted runners are ~7 GB RAM; layer export also needs headroom).
+RUN MAKEFLAGS="${MAKEFLAGS:--j2}" \
+    CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-2}" \
+    pip install . \
  && make -C F95 clean \
- && make -C F95 Driver GIMEOBJ=ReadModelFromFile \
+ && make -j2 -C F95 Driver GIMEOBJ=ReadModelFromFile \
  && cp F95/Driver /usr/local/bin/SSim
 
 # Development user for Cursor cloud and the local devcontainer. skaha injects the real
