@@ -31,12 +31,20 @@ jobs:
         df -h
 
     # Extra headroom so layer export does not compete with compile/link RAM.
+    # Runners may already have a /swapfile; replace or reuse safely.
     - name: Add swap space
       run: |
-        sudo fallocate -l 8G /swapfile
-        sudo chmod 600 /swapfile
-        sudo mkswap /swapfile
-        sudo swapon /swapfile
+        if swapon --show | grep -q .; then
+          echo "Swap already active:"
+          swapon --show
+        else
+          sudo swapoff /swapfile 2>/dev/null || true
+          sudo rm -f /swapfile
+          sudo fallocate -l 8G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=8192 status=none
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+        fi
         free -h
 
     - name: Install setuptools-scm (for the image tag)
