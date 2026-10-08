@@ -1,11 +1,12 @@
 program test_read_pointings
 
+  use parameters
   use datadec
   use getsur
 
   implicit none
   integer, parameter :: lun_s = 13
-  character(80) :: survey
+  character(path_len) :: survey
   integer :: n_sur, ierr
   real (kind=8) :: sur_mm(n_sur_max)
   type(t_pointing) :: points(n_sur_max)

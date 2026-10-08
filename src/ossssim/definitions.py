@@ -74,7 +74,7 @@ column_description = {
     'eff': 'detection efficiency of field detected in',
     'RA': 'right ascension at detection',
     'DEC': 'declination at detection',
-    'Survey': 'name of survey that detected object',
+    'Survey': 'detection key survey/block (/ is a key delimiter, not a path)',
     'comp': 'component of orbital population model object is from',
     'dist': 'distance from observer',
     'j': 'j component of Neptune j:k exterior resonance',
@@ -147,10 +147,12 @@ observables = ['RA', 'DEC', 'd_ra', 'd_dec', 'r', 'delta', 'm_int', 'Survey', 'e
                'm_rand', 'h_rand', 'Mt', 'h_rand', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'band', 'color']
 
 COLUMN_WIDTH = 14
+# Detection key "survey/block" (name_len + 1 + block_len in Fortran parameters).
+SURVEY_KEY_WIDTH = 65
 
 column_format = {
     'flag': f'{COLUMN_WIDTH}d',
-    'Survey': f'{COLUMN_WIDTH}s',
+    'Survey': f'{SURVEY_KEY_WIDTH}s',
     'Comments': f'{COLUMN_WIDTH}s',
     'comp': f'{COLUMN_WIDTH}s',
     'RA': f'>{COLUMN_WIDTH}.5f',

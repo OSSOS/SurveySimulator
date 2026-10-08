@@ -4,13 +4,34 @@ README.formats
 This file explains the format of the survey characterization that
 is critical to the operation of the survey simulator.
 
-The Survey Simulator divides the sky coverage of all observations
-into 'blocks' of contiguous rectangular area.  The 
-pointings.list
-file lists each such rectangular block, one per line.
-Each such line should contain the name of an 'efficiency file'
-that is in the same directory.  Although rare, different blocks in 
-the pointing file could share a single efficiency definition.
+Terminology
+-----------
+
+- Survey: a characterization subdirectory that contains pointings.list
+  and the .eff files. The survey identity is the directory basename
+  (maximum length name_len = 32). Paths to that directory may be up to
+  path_len = 2048 characters.
+- Block: one efficiency characterization (.eff file) within a survey.
+  The block identity is the .eff basename with the .eff suffix removed
+  (maximum length block_len = 32). Block names are unique within a
+  survey; they need not be unique across surveys. Several FoV rows in
+  pointings.list may share one block (same .eff file).
+- Pointing: one FoV row in pointings.list (geometry, epoch, fill factor,
+  observatory code, and a reference to a block via the efficiency file).
+- Detection key: "survey/block" (maximum key_len = 65). The '/' character
+  is a structural delimiter in detect/track Surv columns and in the
+  simulator Survey field — it is not a filesystem path. Do not open the
+  key as a file; open .eff files as <survey_dir>/<efficiency_file_name>.
+  Survey and block names must not contain '/'. Efficiency basenames
+  themselves are limited to eff_name_len = block_len + 4 (stem + ".eff").
+
+Loading fails hard on format, path-length, name-length, missing .eff, or
+other characterization errors (no silent skipping of bad rows).
+
+The Survey Simulator describes sky coverage as rectangular (or polygonal)
+pointings. The pointings.list file lists each pointing, one per line.
+Each line names an efficiency file in the same directory (the block).
+Different pointings may share a single efficiency definition.
 
 --------------------------------------------------------------------------------
 
@@ -31,7 +52,9 @@ where:
 <filling_factor>: filling factor of that FOV (fraction of FOV occupied by
                   active pixels)
 <obs_code>: observatory code
-<efficiency_file_name>: name of efficiency file for that pointing
+<efficiency_file_name>: basename of the efficiency (.eff) file for that
+  pointing's block (must live in the same survey directory; no '/' in
+  the name; block stem length <= block_len)
 
 Lines starting with '#' are ignored and can be used for comments.
 

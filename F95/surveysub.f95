@@ -76,7 +76,7 @@ contains
 !     mt    : Mean anomaly at discovery [rad] (R8)
 !     jdayp : Time of discovery [JD] (R8)
 !     ic    : Index of color used for survey (I4)
-!     surna : Detection survey name (CH10)
+!     surna : Detection key "survey/block" (CH key_len)
 !     h_rand: Absolute randomized magnitude, in detection filter (R8)
 !     ierr  : error flag
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -124,7 +124,7 @@ contains
     real (kind=8), intent(out) :: ra, dec, d_ra, d_dec, r, delta, m_int, &
          m_rand, eff, mt, jdayp, h_rand
     character(*), intent(in) :: surnam
-    character(10), intent(out) :: surna
+    character(key_len), intent(out) :: surna
 
     integer, parameter :: screen = 6, keybd = 5, &
          lun_s = 97, lun_h = 6
@@ -203,12 +203,15 @@ contains
              if (ierr .eq. 100) then
                 write (screen, *) &
                      'GetSurvey: reached maximum number of pointings, ', n_sur
-             else if (ierr .eq. 10) then
+             else if ((ierr .eq. 10) .or. (ierr .eq. -10)) then
                 write (screen, *) 'Unable to open survey file in ', surnam
+             else if (ierr .eq. -20) then
+                write (screen, *) &
+                     'GetSurvey: failed loading characterization in ', surnam
              else if (ierr .eq. 30) then
                 goto 100
              else
-                write (screen, *) 'Unknown return code in read_sur.', ierr
+                write (screen, *) 'GetSurvey failed with ierr=', ierr
              end if
              return
           end if
@@ -523,8 +526,9 @@ contains
 ! Record what needs to be recorded.
                             if (flag_l .gt. flag) then
                                isur = i_sur
-                               surna = points(i_sur)%efnam &
-                                    (1:min(len(surna),len(points(1)%efnam)))
+                               ! Detection key: survey/block ( '/' is a key
+                               ! delimiter, not a filesystem path).
+                               surna = points(i_sur)%key
 ! Converting intrinsic magnitude to 'x' band, keeping apparent
 ! magnitude in discovery filter
                                ic = filt_i
@@ -655,32 +659,47 @@ contains
     return
   end subroutine pointing_center
 
-  subroutine pointing_meta(idx, efnam, epoch, code, mag_lim, rate_mid_asphr)
+  subroutine pointing_meta(idx, survey, block, key, eff_file, epoch, code, &
+       mag_lim, rate_mid_asphr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-! Metadata for pointing idx: efficiency filename, epoch [JD], obs code,
-! limiting magnitude, and midpoint rate_cut ["/hr].
+! Metadata for pointing idx: survey name, block name, detection key
+! (survey/block), efficiency basename, epoch [JD], obs code, limiting
+! magnitude, and midpoint rate_cut ["/hr].
+! '/' in key is a delimiter, not a filesystem path.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) idx
-!f2py intent(out) efnam
+!f2py intent(out) survey
+!f2py intent(out) block
+!f2py intent(out) key
+!f2py intent(out) eff_file
 !f2py intent(out) epoch
 !f2py intent(out) code
 !f2py intent(out) mag_lim
 !f2py intent(out) rate_mid_asphr
     implicit none
     integer, intent(in) :: idx
-    character(80), intent(out) :: efnam
+    character(name_len), intent(out) :: survey
+    character(block_len), intent(out) :: block
+    character(key_len), intent(out) :: key
+    character(eff_name_len), intent(out) :: eff_file
     real (kind=8), intent(out) :: epoch, mag_lim, rate_mid_asphr
     integer, intent(out) :: code
     real (kind=8) :: rmid
 
-    efnam = ' '
+    survey = ' '
+    block = ' '
+    key = ' '
+    eff_file = ' '
     epoch = 0.d0
     code = 0
     mag_lim = 0.d0
     rate_mid_asphr = 0.d0
     if ((.not. survey_loaded) .or. (idx .lt. 1) .or. (idx .gt. n_sur_loaded)) &
          return
-    efnam = points_loaded(idx)%efnam
+    survey = points_loaded(idx)%survey
+    block = points_loaded(idx)%block
+    key = points_loaded(idx)%key
+    eff_file = points_loaded(idx)%eff_file
     epoch = points_loaded(idx)%o_pos(1)%jday
     code = points_loaded(idx)%code
     mag_lim = sur_mm_loaded(idx)
