@@ -15,6 +15,8 @@ module parameters
   integer, parameter :: key_len   = name_len + 1 + block_len
   ! Efficiency basename as listed in pointings.list (stem + optional ".eff").
   integer, parameter :: eff_name_len = block_len + 4
+  ! Max epoch child directories under a multi-epoch survey root.
+  integer, parameter :: max_epochs = 32
 
   ! define some useful constants
   real (kind=8), parameter :: Pi = 3.141592653589793238d0, drad = Pi/180.0D0, &
