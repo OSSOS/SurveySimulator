@@ -15,6 +15,10 @@ module surveysub
   integer, save :: n_sur_loaded = 0
   type(t_pointing), save, private :: points_loaded(n_sur_max)
   real (kind=8), save, private :: sur_mm_loaded(n_sur_max)
+  integer, save, private :: n_epochs_loaded = 0
+  integer, save, private :: det_req_loaded = 1
+  integer, save, private :: epoch_n_loaded(max_epochs)
+  integer, save, private :: epoch_off_loaded(max_epochs)
 
 contains
 
@@ -53,7 +57,10 @@ contains
 !     ph    : phase of lightcurve at epoch jday [rad] (R8)
 !     period: period of lightcurve [day] (R8)
 !     amp   : amplitude of lightcurve [mag] (R8)
-!     surnam: Survey directory name (CH)
+!     surnam: Survey root directory (CH). If root/pointings.list exists,
+!             that single epoch is loaded. Otherwise each immediate child
+!             containing pointings.list is an epoch. Survey name is the
+!             root basename; detections_required comes from survey.conf.
 !
 ! OUTPUT
 !     seed  : Random number generator seed (I4)
@@ -76,7 +83,7 @@ contains
 !     mt    : Mean anomaly at discovery [rad] (R8)
 !     jdayp : Time of discovery [JD] (R8)
 !     ic    : Index of color used for survey (I4)
-!     surna : Detection survey name (CH10)
+!     surna : Detection key "survey/block" (CH key_len)
 !     h_rand: Absolute randomized magnitude, in detection filter (R8)
 !     ierr  : error flag
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -124,7 +131,7 @@ contains
     real (kind=8), intent(out) :: ra, dec, d_ra, d_dec, r, delta, m_int, &
          m_rand, eff, mt, jdayp, h_rand
     character(*), intent(in) :: surnam
-    character(10), intent(out) :: surna
+    character(key_len), intent(out) :: surna
 
     integer, parameter :: screen = 6, keybd = 5, &
          lun_s = 97, lun_h = 6
@@ -147,6 +154,10 @@ contains
     integer :: in_poly, icache, k
     logical, save :: newpos, rate_ok
     logical :: cache_hit
+    integer, save :: n_epochs, detections_required
+    integer, save :: epoch_n(max_epochs), epoch_off(max_epochs)
+    integer :: ie, i0, i1e, n_hit, flag_epoch
+    character(name_len) :: survey_name
     data &
          eff_lim /0.4d0/
     CHARACTER(len=256) :: log_msg
@@ -172,9 +183,8 @@ contains
     surna = ' '
     call debug_set(enable_debug)
 
-    ! Reload when the characterization directory changes. Do not touch
-    ! ran3 (iff): callers that AND several epochs must keep one RNG stream.
-    ! Cache loaded surveys so switching epoch1/2/3 does not reopen JWST.csv.
+    ! Reload when the survey root changes. Do not touch ran3 (iff).
+    ! Cache loaded survey roots (all epochs) so repeated draws reuse JPL LUNs.
     if (first .or. (surnam(1:len_trim(surnam)) /= &
          last_surnam(1:len_trim(last_surnam)))) then
        first = .false.
@@ -194,21 +204,30 @@ contains
           n_sur = survey_cache_n(icache)
           points(1:n_sur) = survey_cache_points(1:n_sur, icache)
           sur_mmag(1:n_sur) = survey_cache_mmag(1:n_sur, icache)
+          n_epochs = survey_cache_n_epochs(icache)
+          detections_required = survey_cache_det_req(icache)
+          epoch_n(1:n_epochs) = survey_cache_epoch_n(1:n_epochs, icache)
+          epoch_off(1:n_epochs) = survey_cache_epoch_off(1:n_epochs, icache)
           ierr = 0
        else
-          call GetSurvey (surnam, lun_s, n_sur, points, sur_mmag, ierr)
+          call LoadSurveyRoot(surnam, lun_s, n_sur, points, sur_mmag, &
+               n_epochs, epoch_n, epoch_off, detections_required, &
+               survey_name, ierr)
           if (ierr .ne. 0) then
              first = .true.
              last_surnam = ' '
              if (ierr .eq. 100) then
                 write (screen, *) &
-                     'GetSurvey: reached maximum number of pointings, ', n_sur
-             else if (ierr .eq. 10) then
+                     'LoadSurveyRoot: reached maximum number of pointings, ', &
+                     n_sur
+             else if ((ierr .eq. 10) .or. (ierr .eq. -10)) then
                 write (screen, *) 'Unable to open survey file in ', surnam
-             else if (ierr .eq. 30) then
-                goto 100
+             else if (ierr .eq. -20) then
+                write (screen, *) &
+                     'LoadSurveyRoot: failed loading characterization in ', &
+                     surnam
              else
-                write (screen, *) 'Unknown return code in read_sur.', ierr
+                write (screen, *) 'LoadSurveyRoot failed with ierr=', ierr
              end if
              return
           end if
@@ -219,12 +238,19 @@ contains
              survey_cache_n(icache) = n_sur
              survey_cache_points(1:n_sur, icache) = points(1:n_sur)
              survey_cache_mmag(1:n_sur, icache) = sur_mmag(1:n_sur)
+             survey_cache_n_epochs(icache) = n_epochs
+             survey_cache_det_req(icache) = detections_required
+             survey_cache_epoch_n(1:n_epochs, icache) = epoch_n(1:n_epochs)
+             survey_cache_epoch_off(1:n_epochs, icache) = &
+                  epoch_off(1:n_epochs)
           end if
        end if
 100    continue
-! Determine overall faintest 'x' magnitude for all surveys
+! Determine overall faintest 'x' magnitude for all pointings
        mag_faint = 0.d0
-       write (log_msg, *) 'Number of surveys: ',n_sur
+       write (log_msg, *) 'Number of epochs: ', n_epochs, &
+            ' pointings: ', n_sur, ' detections_required: ', &
+            detections_required
        call dbg_print(2, log_msg)
        write (log_msg, *)  'Survey','Survey Limit','Faintest Limit'
        call dbg_print(4, log_msg)
@@ -262,9 +288,14 @@ contains
     if (mag_peri .le. mag_faint) then
        jday_o = -1.d30
        o_ml = o_m
+       n_hit = 0
 
-! loop on surveys
-       do i_sur = 1, n_sur
+! Loop on epochs; count epochs with a detection vs detections_required.
+       do ie = 1, n_epochs
+          flag_epoch = 0
+          i0 = epoch_off(ie)
+          i1e = epoch_off(ie) + epoch_n(ie) - 1
+          do i_sur = i0, i1e
           obspos = points(i_sur)%o_pos
           ff = points(i_sur)%ff
           rc = points(i_sur)%c%r_cut
@@ -523,8 +554,9 @@ contains
 ! Record what needs to be recorded.
                             if (flag_l .gt. flag) then
                                isur = i_sur
-                               surna = points(i_sur)%efnam &
-                                    (1:min(len(surna),len(points(1)%efnam)))
+                               ! Detection key: survey/block ( '/' is a key
+                               ! delimiter, not a filesystem path).
+                               surna = points(i_sur)%key
 ! Converting intrinsic magnitude to 'x' band, keeping apparent
 ! magnitude in discovery filter
                                ic = filt_i
@@ -556,9 +588,10 @@ contains
                                jdayp = obspos(1)%jday
                             end if
 ! We got it, and we know if it was tracked and/or characterized.
-! Return if tracked and characterized, otherwise keep looping.
-                            if (flag .ge. 4) then
-                                 return
+! Done with this epoch if tracked and characterized; keep other epochs.
+                            if (flag_l .gt. flag_epoch) flag_epoch = flag_l
+                            if (flag_epoch .ge. 4) then
+                                 goto 400
                             end if
                          end if
                       end if
@@ -567,8 +600,24 @@ contains
              end if
           end if
 
-! End loop on surveys
+! End loop on pointings within epoch
+          end do
+400       continue
+          if (flag_epoch .gt. 0) n_hit = n_hit + 1
        end do
+
+! Require K epoch detections (1 = OR, n_epochs = AND).
+       if (n_hit .lt. detections_required) then
+          flag = 0
+          isur = 0
+          surna = ' '
+          ic = 0
+          m_int = 0.d0
+          m_rand = 0.d0
+          h_rand = 0.d0
+          eff = 0.d0
+          mt = 0.d0
+       end if
    end if
    return
 
@@ -580,12 +629,15 @@ contains
           last_surnam = ' '
           survey_loaded = .false.
           n_sur_loaded = 0
+          n_epochs_loaded = 0
+          det_req_loaded = 1
           call close_jpl_ephemeris()
   end subroutine reset_simulator
 
   subroutine survey_load(survey, lun_s, n_sur, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-! Load a survey directory into module storage for index-based queries.
+! Load a survey root into module storage for index-based queries.
+! Discovers epochs under survey (see LoadSurveyRoot / discover_epochs).
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) survey
 !f2py intent(in) lun_s
@@ -595,18 +647,38 @@ contains
     character(*), intent(in) :: survey
     integer, intent(in) :: lun_s
     integer, intent(out) :: n_sur, ierr
+    character(name_len) :: sname
 
-    call GetSurvey(survey, lun_s, n_sur_loaded, points_loaded, &
-         sur_mm_loaded, ierr)
+    call LoadSurveyRoot(survey, lun_s, n_sur_loaded, points_loaded, &
+         sur_mm_loaded, n_epochs_loaded, epoch_n_loaded, epoch_off_loaded, &
+         det_req_loaded, sname, ierr)
     if (ierr .eq. 0) then
        survey_loaded = .true.
     else
        survey_loaded = .false.
        n_sur_loaded = 0
+       n_epochs_loaded = 0
+       det_req_loaded = 1
     end if
     n_sur = n_sur_loaded
     return
   end subroutine survey_load
+
+  subroutine survey_meta(n_epochs, detections_required)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Multi-epoch metadata for the survey currently loaded via survey_load.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+!f2py intent(out) n_epochs
+!f2py intent(out) detections_required
+    implicit none
+    integer, intent(out) :: n_epochs, detections_required
+    n_epochs = 0
+    detections_required = 1
+    if (.not. survey_loaded) return
+    n_epochs = n_epochs_loaded
+    detections_required = det_req_loaded
+    return
+  end subroutine survey_meta
 
   subroutine pointing_geom(idx, area_deg2, fill)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -655,32 +727,47 @@ contains
     return
   end subroutine pointing_center
 
-  subroutine pointing_meta(idx, efnam, epoch, code, mag_lim, rate_mid_asphr)
+  subroutine pointing_meta(idx, survey, block, key, eff_file, epoch, code, &
+       mag_lim, rate_mid_asphr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-! Metadata for pointing idx: efficiency filename, epoch [JD], obs code,
-! limiting magnitude, and midpoint rate_cut ["/hr].
+! Metadata for pointing idx: survey name, block name, detection key
+! (survey/block), efficiency basename, epoch [JD], obs code, limiting
+! magnitude, and midpoint rate_cut ["/hr].
+! '/' in key is a delimiter, not a filesystem path.
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) idx
-!f2py intent(out) efnam
+!f2py intent(out) survey
+!f2py intent(out) block
+!f2py intent(out) key
+!f2py intent(out) eff_file
 !f2py intent(out) epoch
 !f2py intent(out) code
 !f2py intent(out) mag_lim
 !f2py intent(out) rate_mid_asphr
     implicit none
     integer, intent(in) :: idx
-    character(80), intent(out) :: efnam
+    character(name_len), intent(out) :: survey
+    character(block_len), intent(out) :: block
+    character(key_len), intent(out) :: key
+    character(eff_name_len), intent(out) :: eff_file
     real (kind=8), intent(out) :: epoch, mag_lim, rate_mid_asphr
     integer, intent(out) :: code
     real (kind=8) :: rmid
 
-    efnam = ' '
+    survey = ' '
+    block = ' '
+    key = ' '
+    eff_file = ' '
     epoch = 0.d0
     code = 0
     mag_lim = 0.d0
     rate_mid_asphr = 0.d0
     if ((.not. survey_loaded) .or. (idx .lt. 1) .or. (idx .gt. n_sur_loaded)) &
          return
-    efnam = points_loaded(idx)%efnam
+    survey = points_loaded(idx)%survey
+    block = points_loaded(idx)%block
+    key = points_loaded(idx)%key
+    eff_file = points_loaded(idx)%eff_file
     epoch = points_loaded(idx)%o_pos(1)%jday
     code = points_loaded(idx)%code
     mag_lim = sur_mm_loaded(idx)

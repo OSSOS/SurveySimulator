@@ -105,9 +105,13 @@ class OSSSSim:
     def __init__(self, characterization_directory, seed):
         """
         Args:
-            characterization_directory (str): path to a survey characterization directory.
-                Full surveys are distributed separately in SurveySimulator-Data;
-                format docs are under docs/; small fixtures live in F95/tests/Surveys/.
+            characterization_directory (str): path to a survey *root*.
+                If ``root/pointings.list`` exists it is a single-epoch survey;
+                otherwise each child directory with ``pointings.list`` is an
+                epoch. Optional ``survey.conf`` sets ``detections_required``
+                (default 1 = any epoch; set to n_epochs for AND). Full surveys
+                live in SurveySimulator-Data; format docs under docs/; fixtures
+                under F95/tests/Surveys/ and tests/data/Surveys/.
 
         """
 
@@ -121,12 +125,12 @@ class OSSSSim:
         """
         Pass the target elements to detos1 and determine if this target would be detected.
 
-        Changing ``self.characterization_directory`` between calls reloads that
-        survey (Detos1 compares the path to the last loaded directory) without
-        resetting the ran3 stream. Loaded surveys and JPL ephemeris LUNs are
-        cached, so ANDing several epochs does not reopen JWST.csv on every
-        draw. Do not construct a new OSSSSim per epoch: ``__init__`` calls
-        ``reset_simulator()`` and would reseed the RNG.
+        Pass the survey root once; Detos1 loads all epochs and applies
+        ``detections_required`` from ``survey.conf``. Changing
+        ``self.characterization_directory`` between calls reloads that survey
+        root without resetting the ran3 stream. Do not construct a new
+        OSSSSim per epoch: ``__init__`` calls ``reset_simulator()`` and would
+        reseed the RNG.
 
         Args:
             row (Row or dict): elements of the target to simulate
@@ -172,7 +176,7 @@ class OSSSSim:
 
         M: the mean anomaly at detection
 
-        Survey: a string indicating which field detected the target
+        Survey: detection key "survey/block" for the characterizing block
 
         The colors list declares the color of the KBO in multiple filters. The value of model_band_pass is
         used to transform the color dictionary into colors in the bandpass of the model.

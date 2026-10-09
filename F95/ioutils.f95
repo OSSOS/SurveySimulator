@@ -167,7 +167,7 @@ contains
 ! \subsubsection{Declarations}
 
     integer :: k, lc, lw0
-    character(1024) :: command
+    character(path_len) :: command
 
 ! \subsection{Parsing}
 
@@ -175,6 +175,12 @@ contains
        lw(nw) = 0
     end do
     lc = len(comd)
+    if (lc .gt. path_len) then
+       write (6, *) 'parse: input longer than path_len=', path_len, &
+            ' got=', lc
+       stop
+    end if
+    command = ' '
     command(1:lc) = comd(1:lc)
 1000 continue
     if ((command(lc:lc) .eq. char(0)) &
@@ -307,10 +313,15 @@ contains
     return
   end subroutine Format
 
-    character(100) function strip_comment(str)
+    character(path_len) function strip_comment(str)
         character (*), intent(in) :: str
         integer c_idx, i1, i2
         logical finished
+        if (len_trim(str) .gt. path_len) then
+           write (6, *) 'strip_comment: string longer than path_len=', &
+                path_len, ' got=', len_trim(str)
+           stop
+        end if
         strip_comment = str
         c_idx = index(strip_comment, '!')
         if (c_idx /= 0) then

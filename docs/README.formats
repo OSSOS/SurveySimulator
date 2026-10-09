@@ -4,13 +4,56 @@ README.formats
 This file explains the format of the survey characterization that
 is critical to the operation of the survey simulator.
 
-The Survey Simulator divides the sky coverage of all observations
-into 'blocks' of contiguous rectangular area.  The 
-pointings.list
-file lists each such rectangular block, one per line.
-Each such line should contain the name of an 'efficiency file'
-that is in the same directory.  Although rare, different blocks in 
-the pointing file could share a single efficiency definition.
+Terminology
+-----------
+
+- Survey root: the directory passed to the simulator / Driver. Survey
+  identity is the basename of this directory (maximum length name_len = 32).
+  Paths may be up to path_len = 2048 characters.
+- Single-epoch survey: survey root contains pointings.list (and .eff
+  files). That directory alone is loaded.
+- Multi-epoch survey: survey root does *not* contain pointings.list.
+  Each immediate child directory that contains pointings.list is an
+  epoch (folder names are unrestricted: epoch1, visitOne, 20260610, …).
+  All such epochs are loaded; detection keys still use the survey-root
+  basename, not the epoch folder name.
+- Block: one efficiency characterization (.eff file) within a survey.
+  The block identity is the .eff basename with the .eff suffix removed
+  (maximum length block_len = 32). Block names are unique within an
+  epoch directory; the same block stem may appear in multiple epochs.
+  Several FoV rows in pointings.list may share one block (same .eff).
+- Pointing: one FoV row in pointings.list (geometry, epoch JD, fill
+  factor, observatory code, and a reference to a block via the
+  efficiency file).
+- Detection key: "survey/block" (maximum key_len = 65). The '/' character
+  is a structural delimiter in detect/track Surv columns and in the
+  simulator Survey field — it is not a filesystem path and does not
+  include the epoch folder. Do not open the key as a file; open .eff
+  files as <epoch_or_survey_dir>/<efficiency_file_name>. Survey and
+  block names must not contain '/'. Efficiency basenames are limited to
+  eff_name_len = block_len + 4 (stem + ".eff").
+
+survey.conf (optional, in the survey root)
+------------------------------------------
+
+Simple key = value lines (# comments allowed), same style as .eff files:
+
+  detections_required = 1
+
+detections_required is the minimum number of *epoch* detections needed
+for a positive Detos1 result (1 = any epoch / OR; n_epochs = AND; values
+in between = any K of N). Missing file defaults to 1. Must satisfy
+1 <= detections_required <= n_epochs (for a single-epoch survey the
+effective requirement is 1).
+
+Loading fails hard on format, path-length, name-length, missing .eff,
+invalid detections_required, or other characterization errors (no silent
+skipping of bad rows).
+
+The Survey Simulator describes sky coverage as rectangular (or polygonal)
+pointings. The pointings.list file lists each pointing, one per line.
+Each line names an efficiency file in the same directory (the block).
+Different pointings may share a single efficiency definition.
 
 --------------------------------------------------------------------------------
 
@@ -31,7 +74,9 @@ where:
 <filling_factor>: filling factor of that FOV (fraction of FOV occupied by
                   active pixels)
 <obs_code>: observatory code
-<efficiency_file_name>: name of efficiency file for that pointing
+<efficiency_file_name>: basename of the efficiency (.eff) file for that
+  pointing's block (must live in the same survey directory; no '/' in
+  the name; block stem length <= block_len)
 
 Lines starting with '#' are ignored and can be used for comments.
 
