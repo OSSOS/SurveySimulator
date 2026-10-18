@@ -6,6 +6,7 @@ module getsur
   use poly_lib
   use effut
   use ioutils
+  use dirlist
 
   integer, parameter :: max_jpl_eph = 32
   integer, save :: n_jpl_eph = 0
@@ -24,6 +25,11 @@ module getsur
   integer, save :: survey_cache_n(max_survey_cache)
   type(t_pointing), save :: survey_cache_points(n_sur_max, max_survey_cache)
   real (kind=8), save :: survey_cache_mmag(n_sur_max, max_survey_cache)
+  ! Multi-epoch metadata per cache slot
+  integer, save :: survey_cache_n_epochs(max_survey_cache)
+  integer, save :: survey_cache_det_req(max_survey_cache)
+  integer, save :: survey_cache_epoch_n(max_epochs, max_survey_cache)
+  integer, save :: survey_cache_epoch_off(max_epochs, max_survey_cache)
 
 contains
 
@@ -651,6 +657,248 @@ contains
     n_survey_cache = 0
     pointing_file_open = .false.
   end subroutine close_jpl_ephemeris
+
+  subroutine read_survey_conf(root, detections_required, ierr)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Read survey.conf from survey root. Missing file => detections_required=1.
+! Format: key = value lines (same style as .eff). Only detections_required
+! is recognized today.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    implicit none
+    character(*), intent(in) :: root
+    integer, intent(out) :: detections_required, ierr
+    character(path_len) :: fname, line
+    character(path_len) :: word(nw_max)
+    integer :: lun, ios, eq_ind, nw, lw(nw_max), val
+
+    detections_required = 1
+    ierr = 0
+    if (len_trim(root) + len('/survey.conf') > path_len) then
+       write (6, *) 'read_survey_conf: path too long'
+       ierr = 20
+       return
+    end if
+    fname = root(1:len_trim(root))//'/survey.conf'
+    if (.not. file_exists(fname(1:len_trim(fname)))) return
+
+    lun = 96
+    open (unit=lun, file=fname(1:len_trim(fname)), status='old', &
+         action='read', iostat=ios)
+    if (ios /= 0) then
+       write (6, *) 'read_survey_conf: cannot open ', fname(1:len_trim(fname))
+       ierr = 20
+       return
+    end if
+
+100 continue
+    read (lun, '(a)', iostat=ios) line
+    if (ios < 0) goto 200
+    if (ios > 0) then
+       write (6, *) 'read_survey_conf: read error in ', &
+            fname(1:len_trim(fname))
+       ierr = 20
+       close (lun)
+       return
+    end if
+    if (len_trim(line) == 0) goto 100
+    if (line(1:1) == '#') goto 100
+    eq_ind = index(line, '=')
+    if (eq_ind <= 0) goto 100
+    call parse(line(1:eq_ind-1), nw_max, nw, word, lw)
+    if (nw /= 1) goto 100
+    if (word(1)(1:lw(1)) == 'detections_required') then
+       read (line(eq_ind+1:), *, iostat=ios) val
+       if (ios /= 0) then
+          write (6, *) 'read_survey_conf: bad detections_required in ', &
+               fname(1:len_trim(fname))
+          ierr = 20
+          close (lun)
+          return
+       end if
+       detections_required = val
+    end if
+    goto 100
+200 continue
+    close (lun)
+    return
+  end subroutine read_survey_conf
+
+  subroutine discover_epochs(root, epoch_dirs, n_epochs, survey_name, ierr)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Resolve epoch directories under survey root.
+! If root/pointings.list exists => single epoch (root itself).
+! Else each immediate child with pointings.list is an epoch directory.
+! survey_name = basename(root).
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    implicit none
+    character(*), intent(in) :: root
+    character(path_len), intent(out) :: epoch_dirs(max_epochs)
+    integer, intent(out) :: n_epochs, ierr
+    character(name_len), intent(out) :: survey_name
+    character(path_len) :: pl, subnames(max_epochs), child
+    integer :: i, n_sub, ierr2, i1, i2
+    logical :: finished
+
+    n_epochs = 0
+    ierr = 0
+    do i = 1, max_epochs
+       epoch_dirs(i) = ' '
+    end do
+    survey_name = ' '
+
+    call read_file_name(root, i1, i2, finished, len(root))
+    if (finished .or. (i2 < i1)) then
+       write (6, *) 'discover_epochs: empty survey root'
+       ierr = 20
+       return
+    end if
+
+    call survey_basename(root(i1:i2), survey_name, ierr2)
+    if (ierr2 /= 0) then
+       ierr = 20
+       return
+    end if
+
+    if (len_trim(root(i1:i2)) + len('/pointings.list') > path_len) then
+       write (6, *) 'discover_epochs: path too long'
+       ierr = 20
+       return
+    end if
+    pl = root(i1:i2)//'/pointings.list'
+    if (file_exists(pl(1:len_trim(pl)))) then
+       n_epochs = 1
+       epoch_dirs(1) = root(i1:i2)
+       return
+    end if
+
+    call list_subdirs(root(i1:i2), subnames, n_sub, ierr2)
+    if (ierr2 /= 0) then
+       ierr = 20
+       return
+    end if
+
+    do i = 1, n_sub
+       child = root(i1:i2)//'/'// &
+            subnames(i)(1:len_trim(subnames(i)))
+       if (len_trim(child) + len('/pointings.list') > path_len) cycle
+       pl = child(1:len_trim(child))//'/pointings.list'
+       if (file_exists(pl(1:len_trim(pl)))) then
+          if (n_epochs >= max_epochs) then
+             write (6, *) 'discover_epochs: more than max_epochs=', &
+                  max_epochs, ' under ', root(i1:i2)
+             ierr = 20
+             return
+          end if
+          n_epochs = n_epochs + 1
+          epoch_dirs(n_epochs) = child(1:len_trim(child))
+       end if
+    end do
+
+    if (n_epochs <= 0) then
+       write (6, *) 'discover_epochs: no pointings.list in ', &
+            root(i1:i2), ' or its immediate children'
+       ierr = 20
+       return
+    end if
+    return
+  end subroutine discover_epochs
+
+  subroutine apply_survey_name(points, n_sur, sname)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Force survey identity / detection key to survey-root basename.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    implicit none
+    type(t_pointing), intent(inout) :: points(:)
+    integer, intent(in) :: n_sur
+    character(*), intent(in) :: sname
+    integer :: i
+
+    do i = 1, n_sur
+       points(i)%survey = sname
+       points(i)%key = sname(1:len_trim(sname))//'/'// &
+            points(i)%block(1:len_trim(points(i)%block))
+    end do
+    return
+  end subroutine apply_survey_name
+
+  subroutine LoadSurveyRoot(root, lun_s, n_sur, points, sur_mm, n_epochs, &
+       epoch_n, epoch_off, detections_required, survey_name, ierr)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Load a survey root: discover epochs, read survey.conf, load all
+! pointings, stamp survey-root basename onto keys.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    implicit none
+    character(*), intent(in) :: root
+    integer, intent(in) :: lun_s
+    integer, intent(out) :: n_sur, n_epochs, detections_required, ierr
+    integer, intent(out) :: epoch_n(max_epochs), epoch_off(max_epochs)
+    type(t_pointing), intent(out) :: points(n_sur_max)
+    real (kind=8), intent(out) :: sur_mm(n_sur_max)
+    character(name_len), intent(out) :: survey_name
+
+    character(path_len) :: epoch_dirs(max_epochs)
+    type(t_pointing) :: ep_points(n_sur_max)
+    real (kind=8) :: ep_mm(n_sur_max)
+    integer :: ie, n_ep, j, ierr2
+
+    n_sur = 0
+    n_epochs = 0
+    detections_required = 1
+    survey_name = ' '
+    ierr = 0
+    do ie = 1, max_epochs
+       epoch_n(ie) = 0
+       epoch_off(ie) = 0
+    end do
+
+    call discover_epochs(root, epoch_dirs, n_epochs, survey_name, ierr2)
+    if (ierr2 /= 0) then
+       ierr = ierr2
+       return
+    end if
+
+    call read_survey_conf(root, detections_required, ierr2)
+    if (ierr2 /= 0) then
+       ierr = ierr2
+       return
+    end if
+
+    if (detections_required < 1) then
+       write (6, *) 'LoadSurveyRoot: detections_required must be >= 1, got ', &
+            detections_required
+       ierr = -20
+       return
+    end if
+    if (detections_required > n_epochs) then
+       write (6, *) 'LoadSurveyRoot: detections_required=', &
+            detections_required, ' > n_epochs=', n_epochs
+       ierr = -20
+       return
+    end if
+
+    do ie = 1, n_epochs
+       call GetSurvey(epoch_dirs(ie)(1:len_trim(epoch_dirs(ie))), lun_s, &
+            n_ep, ep_points, ep_mm, ierr2)
+       if (ierr2 /= 0) then
+          ierr = ierr2
+          return
+       end if
+       if (n_sur + n_ep > n_sur_max) then
+          write (6, *) 'LoadSurveyRoot: total pointings exceed n_sur_max'
+          ierr = 100
+          return
+       end if
+       call apply_survey_name(ep_points, n_ep, survey_name)
+       epoch_off(ie) = n_sur + 1
+       epoch_n(ie) = n_ep
+       do j = 1, n_ep
+          points(n_sur + j) = ep_points(j)
+          sur_mm(n_sur + j) = ep_mm(j)
+       end do
+       n_sur = n_sur + n_ep
+    end do
+    return
+  end subroutine LoadSurveyRoot
 
   subroutine survey_basename(dirn, sname, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-

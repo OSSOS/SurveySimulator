@@ -78,16 +78,42 @@ class Pointing:
         return scale * eta
 
 
+def read_survey_conf(directory: Union[str, Path]) -> int:
+    """
+    Read ``detections_required`` from ``survey.conf`` in the survey root.
+
+    Missing file defaults to 1. Same key=value contract as the Fortran reader.
+    """
+    path = Path(directory) / 'survey.conf'
+    detections_required = 1
+    if not path.is_file():
+        return detections_required
+    for raw in path.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith('#'):
+            continue
+        if '=' not in line:
+            continue
+        key, _, val = line.partition('=')
+        if key.strip() == 'detections_required':
+            detections_required = int(val.strip().split()[0])
+    return detections_required
+
+
 class SurveyCharacterization:
     """
-    Loaded survey characterization directory with keyed pointing access.
+    Loaded survey characterization root with keyed pointing access.
 
-    A *survey* is the characterization subdirectory (basename). A *block* is
-    an ``.eff`` stem within that survey. Pointing keys use the block name;
-    when several pointings share the same block they are disambiguated as
-    ``block#0``, ``block#1``, ... in ``pointings.list`` order. Detection
-    attribution uses ``survey/block`` (see ``Pointing.key``). Use
-    ``by_index`` for unambiguous iteration.
+    Pass the *survey root*. If ``root/pointings.list`` exists it is a
+    single-epoch survey; otherwise each immediate child containing
+    ``pointings.list`` is an epoch. Survey identity is the root basename.
+    Optional ``survey.conf`` sets ``detections_required`` (default 1).
+
+    A *block* is an ``.eff`` stem within that survey. Pointing keys use the
+    block name; when several pointings share the same block they are
+    disambiguated as ``block#0``, ``block#1``, ... Detection attribution uses
+    ``survey/block`` (see ``Pointing.key``). Use ``by_index`` for unambiguous
+    iteration.
     """
 
     def __init__(
@@ -95,10 +121,14 @@ class SurveyCharacterization:
         directory: Path,
         pointings: Dict[str, Pointing],
         by_index: List[Pointing],
+        n_epochs: int = 1,
+        detections_required: int = 1,
     ):
         self.directory = Path(directory)
         self.pointings = pointings
         self.by_index = by_index
+        self.n_epochs = n_epochs
+        self.detections_required = detections_required
 
     @classmethod
     def from_directory(
@@ -106,10 +136,20 @@ class SurveyCharacterization:
         directory: Union[str, Path],
         lun: int = 21,
     ) -> "SurveyCharacterization":
-        """Load ``pointings.list`` and associated ``.eff`` files via Fortran."""
+        """Load a survey root (single- or multi-epoch) via Fortran."""
         directory = Path(directory).resolve()
-        if not (directory / 'pointings.list').is_file():
-            raise FileNotFoundError(f"No pointings.list in {directory}")
+        if not directory.is_dir():
+            raise FileNotFoundError(f"Survey root not found: {directory}")
+        has_root_pl = (directory / 'pointings.list').is_file()
+        if not has_root_pl:
+            kids = [
+                p for p in directory.iterdir()
+                if p.is_dir() and (p / 'pointings.list').is_file()
+            ]
+            if not kids:
+                raise FileNotFoundError(
+                    f"No pointings.list in {directory} or its immediate children"
+                )
 
         lib = ossssimlib.surveysub
         lib.reset_simulator()
@@ -118,6 +158,7 @@ class SurveyCharacterization:
             raise RuntimeError(
                 f"survey_load failed for {directory}: ierr={ierr}, n_sur={n_sur}"
             )
+        n_epochs, detections_required = lib.survey_meta()
 
         # First pass: collect metadata; count duplicate blocks for id disambiguation
         raw = []
@@ -183,7 +224,13 @@ class SurveyCharacterization:
             by_index.append(p)
             pointings[pid] = p
 
-        return cls(directory, pointings, by_index)
+        return cls(
+            directory,
+            pointings,
+            by_index,
+            n_epochs=int(n_epochs),
+            detections_required=int(detections_required),
+        )
 
     def keys(self) -> List[str]:
         return list(self.pointings.keys())

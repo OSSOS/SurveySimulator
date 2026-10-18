@@ -14,4 +14,4 @@ from .core import *
 from .models import DetectFile, ModelFile, ModelOutputFile, ModelFileEcsv, ModelFileOld
 from .ephem import Ephem
 from .characterization import *
-from .survey import SurveyCharacterization, Pointing
+from .survey import SurveyCharacterization, Pointing, read_survey_conf

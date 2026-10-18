@@ -15,11 +15,13 @@ F90M    = $(addsuffix .f90,${M})
 F90_WRAP_M    = $(addprefix f90wrap_,${F90M})
 
 # Things that should be in the library
-A   = parameters poly_dec datadec common_data debug poly_lib ioutils elemutils rot effut xvutils numutils getsur surveysub
+A   = parameters poly_dec datadec common_data debug poly_lib ioutils elemutils rot effut xvutils numutils dirlist getsur surveysub
 OBJA	= $(addsuffix .o,${A})
 SRCA	= $(addsuffix .f95,${A})
 FPPA	= $(addsuffix .fpp,${A})
 MODA	= $(addsuffix .mod,${A})
+# C helpers (POSIX directory listing)
+COBJ    = list_dirs.o
 
 MODULE	?= ossssimlib
 GOBJ	= GiMeObjF95
@@ -77,6 +79,9 @@ test:
 %.o : %.f95
 	$(FC) $(FFLAGS) -c $<
 
+%.o : %.c
+	$(CC) $(CFLAGS) -fPIC -c $<
+
 # ---------------------------------------------------------------------------
 # Explicit Fortran MODULE dependencies for parallel builds (make -j).
 # gfortran emits .mod files alongside .o; consumers must wait on the
@@ -90,7 +95,9 @@ effut.o: datadec.o parameters.o
 rot.o: datadec.o elemutils.o
 xvutils.o: elemutils.o rot.o ioutils.o
 numutils.o: datadec.o xvutils.o rot.o common_data.o
-getsur.o: parameters.o datadec.o xvutils.o poly_lib.o effut.o ioutils.o
+dirlist.o: parameters.o
+getsur.o: parameters.o datadec.o xvutils.o poly_lib.o effut.o ioutils.o \
+	dirlist.o
 surveysub.o: debug.o common_data.o parameters.o datadec.o poly_lib.o \
 	effut.o numutils.o getsur.o ioutils.o
 
@@ -120,14 +127,14 @@ link:
 	rm -f GiMeObj.f95 GiMeObj.o
 	$(MAKE) GiMeObj.f95
 
-Driver: Driver.f95 $(OBJA) $(OBJU) Makefile GiMeObj.f95
-	$(FC) $(FFLAGP) -o Driver $(OBJA) $(OBJU) Driver.f95
+Driver: Driver.f95 $(OBJA) $(COBJ) $(OBJU) Makefile GiMeObj.f95
+	$(FC) $(FFLAGP) -o Driver $(OBJA) $(COBJ) $(OBJU) Driver.f95
 
 magerr: magerr.f95 $(OBJU) ${SRCM} Makefile GiMeObj.f95
 	$(FC) $(FFLAGP) -o magerr $(OBJU) ${SRCM} magerr.f95
 	rm GiMeObj.f95
 
-libsrc.a: ${OBJA}
+libsrc.a: ${OBJA} $(COBJ)
 	${LIBTOOL} $@ $?
 
 Modules: _$(MODULE).so Makefile 
