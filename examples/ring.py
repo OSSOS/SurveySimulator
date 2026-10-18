@@ -121,11 +121,8 @@ if __name__ == '__main__':
     import pathlib
     seed = 123456789
     n_track = 10
-    # Prefer sibling SurveySimulator-Data; fall back to in-repo CFEPS test fixture
     repo_root = pathlib.Path(__file__).resolve().parents[1]
-    cfeps = repo_root.parent / 'SurveySimulator-Data' / 'Characterizations' / 'CFEPS'
-    if not cfeps.is_dir():
-        cfeps = repo_root / 'F95' / 'tests' / 'Surveys' / 'CFEPS'
+    cfeps = repo_root / 'data' / 'Surveys' / 'CFEPS'
     for i in range(2):
         file_format='ecsv'
         model_filename = f'RingModel_{i}.{file_format}'

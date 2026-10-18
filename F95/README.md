@@ -53,10 +53,10 @@ or to read a model from an input file:
       <n> = 0: run until the 'model' decides to stop
   - the name of the directory containing the characterized survey blocks
     (see [`../docs/`](../docs/) for characterization formats and a mini example;
-    full survey packages are distributed in the sibling
-    [`SurveySimulator-Data`](../../SurveySimulator-Data/) tree;
-    Driver test fixtures are under `tests/Surveys/`)
-  - the name of the model input file (a file GiMeObj will read in)
+    example characterizations are in [`../data/Surveys/`](../data/Surveys/),
+    linked from `tests/Surveys/` for the Driver regressions)
+  - the name of the model input file (a file GiMeObj will read in; examples
+    are in [`../data/Models/`](../data/Models/), linked from `tests/Models/`)
   - the name of the output file where the detected objects will be listed
   - the name of the output file where the detected and tracked objects will be
     listed

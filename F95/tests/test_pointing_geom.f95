@@ -16,7 +16,7 @@ program test_pointing_geom
 
   nfail = 0
   call reset_simulator()
-  call survey_load('../../src/ossssim/Characterizations/CFEPS', 21, n_sur, ierr)
+  call survey_load('Surveys/CFEPS', 21, n_sur, ierr)
   if ((ierr .ne. 0) .or. (n_sur .le. 0)) then
      write (6, *) 'FAIL: survey_load ierr=', ierr, ' n_sur=', n_sur
      stop 1
