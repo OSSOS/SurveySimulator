@@ -75,7 +75,7 @@ OUTPUT
     mt    : Mean anomaly at discovery [rad] (R8)
     jdayp : Time of discovery [JD] (R8)
     ic    : Index of color used for survey (I4)
-    surna : Detection survey name (CH10)
+    surna : Detection key "survey/block" (CH key_len; '/' is a key delimiter)
     h_rand: Absolute randomized magnitude, in detection filter (R8)
 
 The Detos1 routine is part of the survey simulator and should not be modified

@@ -29,11 +29,14 @@ def _as_str(value) -> str:
 
 @dataclass
 class Pointing:
-    """One survey pointing with geometric area, fill factor, and efficiency."""
+    """One FoV pointing with geometry, fill factor, and efficiency (block)."""
 
     id: str
     index: int  # 1-based Fortran index into the loaded survey
-    efnam: str
+    survey: str  # characterization directory basename
+    block: str  # .eff stem; unique within survey only
+    key: str  # "survey/block" detection key ('/' is a delimiter, not a path)
+    efnam: str  # efficiency basename as listed in pointings.list
     ra: float  # radians
     dec: float  # radians
     epoch: float  # JD
@@ -54,7 +57,8 @@ class Pointing:
         lib = self._lib or ossssimlib.surveysub
         arr = np.asarray(mag, dtype=float)
         if arr.ndim == 0:
-            eta, _maglim = lib.pointing_eta(self.index, float(arr), rate)
+            # f90wrap returns intent(out) maglim before the function result
+            _maglim, eta = lib.pointing_eta(self.index, float(arr), rate)
             return float(eta)
         etas = np.empty(arr.size, dtype=float)
         lib.pointing_eta_grid(
@@ -78,9 +82,11 @@ class SurveyCharacterization:
     """
     Loaded survey characterization directory with keyed pointing access.
 
-    Pointing keys use the efficiency-file basename without ``.eff``. When
-    several pointings share the same efficiency file they are disambiguated
-    as ``name#0``, ``name#1``, ... in ``pointings.list`` order. Use
+    A *survey* is the characterization subdirectory (basename). A *block* is
+    an ``.eff`` stem within that survey. Pointing keys use the block name;
+    when several pointings share the same block they are disambiguated as
+    ``block#0``, ``block#1``, ... in ``pointings.list`` order. Detection
+    attribution uses ``survey/block`` (see ``Pointing.key``). Use
     ``by_index`` for unambiguous iteration.
     """
 
@@ -113,23 +119,27 @@ class SurveyCharacterization:
                 f"survey_load failed for {directory}: ierr={ierr}, n_sur={n_sur}"
             )
 
-        # First pass: collect raw metadata and count duplicate efnam stems
+        # First pass: collect metadata; count duplicate blocks for id disambiguation
         raw = []
         counts: Dict[str, int] = {}
         for i in range(1, n_sur + 1):
             area, fill = lib.pointing_geom(i)
             ra, dec = lib.pointing_center(i)
-            efnam, epoch, code, mag_lim, rate_mid = lib.pointing_meta(i)
-            efnam_s = _as_str(efnam)
-            stem = Path(efnam_s).name
-            if stem.lower().endswith('.eff'):
-                stem = stem[:-4]
-            counts[stem] = counts.get(stem, 0) + 1
+            survey, block, key, eff_file, epoch, code, mag_lim, rate_mid = (
+                lib.pointing_meta(i)
+            )
+            survey_s = _as_str(survey)
+            block_s = _as_str(block)
+            key_s = _as_str(key)
+            eff_s = _as_str(eff_file)
+            counts[block_s] = counts.get(block_s, 0) + 1
             raw.append(
                 dict(
                     index=i,
-                    efnam=efnam_s,
-                    stem=stem,
+                    survey=survey_s,
+                    block=block_s,
+                    key=key_s,
+                    efnam=eff_s,
                     ra=float(ra),
                     dec=float(dec),
                     epoch=float(epoch),
@@ -141,21 +151,24 @@ class SurveyCharacterization:
                 )
             )
 
-        # Second pass: assign ids (plain stem if unique, else stem#k)
+        # Second pass: assign ids (plain block if unique, else block#k)
         seen: Dict[str, int] = {}
         by_index: List[Pointing] = []
         pointings: Dict[str, Pointing] = {}
         for item in raw:
-            stem = item['stem']
-            if counts[stem] == 1:
-                pid = stem
+            block = item['block']
+            if counts[block] == 1:
+                pid = block
             else:
-                k = seen.get(stem, 0)
-                seen[stem] = k + 1
-                pid = f"{stem}#{k}"
+                k = seen.get(block, 0)
+                seen[block] = k + 1
+                pid = f"{block}#{k}"
             p = Pointing(
                 id=pid,
                 index=item['index'],
+                survey=item['survey'],
+                block=item['block'],
+                key=item['key'],
                 efnam=item['efnam'],
                 ra=item['ra'],
                 dec=item['dec'],
@@ -194,33 +207,22 @@ class SurveyCharacterization:
         include_fill: bool = True,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Effective survey area as a function of magnitude.
+        Sum effective area over pointings vs magnitude.
 
-        A_eff(m) = sum_i area_i * fill_i * eta_i(m, rate_i)
+        Args:
+            mags: magnitude grid.
+            rate_asphr: on-sky rate ["/hr]; default is each pointing's rate_cut midpoint.
+            pointing_ids: Subset of pointing keys; default is all pointings.
+            include_fill: multiply by fill factor when True.
 
-        Parameters
-        ----------
-        mags :
-            Magnitude grid.
-        rate_asphr :
-            On-sky rate ["/hr] applied to every pointing. When None, each
-            pointing uses its own rate_cut midpoint.
-        pointing_ids :
-            Subset of pointing keys; default is all pointings.
-        include_fill :
-            If False, omit fill factors from the sum.
-
-        Returns
-        -------
-        mags, A_eff : ndarray
-            Magnitude grid and effective area [deg^2].
+        Returns:
+            (mags array, total effective area array) in square degrees.
         """
         m = np.asarray(mags, dtype=float)
         if pointing_ids is None:
-            selected = self.by_index
+            selected = list(self.by_index)
         else:
             selected = [self.pointings[k] for k in pointing_ids]
-
         total = np.zeros(m.shape, dtype=float)
         for p in selected:
             total = total + np.asarray(

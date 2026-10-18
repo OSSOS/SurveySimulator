@@ -44,6 +44,7 @@ program Driver
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
+  use parameters
   use gimeobjut
   use surveysub
   use debug, only: debug_init_from_args, debug_is_active
@@ -59,9 +60,10 @@ program Driver
        eff_lim, h_rand
   integer :: n_hits, n_track, ierr, seed, flag, isur, ic, n_iter, &
        n_track_max, nchar, values(8), c_idx, i1, i2
-  character(80) :: distri_file, trk_outfile, det_outfile, line
-  character(100) :: survey_dir, comments
-  character(10) :: surna, time
+  character(path_len) :: distri_file, trk_outfile, det_outfile, line
+  character(path_len) :: survey_dir, comments
+  character(key_len) :: surna
+  character(10) :: time
   character(8) :: date
   character(5) :: zone
   logical :: keep_going, finished
@@ -120,7 +122,8 @@ program Driver
   write (lun_h, '(''#'')')
   write (lun_h, ' &
        (''# flag: >0: detected; >2: characterized; 0 mod(2): tracked'')')
-  write (lun_h, '(''# Survey: name of the block'')')
+  write (lun_h, '(a)') &
+       '# Surv: detection key survey/block (/ is a key delimiter, not a path)'
   write (lun_h, '(''#'')')
   write (lun_h, '(a,a,a,a)') &
        '#   a      e        i       node     peri      M       H_int ', &
@@ -227,7 +230,7 @@ program Driver
   call exit (0)
 
 9000 format (f8.3,1x,f6.3,1x,4(f8.3,1x),f8.2,1x,5(f8.3,1x),i2,2(1x,f8.3), &
-          1x,f6.2,1x,f8.5,1x,f8.4,1x,a6,1x,a)
+          1x,f6.2,1x,f8.5,1x,f8.4,1x,a65,1x,a)
 9010 format (6(f9.4,1x),f5.2,1x,3(f9.4,1x),3(f5.2,1x),a)
 
 9503 continue

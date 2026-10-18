@@ -172,7 +172,7 @@ class OSSSSim:
 
         M: the mean anomaly at detection
 
-        Survey: a string indicating which field detected the target
+        Survey: detection key "survey/block" for the characterizing block
 
         The colors list declares the color of the KBO in multiple filters. The value of model_band_pass is
         used to transform the color dictionary into colors in the bandpass of the model.

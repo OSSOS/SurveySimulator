@@ -39,10 +39,18 @@ module datadec
      type(t_eff_r), dimension(n_r_max) :: eff_p
   end type t_charact
 
+  ! Pointing: one FoV row from pointings.list.
+  ! Survey: characterization directory basename (unique across loaded surveys).
+  ! Block: .eff stem within a survey (unique inside that survey only).
+  ! Detection key = trim(survey)//'/'//trim(block); '/' is a key delimiter,
+  ! not a filesystem path — open files via eff_file under the survey directory.
   type t_pointing
      real (kind=8) :: ff
      integer :: code
-     character(80) :: efnam
+     character(name_len) :: survey
+     character(block_len) :: block
+     character(eff_name_len) :: eff_file
+     character(key_len) :: key
      type(t_obspos) :: o_pos(2)
      type(t_polygon) :: poly
      type(t_charact) :: c

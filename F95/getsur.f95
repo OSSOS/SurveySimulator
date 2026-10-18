@@ -10,14 +10,14 @@ module getsur
   integer, parameter :: max_jpl_eph = 32
   integer, save :: n_jpl_eph = 0
   integer, save :: jpl_eph_lun(max_jpl_eph)
-  character(len=1024), save :: jpl_eph_name(max_jpl_eph)
+  character(len=path_len), save :: jpl_eph_name(max_jpl_eph)
 
   ! Not in the f90wrap module list. A character array here must not live in
   ! surveysub: f90wrap emits f90wrap.runtime.direct_c_array for it, which
   ! older CANFAR f90wrap.runtime does not provide.
   integer, parameter :: max_survey_cache = 8
   integer, save :: n_survey_cache = 0
-  character(len=1024), save :: survey_cache_name(max_survey_cache)
+  character(len=path_len), save :: survey_cache_name(max_survey_cache)
   ! Shared across GetSurvey directories. Reset in close_jpl_ephemeris so a
   ! leftover open on lun 13 cannot make epoch1 look empty while epoch2 loads.
   logical, save :: pointing_file_open = .false.
@@ -352,8 +352,8 @@ contains
     integer, intent(out) :: ierr
     character(*), intent(in) :: filen
     integer :: eq_ind, nw, lw(nw_max), i, j
-    character(256) :: line
-    character(80) :: word(nw_max)
+    character(path_len) :: line
+    character(path_len) :: word(nw_max)
     logical rcut, tr, fi, mag, in_rates, in_func, rate(0:n_r_max), ph
 
     rcut = .false.
@@ -596,14 +596,21 @@ contains
     integer, intent(OUT) :: code_out
   
     character(len=300) :: fmt
-    character(len=1024) :: fname
-    integer :: ierr, j, k
+    character(len=path_len) :: fname
+    integer :: ierr, j, k, need
 
     j=len_trim(code_in)
     write(fmt, '(A,I0,A)') "(I",j,")"
     read(code_in, fmt=fmt, iostat=ierr) code_out
     if ( ierr .ne. 0 ) then
        ! try and open 'code_in' as a file in dirn
+       need = len_trim(dirn) + 1 + len_trim(code_in)
+       if (need .gt. path_len) then
+          write(0, *) "JPL ephemeris path longer than path_len=", path_len, &
+               " need=", need
+          code_out = 0
+          return
+       end if
        fname = dirn(1:len_trim(dirn))//'/'//code_in(1:len_trim(code_in))
        do k = 1, n_jpl_eph
           if (fname(1:len_trim(fname)) == &
@@ -613,7 +620,8 @@ contains
           end if
        end do
        if (n_jpl_eph .ge. max_jpl_eph) then
-          write(0, *) "Too many JPL ephemeris files open: ", fname
+          write(0, *) "Too many JPL ephemeris files open: ", &
+               fname(1:len_trim(fname))
           code_out = 0
           return
        end if
@@ -622,7 +630,8 @@ contains
        jpl_eph_name(n_jpl_eph) = fname
        open(unit=jpl_eph_lun(n_jpl_eph), file=fname, iostat=ierr, status='old')
        if ( ierr .ne. 0 ) then
-          write(0, *) "Failed to open JPL Ephemeris at ",fname," error: ", ierr
+          write(0, *) "Failed to open JPL Ephemeris at ", &
+               fname(1:len_trim(fname))," error: ", ierr
           n_jpl_eph = n_jpl_eph - 1
           code_out=0
        else
@@ -643,10 +652,130 @@ contains
     pointing_file_open = .false.
   end subroutine close_jpl_ephemeris
 
+  subroutine survey_basename(dirn, sname, ierr)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Extract survey identity = last path component of characterization dir.
+! Enforces name_len and rejects '/' inside the survey name.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    implicit none
+    character(*), intent(in) :: dirn
+    character(name_len), intent(out) :: sname
+    integer, intent(out) :: ierr
+    integer :: i1, i2, k, slen
+    logical :: finished
+
+    sname = ' '
+    ierr = 0
+    call read_file_name(dirn, i1, i2, finished, len(dirn))
+    if (finished .or. (i2 .lt. i1)) then
+       write (6, *) 'survey_basename: empty characterization directory'
+       ierr = 20
+       return
+    end if
+    ! Drop trailing path separators, then take the last component.
+120 continue
+    if ((i2 .ge. i1) .and. ((dirn(i2:i2) .eq. '/') .or. &
+         (dirn(i2:i2) .eq. char(92)))) then
+       i2 = i2 - 1
+       goto 120
+    end if
+    if (i2 .lt. i1) then
+       write (6, *) 'survey_basename: empty survey name in ', &
+            dirn(1:len_trim(dirn))
+       ierr = 20
+       return
+    end if
+    k = i2
+    do while (k .ge. i1)
+       if ((dirn(k:k) .eq. '/') .or. (dirn(k:k) .eq. char(92))) exit
+       k = k - 1
+    end do
+    if (k .ge. i1) then
+       i1 = k + 1
+    end if
+    if (i2 .lt. i1) then
+       write (6, *) 'survey_basename: empty survey name in ', &
+            dirn(1:len_trim(dirn))
+       ierr = 20
+       return
+    end if
+    slen = i2 - i1 + 1
+    if (slen .gt. name_len) then
+       write (6, *) 'survey_basename: survey name longer than name_len=', &
+            name_len, ' got=', slen, ' name=', dirn(i1:i2)
+       ierr = 20
+       return
+    end if
+    if (index(dirn(i1:i2), '/') .gt. 0) then
+       write (6, *) 'survey_basename: survey name must not contain /: ', &
+            dirn(i1:i2)
+       ierr = 20
+       return
+    end if
+    sname = dirn(i1:i2)
+    return
+  end subroutine survey_basename
+
+  subroutine block_from_eff(eff_file, bname, ierr)
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+! Block identity = efficiency basename with trailing .eff stripped.
+! Enforces block_len and rejects '/' in the block name.
+!-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+    implicit none
+    character(*), intent(in) :: eff_file
+    character(block_len), intent(out) :: bname
+    integer, intent(out) :: ierr
+    integer :: i1, i2, slen, epos
+    logical :: finished
+    character(path_len) :: stem
+
+    bname = ' '
+    ierr = 0
+    call read_file_name(eff_file, i1, i2, finished, len(eff_file))
+    if (finished .or. (i2 .lt. i1)) then
+       write (6, *) 'block_from_eff: empty efficiency file name'
+       ierr = 20
+       return
+    end if
+    ! Efficiency names in pointings.list are basenames (no directory).
+    if ((index(eff_file(i1:i2), '/') .gt. 0) .or. &
+         (index(eff_file(i1:i2), char(92)) .gt. 0)) then
+       write (6, *) 'block_from_eff: efficiency name must be a basename, got ', &
+            eff_file(i1:i2)
+       ierr = 20
+       return
+    end if
+    stem = eff_file(i1:i2)
+    slen = len_trim(stem)
+    if (slen .ge. 4) then
+       epos = slen - 3
+       if ((stem(epos:slen) .eq. '.eff') .or. &
+            (stem(epos:slen) .eq. '.EFF')) then
+          stem(epos:slen) = ' '
+          slen = epos - 1
+       end if
+    end if
+    if (slen .le. 0) then
+       write (6, *) 'block_from_eff: empty block name from ', &
+            eff_file(i1:i2)
+       ierr = 20
+       return
+    end if
+    if (slen .gt. block_len) then
+       write (6, *) 'block_from_eff: block name longer than block_len=', &
+            block_len, ' got=', slen, ' name=', stem(1:slen)
+       ierr = 20
+       return
+    end if
+    bname = stem(1:slen)
+    return
+  end subroutine block_from_eff
+
   subroutine read_sur (dirn, lun_in, point, ierr)
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! This routine opens and reads in the survey description file.
 ! Angles are returned in radian.
+! Sets point%survey / %block / %eff_file / %key (detection key survey/block).
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !
 ! J-M. Petit  Observatoire de Besancon
@@ -655,6 +784,7 @@ contains
 ! Version 3 : May 2016
 !             Changed API to remove size of arrays, added parameter
 !             statement to define array sizes (in include file)
+! Version 4 : survey/block identity fields; path_len buffers; hard fail
 !
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 ! INPUT
@@ -666,7 +796,7 @@ contains
 !     ierr  : Error code
 !                0 : nominal run
 !               10 : unable to open pointing file
-!               20 : error reading record
+!               20 : error reading record / name / path / .eff
 !               30 : end of file reached
 !-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 !f2py intent(in) dirn
@@ -681,18 +811,41 @@ contains
     character(*), intent(in) :: dirn
     type(t_v3d) :: vel
     real (kind=8) :: w, h, ra, dec
-    integer :: j, nw, lw(nw_max), lun_e, ierr_e, i1, i2, i3, i4
-    character(100) :: line, fname
-    character(80) :: word(nw_max)
+    integer :: j, nw, lw(nw_max), lun_e, ierr_e, i1, i2, i3, i4, need
+    character(path_len) :: line, fname
+    character(path_len) :: word(nw_max)
     logical, save :: finished
+    character(name_len) :: sname
+    character(block_len) :: bname
+
+    point%survey = ' '
+    point%block = ' '
+    point%eff_file = ' '
+    point%key = ' '
 
     call read_file_name (dirn, i1, i2, finished, len(dirn))
     ierr = 0
     lun_e = lun_in + 1
+
+    call survey_basename(dirn, sname, ierr_e)
+    if (ierr_e .ne. 0) then
+       ierr = 20
+       return
+    end if
+    point%survey = sname
+
     if (.not. pointing_file_open) then
+       need = (i2 - i1 + 1) + len('/pointings.list')
+       if (need .gt. path_len) then
+          write (6, *) 'read_sur: path to pointings.list exceeds path_len=', &
+               path_len, ' need=', need
+          ierr = 20
+          return
+       end if
+       line = ' '
        line(1:i2-i1+1) = dirn(i1:i2)
        line(i2-i1+2:) = '/pointings.list'
-       open (unit=lun_in, file=line, status='old', err=1000)
+       open (unit=lun_in, file=line(1:need), status='old', err=1000)
        pointing_file_open = .true.
     end if
 1500 continue
@@ -701,6 +854,7 @@ contains
     end do
     read (lun_in, '(a)', err=2000, end=3000) line
     if (line(1:1) .eq. '#') goto 1500
+    if (len_trim(line) .eq. 0) goto 1500
     call parse (line, nw_max, nw, word, lw)
     if (word(1)(1:4) .eq. 'ears') then
        if (nw .lt. 7) goto 2000
@@ -739,8 +893,6 @@ contains
           point%poly%y(j) = point%poly%y(j)*drad
        end do
        call create_poly(ra, dec, point%poly)
-!         write (6, *) 'This feature is not implemented yet.'
-!         goto 2000
     else
        if (word(1)(1:4) .eq. 'rect') then
           do j = 2, nw
@@ -769,30 +921,54 @@ contains
     call check_polygon(point%poly)
     read (word(5), *, err=2000) point%o_pos(1)%jday
     read (word(6), *, err=2000) point%ff
-    ! get the path to the 
     call get_code(word(7), dirn, point%code)
-    !    read (word(7), *, err=2000) point%code
+    if (point%code .eq. 0) then
+       write (6, *) 'read_sur: invalid observatory code ', &
+            word(7)(1:len_trim(word(7)))
+       goto 2000
+    end if
 
-    ! USE OF SLALIB: need to get longitude, latitude and elevation of
-    ! observatory. This is given by the sla_OBS routine. One then needs to
-    ! get the LST (see documentation on EXPLANATION AND EXAMPLES:
-    ! Ephemerides).
+    call read_file_name (word(8), i3, i4, finished, len(word(8)))
+    if (finished .or. (i4 .lt. i3)) goto 2000
+    if ((i4 - i3 + 1) .gt. eff_name_len) then
+       write (6, *) 'read_sur: efficiency file name exceeds eff_name_len=', &
+            eff_name_len, ' got=', (i4 - i3 + 1)
+       goto 2000
+    end if
+    point%eff_file = word(8)(i3:i4)
 
-    point%efnam = word(8)
-    call read_file_name (point%efnam, i3, i4, finished, len(point%efnam))
+    call block_from_eff(point%eff_file, bname, ierr_e)
+    if (ierr_e .ne. 0) then
+       ierr = 20
+       return
+    end if
+    point%block = bname
+    ! Detection key uses '/' as a structural delimiter, not a path.
+    ! Use len_trim slices: ioutils defines a trim subroutine that shadows
+    ! the intrinsic.
+    point%key = point%survey(1:len_trim(point%survey))//'/'// &
+         point%block(1:len_trim(point%block))
 
 ! Open and read in efficiency function
-    fname(1:i2-i1+2) = dirn(i1:i2)//'/'
-    fname(i2-i1+3:) = point%efnam
-    call read_eff (fname, lun_e, point%c, ierr_e)
+    need = (i2 - i1 + 1) + 1 + len_trim(point%eff_file)
+    if (need .gt. path_len) then
+       write (6, *) 'read_sur: efficiency path exceeds path_len=', path_len, &
+            ' need=', need
+       goto 2000
+    end if
+    fname = ' '
+    fname(1:i2-i1+1) = dirn(i1:i2)
+    fname(i2-i1+2:i2-i1+2) = '/'
+    fname(i2-i1+3:) = point%eff_file(1:len_trim(point%eff_file))
+    call read_eff (fname(1:need), lun_e, point%c, ierr_e)
 
     if (ierr_e .eq. 10) then
-       write (6, *) 'Unable to open '//word(8)
+       write (6, *) 'Unable to open ', point%eff_file(1:len_trim(point%eff_file))
        goto 2000
     else if (ierr_e .eq. 0) then
        goto 1610
     else 
-       write (6, *) 'Unknown return code in read_sur.'
+       write (6, *) 'Unknown return code in read_sur from read_eff: ', ierr_e
        ierr = ierr_e
        return
     end if
@@ -907,29 +1083,42 @@ contains
              write (6, *) 'Unable to open ',survey(i1:i2),'/pointings.list'
              ierr = -10
           else if (ierr .eq. 20) then
+             ! Any format / path / .eff / obs-code failure is fatal: do not
+             ! skip the pointing and continue (would under-characterize).
              write (6, *) 'Error reading ',survey(i1:i2),'/pointings.list'
-             write (6, *) 'Survey number: ', n_sur
-             goto 200
+             write (6, *) 'Pointing index (0-based load count): ', n_sur
+             ierr = -20
           else if (ierr .eq. 30) then
              goto 300
           else
-             write (6, *) 'Unknown return code in read_obj.'
+             write (6, *) 'Unknown return code in GetSurvey: ', ierr
           end if
           return
        end if
 
+       ! Block names must be unique within a survey. Multiple pointings may
+       ! share the same .eff (same block + same eff_file). Different .eff
+       ! files that collapse to the same block stem are an error.
+       do j = 1, n_sur
+          if (points(j)%block(1:len_trim(points(j)%block)) .eq. &
+               point%block(1:len_trim(point%block))) then
+             if (points(j)%eff_file(1:len_trim(points(j)%eff_file)) .ne. &
+                  point%eff_file(1:len_trim(point%eff_file))) then
+                write (6, *) 'GetSurvey: block name collision in survey ', &
+                     point%survey(1:len_trim(point%survey)), ': block=', &
+                     point%block(1:len_trim(point%block))
+                write (6, *) '  existing eff_file=', &
+                     points(j)%eff_file(1:len_trim(points(j)%eff_file))
+                write (6, *) '  new eff_file=', &
+                     point%eff_file(1:len_trim(point%eff_file))
+                ierr = -20
+                return
+             end if
+          end if
+       end do
+
        n_sur = n_sur + 1
        points(n_sur) = point
-! START comment out in production mode
-!       write (18, *) 'Survey number: ', n_sur
-!       write (18, *) points(n_sur)%o_pos(1)%jday, points(n_sur)%ff, &
-!            points(n_sur)%code
-!       write (18, *) points(n_sur)%o_pos(1)%pos%x, &
-!            points(n_sur)%o_pos(1)%pos%y, &
-!            points(n_sur)%o_pos(1)%pos%z, &
-!            points(n_sur)%o_pos(1)%r
-!       write (18, *) points(n_sur)%efnam, points(n_sur)%c%nr
-! END comment out in production mode
        sur_mm(n_sur) = 0.d0
        nr = point%c%nr
        do j = 1, nr

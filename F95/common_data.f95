@@ -1,8 +1,9 @@
 module common_data
+use parameters
 implicit none
 logical, save :: first
 integer, save :: iff
-character(len=1024), save :: last_surnam
+character(len=path_len), save :: last_surnam
     data first /.true./
     data iff /0/
     data last_surnam /' '/
