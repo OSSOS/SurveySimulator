@@ -14,8 +14,8 @@ To do the test run the following commands:
 - run_tests.sh                    # script to run the test suite
 - test.sh                         # script to run the test suite
 - Makefile                        # Execute the unit test `make test LANGUAGE=(F77|F95)` (run by run_tests.sh)
-- Models                          # Input model files used for the tests
-- Surveys                         # Survey desciption files used in the test, look here to build your own
+- Models -> ../../data/Models     # Input model files used for the tests (symlink)
+- Surveys -> ../../data/Surveys   # Survey description files used in the tests (symlink); look here to build your own
 - InnerHotModel.in                # Input file to run SurveySimulator from a set of parameters.
 - InnerHotModel-check-F77.dat     # Result that should be produced by InnerBeltModel.in when running F77 version
 - InnerHotModel-check-F95.dat     # Result that should be produced by InnerBeltModel.in when running F95 version

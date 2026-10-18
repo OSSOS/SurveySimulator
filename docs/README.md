@@ -14,10 +14,12 @@ inputs (`pointings.list`, efficiency `.eff` files, and related notes).
 
 | Purpose | Location |
 | ------- | -------- |
-| Full characterizations and models (DOI / download) | Sibling [`SurveySimulator-Data`](../../SurveySimulator-Data/) (`Characterizations/`, `Models/`) |
-| Fortran Driver regression fixtures | [`F95/tests/Surveys/`](../F95/tests/Surveys/), [`F95/tests/Models/`](../F95/tests/Models/) |
+| Model inputs (L7, InnerHot, HST, resonance parameters) | [`data/Models/`](../data/Models/) |
+| Example characterizations (CFEPS, HST, JWST) | [`data/Surveys/`](../data/Surveys/) |
+| Full OSSOS v11 / CFEPS characterizations | `characterization/` in [jwst-tno-followup](https://github.com/ijiraq/jwst-tno-followup) |
 | Fortran-specific build / Driver usage | [`F95/README.md`](../F95/README.md) |
 | Python install / module usage | [`src/README.md`](../src/README.md) |
 
-`README.formats` and `Template.eff` under `F95/tests/Surveys/CFEPS/` are
-symlinks back to this directory.
+`F95/tests/Models`, `F95/tests/Surveys`, `examples/Models`,
+`examples/Surveys` and `tests/data/Surveys` are symbolic links into
+[`data/`](../data/), which holds the only copy.

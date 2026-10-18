@@ -109,10 +109,9 @@ class OSSSSim:
                 If ``root/pointings.list`` exists it is a single-epoch survey;
                 otherwise each child directory with ``pointings.list`` is an
                 epoch. Optional ``survey.conf`` sets ``detections_required``
-                (default 1 = any epoch; set to n_epochs for AND). Full surveys
-                live in SurveySimulator-Data; format docs under docs/; fixtures
-                under F95/tests/Surveys/ and tests/data/Surveys/.
-
+                (default 1 = any epoch; set to n_epochs for AND). 
+                Format docs are under docs/; small example characterizations
+                live in data/Surveys/.
         """
 
         self.characterization_directory = characterization_directory

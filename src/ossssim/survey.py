@@ -5,7 +5,7 @@ Example
 -------
 >>> from ossssim import SurveyCharacterization
 >>> import numpy as np
->>> survey = SurveyCharacterization.from_directory('F95/tests/Surveys/CFEPS')
+>>> survey = SurveyCharacterization.from_directory('data/Surveys/CFEPS')
 >>> mags = np.arange(21.0, 26.0, 0.1)
 >>> m, area = survey.coverage_vs_magnitude(mags)
 """

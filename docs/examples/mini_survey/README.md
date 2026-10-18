@@ -10,5 +10,7 @@ layout and for a quick `GetSurvey` smoke test.
 
 See [`../../README.formats`](../../README.formats) for the block file format.
 
-Full survey packages (including complete OSSOS-MA) are distributed separately
-in [`SurveySimulator-Data`](../../../../SurveySimulator-Data/).
+Example characterizations are in [`data/Surveys/`](../../../data/Surveys/).
+The complete OSSOS v11 characterizations (including OSSOS-MA) are kept in the
+`characterization/` directory of
+[jwst-tno-followup](https://github.com/ijiraq/jwst-tno-followup).
