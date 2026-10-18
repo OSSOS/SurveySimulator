@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 import pathlib
 
 script_directory = pathlib.Path(__file__).parent.resolve()
-# Small CFEPS fixture kept in-repo for tests (full surveys live in SurveySimulator-Data)
+# Small CFEPS fixture kept in-repo for tests (data/Surveys/CFEPS)
 CFEPS_DIR = script_directory / 'data' / 'Surveys' / 'CFEPS'
 
 

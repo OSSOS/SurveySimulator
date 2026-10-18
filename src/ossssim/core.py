@@ -106,8 +106,8 @@ class OSSSSim:
         """
         Args:
             characterization_directory (str): path to a survey characterization directory.
-                Full surveys are distributed separately in SurveySimulator-Data;
-                format docs are under docs/; small fixtures live in F95/tests/Surveys/.
+                Format docs are under docs/; small example characterizations
+                live in data/Surveys/.
 
         """
 

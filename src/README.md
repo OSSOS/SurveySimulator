@@ -7,10 +7,9 @@ sources (via f90wrap) and wraps it with Python classes in `ossssim`
 See `pydoc ossssim` and the top-level [`examples/`](../examples/) directory.
 
 Survey characterization formats and a mini example are documented in
-[`../docs/`](../docs/). Full survey characterizations and model files are
-distributed separately as [`SurveySimulator-Data`](../../SurveySimulator-Data/)
-(DOI / web download; not shipped inside this Python package). In-repo test
-fixtures live under `../F95/tests/Surveys/` and `../F95/tests/Models/`.
+[`../docs/`](../docs/). Model inputs and example characterizations are in
+[`../data/`](../data/) (`Models/`, `Surveys/`); they are not shipped inside
+this Python package.
 
 ### Installation
 
